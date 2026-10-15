@@ -13,13 +13,15 @@ if config.config_file_name is not None:
 # Os modelos serão registados nesta metadata
 # depois da validação dos contratos de dados.
 from app.core.models import Base
+import app.core.model_registry  # noqa: F401
 
 target_metadata = Base.metadata
 
 
 def run_migrations_offline():
+    # A geração de SQL offline não necessita de credenciais reais.
     context.configure(
-        url=get_database_url().render_as_string(hide_password=False),
+        url="postgresql+psycopg://offline:offline@localhost/livenet",
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
