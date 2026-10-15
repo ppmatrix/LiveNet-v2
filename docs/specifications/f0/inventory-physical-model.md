@@ -1,7 +1,7 @@
 # LiveNet v2 — Especificação Física do Inventory
 
-**Fase:** F0 — Fundação Técnica  
-**Estado:** Decisões INV-01A a INV-09A aprovadas  
+**Fase:** F0 — Fundação Técnica
+**Estado:** Decisões INV-01A a INV-09A aprovadas
 **Natureza:** Especificação técnica; implementação pendente
 
 ## 1. Objetivo e âmbito
