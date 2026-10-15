@@ -12,14 +12,14 @@ if config.config_file_name is not None:
 
 # Os modelos serão registados nesta metadata
 # depois da validação dos contratos de dados.
-target_metadata = None
+from app.core.models import Base
+
+target_metadata = Base.metadata
 
 
 def run_migrations_offline():
     context.configure(
-        url=get_database_url().render_as_string(
-            hide_password=False
-        ),
+        url=get_database_url().render_as_string(hide_password=False),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
