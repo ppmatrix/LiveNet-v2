@@ -561,8 +561,64 @@ da validação efetuada pela aplicação.
 
 ### Etapas seguintes
 
-- F0.63B: `inventory.group_memberships` — pendente.
+- F0.63B: `inventory.group_memberships` — validada em base isolada.
 - F0.63C: `inventory.group_rules` — pendente.
 
 A validação da F0.63A não representa a conclusão integral
 da funcionalidade INV-04A.
+
+### F0.63B — inventory.group_memberships
+
+**Estado:** Implementação física validada em base isolada.
+
+**Revisão Alembic:** `ba06dd956da9`.
+**Revisão anterior:** `da34876e4210`.
+
+Tabela: `inventory.group_memberships`.
+
+Colunas:
+- `id UUID` — chave primária.
+- `group_id UUID` — FK obrigatória para `inventory.groups.id`.
+- `resource_id UUID` — FK obrigatória para `inventory.resources.id`.
+- `membership_source VARCHAR(32)` — obrigatório.
+- `valid_from TIMESTAMPTZ` — obrigatório.
+- `valid_until TIMESTAMPTZ` — opcional.
+- `created_at TIMESTAMPTZ` — obrigatório, default `now()`.
+
+As chaves estrangeiras não utilizam `ON DELETE CASCADE`.
+
+### F0.63B-C01 — Integridade temporal
+
+**Estado:** Aprovada e implementada.
+
+Constraints:
+- `ck_group_memberships_source`: apenas `manual` ou `rule`.
+- `ck_group_memberships_validity`: fim nulo ou posterior ao início.
+- `ex_group_memberships_no_overlap`: exclusão GiST para impedir
+  períodos sobrepostos na mesma combinação de grupo, recurso e origem.
+
+Os intervalos seguem a semântica `[valid_from, valid_until)`.
+Um limite superior nulo representa um intervalo aberto.
+
+As origens `manual` e `rule` podem coexistir.
+
+A migração instala `btree_gist` quando necessário.
+O downgrade não remove esta extensão.
+
+### Validação da F0.63B
+
+- 58 testes Python aprovados.
+- SQL offline inspecionado.
+- Migração validada em `livenet_f0_test`.
+- 8 testes de integridade temporal aprovados.
+- 4 testes de integridade referencial aprovados.
+- 5 verificações de concorrência aprovadas.
+- Conflito concorrente confirmado com SQLSTATE `23P01`.
+- Downgrade para `da34876e4210` validado.
+- Upgrade para `ba06dd956da9` validado.
+- Extensão `btree_gist` 1.7 preservada no downgrade.
+- Nenhuma associação de teste persistida.
+- Base principal `livenet` não migrada.
+
+A F0.63B está validada fisicamente, mas a funcionalidade
+INV-04A permanece incompleta até às etapas seguintes.

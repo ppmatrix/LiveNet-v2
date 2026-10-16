@@ -13,7 +13,7 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import ExcludeConstraint, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base
@@ -416,4 +416,77 @@ class Group(Base):
     archived_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
+    )
+
+
+
+class GroupMembership(Base):
+    """Associação temporal de um recurso a um grupo."""
+
+    __tablename__ = "group_memberships"
+    __table_args__ = (
+        CheckConstraint(
+            "membership_source IN ('manual', 'rule')",
+            name="ck_group_memberships_source",
+        ),
+        CheckConstraint(
+            "valid_until IS NULL OR valid_until > valid_from",
+            name="ck_group_memberships_validity",
+        ),
+        ExcludeConstraint(
+            ("group_id", "="),
+            ("resource_id", "="),
+            ("membership_source", "="),
+            (
+                text(
+                    "tstzrange("
+                    "valid_from, valid_until, '[)'"
+                    ")"
+                ),
+                "&&",
+            ),
+            name="ex_group_memberships_no_overlap",
+            using="gist",
+        ),
+        {"schema": "inventory"},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.groups.id"),
+        nullable=False,
+    )
+
+    resource_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.resources.id"),
+        nullable=False,
+    )
+
+    membership_source: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+    )
+
+    valid_from: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    valid_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
     )

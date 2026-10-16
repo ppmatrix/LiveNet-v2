@@ -2,9 +2,10 @@
 
 from app.inventory.models import (
     Group,
+    GroupMembership,
     Resource,
     ResourceIdentifier,
     ResourceRelation,
 )
 
-__all__ = ["Group", "Resource", "ResourceIdentifier", "ResourceRelation"]
+__all__ = ["Group", "GroupMembership", "Resource", "ResourceIdentifier", "ResourceRelation"]
