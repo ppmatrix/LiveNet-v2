@@ -89,7 +89,7 @@ Regras:
 | last_seen_at | TIMESTAMPTZ | Obrigatório |
 | verified_at | TIMESTAMPTZ | Opcional |
 | verification_status | VARCHAR(32) | Obrigatório |
-| confidence | NUMERIC(5,4) | Opcional |
+| confidence | NUMERIC(5,4) | Opcional; NULL ou valor entre 0.0000 e 1.0000, inclusive |
 | evidence | JSONB | Obrigatório; default {} |
 | valid_from | TIMESTAMPTZ | Obrigatório |
 | valid_until | TIMESTAMPTZ | Opcional |
@@ -116,6 +116,8 @@ Regras:
 9. `last_seen_at >= first_seen_at`.
 10. `valid_until > valid_from`, quando preenchido.
 11. Sem eliminação em cascata do histórico.
+12. `confidence` é validado por constraint CHECK no intervalo [0, 1], permitindo NULL.
+13. O valor de `confidence`, isoladamente, não autoriza fusão automática de recursos.
 
 Índices iniciais:
 - `(identifier_type, normalized_value, namespace)`.
