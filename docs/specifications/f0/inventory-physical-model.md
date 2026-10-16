@@ -967,3 +967,119 @@ a auditoria e os mecanismos de aplicação e reavaliação.
 
 A conclusão da F0.65A não representa a conclusão
 funcional da INV-06A.
+
+### F0.65B — inventory.policy_versions
+
+**Estado:** Implementada e validada em ambiente de testes.
+
+**Contrato de referência:** INV-06A / DAT-10A.
+
+**Migração Alembic:** `e65b01a7c230`, dependente de
+`c4a91e7b205d`.
+
+A tabela `inventory.policy_versions` armazena versões
+individuais das definições das políticas do LiveNet v2.
+
+Cada versão pertence a uma política existente e possui
+uma numeração positiva, única no contexto dessa política.
+
+Colunas implementadas:
+- `id UUID` — chave primária, gerada pela aplicação.
+- `policy_id UUID` — FK obrigatória para `inventory.policies`.
+- `version INTEGER` — obrigatório e positivo.
+- `definition JSONB` — obrigatório, contendo um objeto JSON.
+- `created_at TIMESTAMPTZ` — obrigatório, default `now()`.
+- `created_by UUID` — opcional, sem FK nesta fase.
+
+### F0.65B-C01 — Integridade e imutabilidade das versões
+
+**Estado:** Aprovada e implementada.
+
+Constraints implementadas:
+- `ck_policy_versions_version_positive`:
+  `version > 0`.
+- `ck_policy_versions_definition_object`:
+  `jsonb_typeof(definition) = 'object'`.
+- `uq_policy_versions_policy_version`:
+  unicidade de `(policy_id, version)`.
+- FK de `policy_id` para `inventory.policies.id`,
+  sem eliminação em cascata.
+
+A numeração sequencial, iniciada em 1, será assegurada
+pela futura camada de serviços. A base de dados garante
+positividade e unicidade, mas não continuidade numérica.
+
+A validação semântica de `definition` permanece
+responsabilidade da futura camada de domínio.
+
+A coluna `created_by` não possui FK enquanto o modelo
+de identidade e RBAC aplicável não estiver definido.
+
+**Imutabilidade:**
+
+A decisão F0.65B-C01 reforça a regra original da
+INV-06A, que estabelecia a imutabilidade das versões
+publicadas. Todas as versões passam a ser imutáveis
+desde a sua criação, independentemente do estado
+de publicação.
+
+A função PostgreSQL
+`inventory.prevent_policy_version_mutation()`
+e o trigger `trg_policy_versions_immutable` impedem
+operações `UPDATE` e `DELETE` sobre os registos de
+`inventory.policy_versions`.
+
+As operações rejeitadas produzem SQLSTATE `23514`.
+Qualquer correção de uma definição exige a criação
+de uma nova versão.
+
+Não foram implementados nesta etapa mecanismos
+funcionais de publicação, aprovação ou atribuição
+de versões.
+
+### Validação da F0.65B
+
+**Estado:** Concluída em ambiente de testes.
+
+Validações realizadas:
+- 11 testes estruturais específicos de `PolicyVersion`.
+- 110 testes Python aprovados na suite completa.
+- Sintaxe Python e cadeia de revisões Alembic verificadas.
+- SQL offline da migração gerado e inspecionado.
+- Migração aplicada exclusivamente em `livenet_f0_test`.
+- Estrutura PostgreSQL confirmada: 6 colunas,
+  5 constraints e trigger de imutabilidade.
+- Inserção de versão válida confirmada.
+- Rejeição de `UPDATE` e `DELETE` confirmada.
+- Preservação da versão original confirmada.
+- Rejeição de versão zero confirmada.
+- Rejeição de numeração duplicada confirmada.
+- Rejeição de definição JSONB do tipo array confirmada.
+- Rejeição de referência a política inexistente confirmada.
+- Testes de integridade executados com ROLLBACK.
+- Downgrade para `c4a91e7b205d` validado.
+- Remoção da tabela, função e trigger confirmada.
+- Preservação de `inventory.policies` confirmada.
+- Reaplicação do upgrade para `e65b01a7c230` validada.
+
+A base principal `livenet` não recebeu esta migração.
+
+### Estado da INV-06A após a F0.65B
+
+A implementação física encontra-se validada para:
+- F0.65A: `inventory.policies`.
+- F0.65B: `inventory.policy_versions`.
+
+Permanecem por implementar em fases posteriores:
+- `inventory.policy_assignments`.
+- `inventory.effective_configs`.
+
+Também permanecem pendentes a camada de serviços,
+a validação funcional das definições, a publicação
+e atribuição de versões, a resolução determinística
+de precedências, a rastreabilidade, a integração
+com RBAC, a auditoria e os mecanismos de aplicação
+e reavaliação.
+
+A conclusão da F0.65B não representa a conclusão
+funcional da INV-06A.

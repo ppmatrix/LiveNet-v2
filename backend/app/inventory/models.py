@@ -763,3 +763,60 @@ class Policy(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+
+
+
+class PolicyVersion(Base):
+    """Versão imutável de uma política do inventário."""
+
+    __tablename__ = "policy_versions"
+    __table_args__ = (
+        CheckConstraint(
+            "version > 0",
+            name="ck_policy_versions_version_positive",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(definition) = 'object'",
+            name="ck_policy_versions_definition_object",
+        ),
+        UniqueConstraint(
+            "policy_id",
+            "version",
+            name="uq_policy_versions_policy_version",
+        ),
+        {"schema": "inventory"},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    policy_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.policies.id"),
+        nullable=False,
+    )
+
+    version: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    definition: Mapped[dict] = mapped_column(
+        JSONB,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )
+
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True,
+    )
