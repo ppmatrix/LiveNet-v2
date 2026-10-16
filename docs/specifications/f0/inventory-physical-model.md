@@ -867,3 +867,103 @@ Permanecem pendentes a camada de serviços, a normalização
 automática na entrada, a gestão funcional das atribuições,
 a auditoria, a integração com grupos dinâmicos e os
 mecanismos de arquivamento e reavaliação associados.
+
+### F0.65A — inventory.policies
+
+**Estado:** Implementada e validada em ambiente de testes.
+
+**Contrato de referência:** INV-06A / DAT-10A.
+
+**Migração Alembic:** `c4a91e7b205d`, dependente de
+`9e1b7c42a630`.
+
+A tabela `inventory.policies` representa o catálogo de
+políticas do LiveNet v2. Nesta etapa, apenas a estrutura
+física do catálogo foi implementada, sem versões,
+atribuições ou cálculo de configurações efetivas.
+
+Colunas implementadas:
+- `id UUID` — chave primária, gerada pela aplicação.
+- `name VARCHAR(255)` — obrigatório.
+- `policy_type VARCHAR(64)` — obrigatório.
+- `description TEXT` — opcional.
+- `enabled BOOLEAN` — obrigatório, default `true`.
+- `created_at TIMESTAMPTZ` — obrigatório, default `now()`.
+- `updated_at TIMESTAMPTZ` — obrigatório, default `now()`.
+- `archived_at TIMESTAMPTZ` — opcional.
+
+### F0.65A-C01 — Integridade do catálogo de políticas
+
+**Estado:** Aprovada e implementada.
+
+Constraints implementadas:
+- `ck_policies_name_not_empty`:
+  `length(btrim(name)) > 0`.
+- `ck_policies_type_normalized`:
+  `policy_type = lower(btrim(policy_type)) AND length(policy_type) > 0`.
+- `ck_policies_timestamps`:
+  `updated_at >= created_at`.
+- `ck_policies_archived_at`:
+  `archived_at IS NULL OR archived_at >= created_at`.
+
+Regras adicionais:
+- O nome não possui constraint de unicidade; nomes duplicados
+  são permitidos.
+- `policy_type` deve ser fornecido normalizado, em minúsculas
+  e sem espaços nas extremidades.
+- Não foi introduzida uma enumeração fechada de tipos de política.
+- `archived_at` é independente de `enabled` ao nível da base
+  de dados.
+- Uma política arquivada não deverá ser aplicada pela futura
+  camada de serviços.
+- A geração de UUID é responsabilidade da aplicação.
+- Não foi introduzido mecanismo automático de atualização
+  de `updated_at`.
+
+### Validação da F0.65A
+
+**Estado:** Concluída em ambiente de testes.
+
+Validações realizadas:
+- 10 testes estruturais específicos do modelo `Policy`.
+- 99 testes Python aprovados na suite completa.
+- Sintaxe Python e cadeia de revisões Alembic verificadas.
+- SQL offline da migração gerado e inspecionado.
+- Migração aplicada exclusivamente em `livenet_f0_test`.
+- Estrutura PostgreSQL confirmada: 8 colunas, chave primária
+  UUID e 4 constraints CHECK.
+- Defaults de `enabled`, `created_at` e `updated_at` confirmados.
+- Inserção válida e aplicação de defaults verificadas.
+- Rejeição de nomes vazios confirmada.
+- Rejeição de `policy_type` não normalizado confirmada.
+- Rejeição de timestamps inconsistentes confirmada.
+- Rejeição de arquivamento temporal inválido confirmada.
+- Aceitação de nomes duplicados confirmada.
+- Independência entre `archived_at` e `enabled` confirmada.
+- Testes de integridade executados com ROLLBACK.
+- Downgrade para `9e1b7c42a630` validado.
+- Ausência da tabela após downgrade confirmada.
+- Reaplicação do upgrade para `c4a91e7b205d` validada.
+
+A base principal `livenet` não recebeu esta migração.
+
+### Estado da INV-06A após a F0.65A
+
+A implementação física inicial do catálogo de políticas
+está validada:
+
+- F0.65A: `inventory.policies`.
+
+Permanecem por implementar em fases posteriores:
+- `inventory.policy_versions`.
+- `inventory.policy_assignments`.
+- `inventory.effective_configs`.
+
+Também permanecem pendentes a camada de serviços, a
+validação funcional das definições, a publicação e
+atribuição de versões, a resolução determinística de
+precedências, a rastreabilidade, a integração com RBAC,
+a auditoria e os mecanismos de aplicação e reavaliação.
+
+A conclusão da F0.65A não representa a conclusão
+funcional da INV-06A.

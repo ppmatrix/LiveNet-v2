@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     ForeignKey,
     Numeric,
@@ -12,6 +13,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    true,
     text,
 )
 from sqlalchemy.dialects.postgresql import ExcludeConstraint, JSONB, UUID
@@ -687,4 +689,77 @@ class ResourceTag(Base):
         nullable=False,
         default=utc_now,
         server_default=func.now(),
+    )
+
+
+class Policy(Base):
+    """Catálogo de políticas do inventário LiveNet v2."""
+
+    __tablename__ = "policies"
+    __table_args__ = (
+        CheckConstraint(
+            "length(btrim(name)) > 0",
+            name="ck_policies_name_not_empty",
+        ),
+        CheckConstraint(
+            "policy_type = lower(btrim(policy_type)) "
+            "AND length(policy_type) > 0",
+            name="ck_policies_type_normalized",
+        ),
+        CheckConstraint(
+            "updated_at >= created_at",
+            name="ck_policies_timestamps",
+        ),
+        CheckConstraint(
+            "archived_at IS NULL OR archived_at >= created_at",
+            name="ck_policies_archived_at",
+        ),
+        {"schema": "inventory"},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    policy_type: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default=true(),
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )
+
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
     )
