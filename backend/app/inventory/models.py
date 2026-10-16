@@ -354,3 +354,66 @@ class ResourceRelation(Base):
         default=utc_now,
         server_default=func.now(),
     )
+
+
+class Group(Base):
+    """Grupo estático ou dinâmico de recursos."""
+
+    __tablename__ = "groups"
+    __table_args__ = (
+        CheckConstraint(
+            "group_type IN ('static', 'dynamic')",
+            name="ck_groups_type",
+        ),
+        CheckConstraint(
+            "updated_at >= created_at",
+            name="ck_groups_timestamps",
+        ),
+        Index(
+            "uq_groups_active_name",
+            "name",
+            unique=True,
+            postgresql_where=text("archived_at IS NULL"),
+        ),
+        {"schema": "inventory"},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
+    group_type: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )
+
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )

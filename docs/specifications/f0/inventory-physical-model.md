@@ -499,3 +499,70 @@ A consolidação documental não altera o estado da base de dados.
 A primeira etapa de implementação prevista é a fundação do
 schema `inventory` e da entidade `inventory.resources`,
 após validação deste documento.
+
+## 14. Estado da implementação física
+
+Esta secção regista a execução incremental da especificação,
+sem substituir nem alterar as decisões INV-01A a INV-09A.
+
+### F0.63A — inventory.groups
+
+**Estado:** Implementação física validada em base isolada.
+
+**Revisão Alembic:** `da34876e4210`.
+
+**Revisão anterior:** `38d641dcd780`.
+
+Tabela implementada: `inventory.groups`.
+
+Colunas:
+- `id UUID` — chave primária, UUID gerado pela aplicação.
+- `name VARCHAR(255)` — obrigatório.
+- `description TEXT` — opcional.
+- `group_type VARCHAR(32)` — obrigatório.
+- `created_at TIMESTAMPTZ` — obrigatório, default `now()`.
+- `updated_at TIMESTAMPTZ` — obrigatório, default `now()`.
+- `archived_at TIMESTAMPTZ` — opcional.
+
+Índice único parcial:
+- `uq_groups_active_name` em `name`.
+- Predicado: `archived_at IS NULL`.
+- Impede nomes duplicados entre grupos não arquivados.
+- Permite reutilizar nomes de grupos arquivados.
+
+### F0.63-C01 — Constraints complementares dos grupos
+
+**Estado:** Aprovada e implementada na F0.63A.
+
+Foram aprovadas duas constraints de integridade:
+
+1. `ck_groups_type`:
+   `CHECK (group_type IN ('static', 'dynamic'))`.
+2. `ck_groups_timestamps`:
+   `CHECK (updated_at >= created_at)`.
+
+A primeira restringe os tipos aos previstos na especificação
+INV-04A. A segunda impede inconsistências temporais básicas.
+
+Estas constraints são aplicadas pelo PostgreSQL, independentemente
+da validação efetuada pela aplicação.
+
+### Validação da F0.63A
+
+- 48 testes Python aprovados.
+- SQL offline da migração inspecionado.
+- Migração aplicada exclusivamente em `livenet_f0_test`.
+- Estrutura física confirmada no PostgreSQL.
+- 8 testes de integridade PostgreSQL aprovados.
+- Testes executados com `ROLLBACK`, sem dados persistidos.
+- Downgrade para `38d641dcd780` validado.
+- Upgrade para `da34876e4210` validado.
+- Base principal `livenet` não migrada.
+
+### Etapas seguintes
+
+- F0.63B: `inventory.group_memberships` — pendente.
+- F0.63C: `inventory.group_rules` — pendente.
+
+A validação da F0.63A não representa a conclusão integral
+da funcionalidade INV-04A.
