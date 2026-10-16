@@ -559,14 +559,6 @@ da validação efetuada pela aplicação.
 - Upgrade para `da34876e4210` validado.
 - Base principal `livenet` não migrada.
 
-### Etapas seguintes
-
-- F0.63B: `inventory.group_memberships` — validada em base isolada.
-- F0.63C: `inventory.group_rules` — pendente.
-
-A validação da F0.63A não representa a conclusão integral
-da funcionalidade INV-04A.
-
 ### F0.63B — inventory.group_memberships
 
 **Estado:** Implementação física validada em base isolada.
@@ -622,3 +614,73 @@ O downgrade não remove esta extensão.
 
 A F0.63B está validada fisicamente, mas a funcionalidade
 INV-04A permanece incompleta até às etapas seguintes.
+
+
+### F0.63C — inventory.group_rules
+
+**Estado:** Implementação física validada em base isolada.
+
+**Revisão Alembic:** `44e7eb855b5a`.
+**Revisão anterior:** `ba06dd956da9`.
+
+Tabela: `inventory.group_rules`.
+
+Colunas:
+- `id UUID` — chave primária, UUID gerado pela aplicação.
+- `group_id UUID` — FK obrigatória para `inventory.groups.id`.
+- `rule_definition JSONB` — obrigatório.
+- `enabled BOOLEAN` — obrigatório, default `true`.
+- `created_at TIMESTAMPTZ` — obrigatório, default `now()`.
+- `updated_at TIMESTAMPTZ` — obrigatório, default `now()`.
+
+A chave estrangeira não utiliza `ON DELETE CASCADE`.
+
+### F0.63C-C01 — Integridade física das regras
+
+**Estado:** Aprovada e implementada.
+
+Constraints:
+- `ck_group_rules_definition_object`:
+  `CHECK (jsonb_typeof(rule_definition) = 'object')`.
+- `ck_group_rules_timestamps`:
+  `CHECK (updated_at >= created_at)`.
+
+São permitidas várias regras por grupo, sem restrição de
+unicidade adicional ou cardinalidade máxima nesta fase.
+
+A estrutura interna de `rule_definition` ainda não possui
+um contrato semântico aprovado.
+
+Não foram implementados o motor de avaliação, os workers
+nem a materialização automática das associações.
+
+### Validação da F0.63C
+
+- 68 testes Python aprovados, incluindo 10 testes estruturais.
+- Sintaxe Python e `git diff --check` validados.
+- SQL offline da migração inspecionado.
+- Migração aplicada exclusivamente em `livenet_f0_test`.
+- Seis colunas e quatro constraints confirmadas no PostgreSQL.
+- 7 testes funcionais de integridade PostgreSQL aprovados.
+- Testes executados com `ROLLBACK`, sem dados persistidos.
+- Downgrade para `ba06dd956da9` validado.
+- Upgrade para `44e7eb855b5a` validado.
+- Tabela recriada sem registos.
+- Base principal `livenet` não migrada.
+
+### Estado da INV-04A após a F0.63C
+
+A implementação física inicial das três tabelas está validada:
+
+- F0.63A: `inventory.groups`.
+- F0.63B: `inventory.group_memberships`.
+- F0.63C: `inventory.group_rules`.
+
+A conclusão destas etapas não representa a conclusão
+funcional da INV-04A.
+
+Permanecem pendentes a definição da linguagem declarativa
+das regras, a respetiva validação semântica, o motor de
+avaliação, a reavaliação idempotente por workers, a
+materialização automática das associações e os mecanismos
+de auditoria associados.

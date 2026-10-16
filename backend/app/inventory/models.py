@@ -490,3 +490,57 @@ class GroupMembership(Base):
         default=utc_now,
         server_default=func.now(),
     )
+
+
+class GroupRule(Base):
+    """Definição declarativa de uma regra de grupo dinâmico."""
+
+    __tablename__ = "group_rules"
+    __table_args__ = (
+        CheckConstraint(
+            "jsonb_typeof(rule_definition) = 'object'",
+            name="ck_group_rules_definition_object",
+        ),
+        CheckConstraint(
+            "updated_at >= created_at",
+            name="ck_group_rules_timestamps",
+        ),
+        {"schema": "inventory"},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    group_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.groups.id"),
+        nullable=False,
+    )
+
+    rule_definition: Mapped[dict] = mapped_column(
+        JSONB,
+        nullable=False,
+    )
+
+    enabled: Mapped[bool] = mapped_column(
+        nullable=False,
+        default=True,
+        server_default=text("true"),
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )
