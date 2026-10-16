@@ -684,3 +684,88 @@ das regras, a respetiva validação semântica, o motor de
 avaliação, a reavaliação idempotente por workers, a
 materialização automática das associações e os mecanismos
 de auditoria associados.
+
+### F0.64A — inventory.tags
+
+**Estado:** Implementada e validada em ambiente de testes.
+
+**Contrato de referência:** INV-05A / DAT-09A.
+
+**Migração Alembic:** `7c4e2a91b605`, dependente de
+`44e7eb855b5a`.
+
+A tabela `inventory.tags` constitui o catálogo global de etiquetas
+do inventário.
+
+Colunas implementadas:
+- `id UUID` — chave primária.
+- `key VARCHAR(128)` — obrigatório.
+- `value VARCHAR(255)` — obrigatório.
+- `description TEXT` — opcional.
+- `created_at TIMESTAMPTZ` — obrigatório, default `now()`.
+- `updated_at TIMESTAMPTZ` — obrigatório, default `now()`.
+
+O modelo SQLAlchemy utiliza UUID gerado na aplicação e timestamps
+UTC gerados na aplicação, mantendo defaults de timestamps na base.
+
+### F0.64A-C01 — Normalização e integridade das etiquetas
+
+**Estado:** Aprovada e implementada.
+
+Regras:
+1. As chaves são armazenadas em minúsculas e sem espaços exteriores.
+2. Os valores são armazenados sem espaços exteriores.
+3. Os valores preservam maiúsculas e minúsculas.
+4. A comparação dos valores distingue maiúsculas de minúsculas.
+5. A combinação `(key, value)` é globalmente única.
+6. Chaves e valores vazios, incluindo apenas espaços, são rejeitados.
+7. A base de dados valida a normalização através de constraints.
+8. A futura camada de serviços normalizará os dados antes da inserção.
+9. `updated_at` não pode ser anterior a `created_at`.
+
+Constraints implementadas:
+- `uq_tags_key_value`:
+  `UNIQUE (key, value)`.
+- `ck_tags_key_normalized`:
+  `CHECK (key = lower(btrim(key)) AND length(key) > 0)`.
+- `ck_tags_value_normalized`:
+  `CHECK (value = btrim(value) AND length(value) > 0)`.
+- `ck_tags_timestamps`:
+  `CHECK (updated_at >= created_at)`.
+
+Exemplo: `environment=Production` e `environment=production`
+são duas etiquetas distintas.
+
+A normalização automática na camada de serviços não faz parte
+desta implementação física.
+
+### Validação da F0.64A
+
+**Estado:** Concluída.
+
+Validações realizadas:
+- 9 testes estruturais específicos do modelo `Tag`.
+- 77 testes Python aprovados na suite completa.
+- Geração e inspeção do SQL offline da migração.
+- Upgrade aplicado exclusivamente em `livenet_f0_test`.
+- Estrutura PostgreSQL verificada: 6 colunas, chave primária,
+  3 constraints CHECK e 1 constraint UNIQUE.
+- 9 testes de integridade PostgreSQL aprovados.
+- Testes executados em transação com `ROLLBACK`.
+- Downgrade para `44e7eb855b5a` validado.
+- Reaplicação do upgrade para `7c4e2a91b605` validada.
+- Tabela recriada sem registos.
+
+A base principal `livenet` não recebeu esta migração.
+
+### Estado da INV-05A após a F0.64A
+
+- `inventory.tags`: implementação física concluída e validada
+  na base isolada de testes.
+- `inventory.resource_tags`: implementação física pendente (F0.64B).
+- Normalização na camada de serviços: pendente.
+- Auditoria de alterações e integração com grupos dinâmicos:
+  pendentes das respetivas fases funcionais.
+
+A conclusão da F0.64A não representa a conclusão integral
+da INV-05A.

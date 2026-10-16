@@ -10,6 +10,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
     text,
 )
@@ -529,6 +530,67 @@ class GroupRule(Base):
         nullable=False,
         default=True,
         server_default=text("true"),
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )
+
+
+class Tag(Base):
+    """Etiqueta normalizada do inventário LiveNet v2."""
+
+    __tablename__ = "tags"
+    __table_args__ = (
+        CheckConstraint(
+            "key = lower(btrim(key)) AND length(key) > 0",
+            name="ck_tags_key_normalized",
+        ),
+        CheckConstraint(
+            "value = btrim(value) AND length(value) > 0",
+            name="ck_tags_value_normalized",
+        ),
+        CheckConstraint(
+            "updated_at >= created_at",
+            name="ck_tags_timestamps",
+        ),
+        UniqueConstraint(
+            "key",
+            "value",
+            name="uq_tags_key_value",
+        ),
+        {"schema": "inventory"},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    key: Mapped[str] = mapped_column(
+        String(128),
+        nullable=False,
+    )
+
+    value: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
