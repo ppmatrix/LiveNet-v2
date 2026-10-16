@@ -250,3 +250,107 @@ class ResourceIdentifier(Base):
         default=utc_now,
         server_default=func.now(),
     )
+
+
+class ResourceRelation(Base):
+    """Relação tipada, dirigida e temporal entre recursos."""
+
+    __tablename__ = "resource_relations"
+    __table_args__ = (
+        CheckConstraint(
+            "source_resource_id <> target_resource_id",
+            name="ck_resource_relations_no_self",
+        ),
+        CheckConstraint(
+            "valid_until IS NULL OR valid_until > valid_from",
+            name="ck_resource_relations_validity",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(evidence) = 'object'",
+            name="ck_resource_relations_evidence_object",
+        ),
+        CheckConstraint(
+            "updated_at >= created_at",
+            name="ck_resource_relations_timestamps",
+        ),
+        Index(
+            "ix_resource_relations_source_type",
+            "source_resource_id",
+            "relation_type",
+        ),
+        Index(
+            "ix_resource_relations_target_type",
+            "target_resource_id",
+            "relation_type",
+        ),
+        Index(
+            "ix_resource_relations_type_validity",
+            "relation_type",
+            "valid_until",
+        ),
+        {"schema": "inventory"},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    source_resource_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.resources.id"),
+        nullable=False,
+    )
+
+    target_resource_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.resources.id"),
+        nullable=False,
+    )
+
+    relation_type: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
+    source_type: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
+    source_instance: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    evidence: Mapped[dict] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'::jsonb"),
+    )
+
+    valid_from: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    valid_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )

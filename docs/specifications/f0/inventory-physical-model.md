@@ -173,6 +173,20 @@ Regras:
 - `(target_resource_id, relation_type)`.
 - `(relation_type, valid_until)`.
 
+### F0.62-C01 — Integridade temporal das relações
+
+**Estado:** Aprovada em 2026-10-16.
+
+A tabela `inventory.resource_relations` inclui a constraint PostgreSQL `CHECK (updated_at >= created_at)`.
+
+**Justificação:** impedir que uma relação apresente uma data de atualização anterior à sua criação, mantendo a coerência temporal com `inventory.resources`.
+
+Esta regra complementa as constraints de autorrelacionamento, validade temporal e formato JSONB de `evidence`.
+
+As regras de cardinalidade contextual, sobreposição temporal e deteção de ciclos continuam a pertencer à camada de domínio.
+
+---
+
 ## 5. INV-04A — Grupos de recursos
 
 **Estado:** Aprovada.
