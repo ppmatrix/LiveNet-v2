@@ -606,3 +606,85 @@ class Tag(Base):
         default=utc_now,
         server_default=func.now(),
     )
+
+
+class ResourceTag(Base):
+    """Associação temporal de uma etiqueta a um recurso."""
+
+    __tablename__ = "resource_tags"
+    __table_args__ = (
+        CheckConstraint(
+            "assignment_source IN ('manual', 'discovery', 'policy')",
+            name="ck_resource_tags_source",
+        ),
+        CheckConstraint(
+            "valid_until IS NULL OR valid_until > valid_from",
+            name="ck_resource_tags_validity",
+        ),
+        ExcludeConstraint(
+            ("resource_id", "="),
+            ("tag_id", "="),
+            ("assignment_source", "="),
+            (
+                text(
+                    "tstzrange("
+                    "valid_from, valid_until, '[)'"
+                    ")"
+                ),
+                "&&",
+            ),
+            name="ex_resource_tags_no_overlap",
+            using="gist",
+        ),
+        Index(
+            "ix_resource_tags_resource_valid_until",
+            "resource_id",
+            "valid_until",
+        ),
+        Index(
+            "ix_resource_tags_tag_valid_until",
+            "tag_id",
+            "valid_until",
+        ),
+        {"schema": "inventory"},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    resource_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.resources.id"),
+        nullable=False,
+    )
+
+    tag_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.tags.id"),
+        nullable=False,
+    )
+
+    assignment_source: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+    )
+
+    valid_from: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    valid_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )

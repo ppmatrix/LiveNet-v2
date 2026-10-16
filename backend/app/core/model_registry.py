@@ -7,7 +7,8 @@ from app.inventory.models import (
     Resource,
     ResourceIdentifier,
     ResourceRelation,
+    ResourceTag,
     Tag,
 )
 
-__all__ = ["Group", "GroupMembership", "GroupRule", "Resource", "ResourceIdentifier", "ResourceRelation", "Tag"]
+__all__ = ["Group", "GroupMembership", "GroupRule", "Resource", "ResourceIdentifier", "ResourceRelation", "ResourceTag", "Tag"]

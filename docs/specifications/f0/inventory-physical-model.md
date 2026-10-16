@@ -762,10 +762,108 @@ A base principal `livenet` não recebeu esta migração.
 
 - `inventory.tags`: implementação física concluída e validada
   na base isolada de testes.
-- `inventory.resource_tags`: implementação física pendente (F0.64B).
+- `inventory.resource_tags`: implementação física validada na F0.64B.
 - Normalização na camada de serviços: pendente.
 - Auditoria de alterações e integração com grupos dinâmicos:
   pendentes das respetivas fases funcionais.
 
 A conclusão da F0.64A não representa a conclusão integral
 da INV-05A.
+
+### F0.64B — inventory.resource_tags
+
+**Estado:** Implementada e validada em ambiente de testes.
+
+**Contrato de referência:** INV-05A / DAT-09A.
+
+**Migração Alembic:** `9e1b7c42a630`, dependente de
+`7c4e2a91b605`.
+
+A tabela `inventory.resource_tags` representa as atribuições
+temporais de etiquetas aos recursos, preservando a origem
+de cada atribuição e permitindo manter o respetivo histórico.
+
+Colunas implementadas:
+- `id UUID` — chave primária, gerada pela aplicação.
+- `resource_id UUID` — FK obrigatória para `inventory.resources.id`.
+- `tag_id UUID` — FK obrigatória para `inventory.tags.id`.
+- `assignment_source VARCHAR(32)` — obrigatório.
+- `valid_from TIMESTAMPTZ` — obrigatório.
+- `valid_until TIMESTAMPTZ` — opcional.
+- `created_at TIMESTAMPTZ` — obrigatório, default `now()`.
+
+As chaves estrangeiras não utilizam `ON DELETE CASCADE`.
+
+### F0.64B-C01 — Integridade temporal das atribuições
+
+**Estado:** Aprovada e implementada.
+
+Origens permitidas:
+- `manual`.
+- `discovery`.
+- `policy`.
+
+Constraints implementadas:
+- Validação de `assignment_source` através de `CHECK`.
+- Validação de `valid_until IS NULL OR valid_until > valid_from`.
+- Exclusão GiST de intervalos sobrepostos para a mesma
+  combinação `(resource_id, tag_id, assignment_source)`.
+
+Os intervalos utilizam a semântica `[valid_from, valid_until)`.
+Um limite superior nulo representa uma atribuição sem data
+de término definida.
+
+São permitidos intervalos consecutivos sem sobreposição.
+A mesma etiqueta pode coexistir no mesmo recurso quando
+as origens de atribuição são diferentes.
+
+Índices adicionais:
+- `(resource_id, valid_until)`.
+- `(tag_id, valid_until)`.
+
+A migração utiliza `btree_gist`, instalando a extensão quando
+necessário. O downgrade preserva a extensão, por ser partilhada
+com outras estruturas do inventário.
+
+Não foram implementados nesta etapa serviços de atribuição,
+normalização automática, workers, auditoria de alterações
+nem reavaliação automática de grupos.
+
+### Validação da F0.64B
+
+**Estado:** Concluída.
+
+Validações realizadas:
+- 12 testes estruturais específicos do modelo `ResourceTag`.
+- 89 testes Python aprovados na suite completa.
+- Sintaxe Python e SQL offline da migração inspecionados.
+- Migração aplicada exclusivamente em `livenet_f0_test`.
+- Estrutura PostgreSQL confirmada: 7 colunas, 2 constraints
+  CHECK, 2 chaves estrangeiras e 1 exclusão GiST.
+- Quatro índices confirmados, incluindo PK e GiST.
+- 9 testes de integridade PostgreSQL aprovados.
+- 4 testes de atualização temporal aprovados.
+- 3 verificações de concorrência aprovadas.
+- Rejeição de atribuição concorrente sobreposta confirmada.
+- Dados temporários eliminados e ausência de registos verificada.
+- Downgrade para `7c4e2a91b605` validado.
+- Reaplicação do upgrade para `9e1b7c42a630` validada.
+- Extensão `btree_gist` preservada no downgrade.
+- Tabela recriada sem registos.
+
+A base principal `livenet` não recebeu esta migração.
+
+### Estado da INV-05A após a F0.64B
+
+A implementação física inicial das duas tabelas está validada:
+
+- F0.64A: `inventory.tags`.
+- F0.64B: `inventory.resource_tags`.
+
+A conclusão destas etapas não representa a conclusão
+funcional da INV-05A.
+
+Permanecem pendentes a camada de serviços, a normalização
+automática na entrada, a gestão funcional das atribuições,
+a auditoria, a integração com grupos dinâmicos e os
+mecanismos de arquivamento e reavaliação associados.
