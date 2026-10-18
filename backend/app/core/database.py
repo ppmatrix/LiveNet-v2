@@ -3,6 +3,7 @@ from pathlib import Path
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL
+from sqlalchemy.orm import sessionmaker
 
 
 def get_database_url():
@@ -31,6 +32,15 @@ def create_database_engine():
         pool_pre_ping=True,
         pool_size=5,
         max_overflow=5,
+    )
+
+
+def create_session_factory(engine):
+    """Create a session factory for an existing SQLAlchemy engine."""
+    return sessionmaker(
+        bind=engine,
+        autoflush=False,
+        expire_on_commit=False,
     )
 
 

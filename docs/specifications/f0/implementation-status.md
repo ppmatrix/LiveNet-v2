@@ -67,7 +67,8 @@ constraints and validation details.
 ## 4. Validation evidence
 
 - [x] Full backend test suite: 130 passed.
-- [x] Alembic HEAD: f065d01a7230.
+- [x] F0.65D Alembic revision: f065d01a7230.
+- [x] Latest validated test-database revision: f066a01a7230.
 - [x] F0.65D PostgreSQL integrity tests: 10 passed.
 - [x] F0.65D downgrade and upgrade validated.
 - [x] F0.65D migration tested in livenet_f0_test.
@@ -102,8 +103,8 @@ acceptance or production readiness.
 - [ ] Server-Sent Events infrastructure.
 - [ ] GitHub Actions CI/CD pipeline.
 - [ ] GitHub Container Registry integration.
-- [ ] Discovery, monitoring, operations, security and audit
-      domain implementations.
+- [ ] Discovery, monitoring, operations and security domain
+      implementations; functional audit integration remains pending.
 - [ ] Transactional Outbox implementation.
 - [ ] Operational readiness, observability and deployment
       acceptance criteria.
@@ -173,7 +174,9 @@ the next development component.
 - SQLAlchemy metadata registration validated.
 
 **Remaining work:**
-- F0.66B: transactional integration with domain services.
+- F0.66B: transactional audit infrastructure and integration
+  tests (implemented locally; publication pending).
+- Functional instrumentation of domain services remains pending.
 - PostgreSQL permission policy.
 - Operational retention and cleanup procedures.
 - Transactional Outbox physical contract and implementation.
@@ -181,3 +184,68 @@ the next development component.
 
 **Safety:** All migration operations were restricted to
 `livenet_f0_test`. The main `livenet` database was not migrated.
+
+
+## F0.66B — Transactional audit service
+
+**Status:** Implemented and validated locally; commit and publication pending.
+
+**Approved contract:** INV-08A / F0.66-C02.
+
+**F0.66B.1 — SQLAlchemy session infrastructure:**
+- `app.core.database.create_session_factory(engine)` creates a
+  sessionmaker bound to an existing SQLAlchemy engine.
+- Session configuration: `autoflush=False` and
+  `expire_on_commit=False`.
+- Transaction ownership belongs to the caller, using a
+  shared session and an explicit transaction boundary.
+- Application-lifetime engine management and integration
+  into functional domain services remain pending.
+
+**F0.66B.2 — Centralized audit writing service:**
+- Implementation: `app.audit.service.record_audit_event()`.
+- Receives an existing SQLAlchemy Session.
+- Adds an `AuditEvent` to that session.
+- Does not independently commit, flush or roll back.
+- Validates required strings, maximum lengths and optional UUIDs.
+- Validates `changes` and `context` as JSON objects.
+- Rejects non-JSON-compatible values, including NaN and infinity.
+- Creates independent JSON copies of input payloads.
+- Rejects a defined set of sensitive field names, including
+  occurrences in nested objects and arrays.
+- Does not depend on Flask request or application context.
+
+**F0.66B.3 — PostgreSQL transactional integration tests:**
+- Three integration tests executed against `livenet_f0_test`.
+- Inventory resource and audit event written in one transaction.
+- Audit database failure rolls back the Inventory operation.
+- Inventory database failure rolls back the audit event,
+  including an event previously sent through `session.flush()`.
+- Tests use an outer transaction with rollback and
+  SQLAlchemy savepoints for isolation.
+- Final database verification: zero residual Inventory
+  resources and zero residual audit events.
+
+**Validation evidence:**
+- Backend unit/regression tests: 162/162 passed.
+- PostgreSQL integration tests: 3/3 passed.
+- Python syntax validation passed.
+- Git whitespace validation passed.
+- No new database migration or physical schema change.
+
+**Limitations and remaining work:**
+- Sensitive-field filtering is based on known field names;
+  it does not guarantee detection of every secret.
+- Domain services must explicitly select safe audit payloads.
+- Tests demonstrate transactional atomicity within an
+  outer rollback boundary, not independent durable persistence
+  after a final database commit.
+- Functional Inventory operations are not yet instrumented
+  to emit audit events.
+- PostgreSQL permission policy, retention and operational
+  procedures remain pending.
+- Transactional Outbox and SIEM functionality are outside
+  this implementation stage.
+
+**Safety:** PostgreSQL integration tests were restricted to
+`livenet_f0_test`. The main `livenet` database was not modified.
