@@ -926,3 +926,70 @@ class PolicyAssignment(Base):
         default=utc_now,
         server_default=func.now(),
     )
+
+
+class EffectiveConfig(Base):
+    """Configuração efetiva derivada para um recurso e tipo de política."""
+
+    __tablename__ = "effective_configs"
+    __table_args__ = (
+        UniqueConstraint(
+            "resource_id",
+            "policy_type",
+            name="uq_effective_configs_resource_policy_type",
+        ),
+        CheckConstraint(
+            "length(btrim(policy_type)) > 0",
+            name="ck_effective_configs_policy_type_not_empty",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(resolved_config) = 'object'",
+            name="ck_effective_configs_resolved_config_object",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(resolution_trace) = 'object'",
+            name="ck_effective_configs_resolution_trace_object",
+        ),
+        CheckConstraint(
+            "revision > 0",
+            name="ck_effective_configs_revision_positive",
+        ),
+        {"schema": "inventory"},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    resource_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.resources.id"),
+        nullable=False,
+    )
+
+    policy_type: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+    )
+
+    resolved_config: Mapped[dict] = mapped_column(
+        JSONB,
+        nullable=False,
+    )
+
+    resolution_trace: Mapped[dict] = mapped_column(
+        JSONB,
+        nullable=False,
+    )
+
+    calculated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    revision: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )

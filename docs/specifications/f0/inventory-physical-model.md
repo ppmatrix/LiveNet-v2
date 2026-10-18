@@ -1217,3 +1217,128 @@ auditoria, aplicação e reavaliação.
 
 A conclusão da F0.65C não representa a conclusão
 funcional da INV-06A.
+
+### F0.65D — inventory.effective_configs
+
+**Estado:** Implementada e validada em ambiente de testes.
+
+**Contrato de referência:** INV-06A / DAT-10A / F0.65D-C01.
+
+**Migração Alembic:** `f065d01a7230`, dependente de
+`f065c01a7230`.
+
+A tabela `inventory.effective_configs` armazena a
+configuração efetiva calculada para cada recurso e
+tipo de política.
+
+É uma tabela derivada e reconstruível, não constituindo
+a fonte de verdade das políticas.
+
+Colunas implementadas:
+
+- `id UUID` — chave primária, gerada pela aplicação.
+- `resource_id UUID` — FK obrigatória para
+  `inventory.resources`, sem eliminação em cascata.
+- `policy_type VARCHAR(64)` — obrigatório e não vazio.
+- `resolved_config JSONB` — obrigatório, objeto JSON.
+- `resolution_trace JSONB` — obrigatório, objeto JSON.
+- `calculated_at TIMESTAMPTZ` — obrigatório.
+- `revision INTEGER` — obrigatório e positivo.
+
+Não existem valores por defeito para os campos de
+cálculo, rastreabilidade ou revisão.
+
+### F0.65D-C01 — Integridade das configurações efetivas
+
+**Estado:** Aprovada e implementada.
+
+A constraint
+`uq_effective_configs_resource_policy_type`
+garante a unicidade de `(resource_id, policy_type)`.
+
+Consequentemente, a tabela representa apenas uma
+configuração efetiva por recurso e tipo de política,
+não mantendo o histórico de cálculos anteriores.
+
+Constraints CHECK implementadas:
+
+- `ck_effective_configs_policy_type_not_empty`:
+  `length(btrim(policy_type)) > 0`.
+- `ck_effective_configs_resolved_config_object`:
+  `jsonb_typeof(resolved_config) = 'object'`.
+- `ck_effective_configs_resolution_trace_object`:
+  `jsonb_typeof(resolution_trace) = 'object'`.
+- `ck_effective_configs_revision_positive`:
+  `revision > 0`.
+
+A FK de `resource_id` assegura a existência do recurso
+associado, sem utilizar `ON DELETE CASCADE`.
+
+A coluna `revision` representa a revisão da
+configuração efetiva no contexto do par
+`(resource_id, policy_type)`.
+
+A primeira configuração persistida deverá utilizar
+a revisão 1. O incremento das revisões e o controlo
+de concorrência pertencem à futura camada de serviços.
+
+A base de dados garante apenas que a revisão é positiva.
+
+Os documentos `resolved_config` e `resolution_trace`
+devem ser objetos JSONB. A validação semântica dos
+respetivos conteúdos será definida com o motor de
+resolução de políticas.
+
+### Validação da F0.65D
+
+**Estado:** Concluída em ambiente de testes.
+
+Validações realizadas:
+
+- 10 testes estruturais específicos de `EffectiveConfig`.
+- 130 testes Python aprovados na suite completa.
+- Sintaxe Python e cadeia Alembic verificadas.
+- SQL PostgreSQL do modelo compilado e inspecionado.
+- Migração aplicada exclusivamente em `livenet_f0_test`.
+- Estrutura confirmada: 7 colunas obrigatórias e
+  7 constraints (PK, FK, UNIQUE e quatro CHECK).
+- Inserção de configuração válida confirmada.
+- Coexistência de tipos de política diferentes confirmada.
+- Rejeição de duplicados por recurso e tipo confirmada.
+- Rejeição de tipo de política vazio confirmada.
+- Rejeição de JSONB do tipo array em ambos os campos.
+- Rejeição de revisões zero e negativas.
+- Rejeição de referência a recurso inexistente.
+- Testes funcionais executados com `ROLLBACK`.
+- Confirmação de zero configurações persistidas.
+- Downgrade para `f065c01a7230` validado.
+- Remoção da tabela no downgrade confirmada.
+- Reaplicação do upgrade para `f065d01a7230` validada.
+
+A base principal `livenet` não recebeu esta migração.
+
+### Estado da INV-06A após a F0.65D
+
+A implementação física das quatro tabelas previstas
+para as políticas encontra-se validada:
+
+- F0.65A: `inventory.policies`.
+- F0.65B: `inventory.policy_versions`.
+- F0.65C: `inventory.policy_assignments`.
+- F0.65D: `inventory.effective_configs`.
+
+A implementação física não representa a conclusão
+funcional do subsistema de políticas.
+
+Permanecem pendentes a camada de serviços, o motor
+de resolução, a validação semântica, a publicação e
+aprovação, a aplicação de políticas, a invalidação e
+reconstrução de configurações, o controlo de
+concorrência, a rastreabilidade funcional, a integração
+com RBAC e a auditoria.
+
+As regras arquiteturais de precedência
+`resource > group > global`, prioridade entre grupos,
+resolução determinística de empates, deteção de
+conflitos e avaliação idempotente permanecem
+reservadas para a implementação funcional.
