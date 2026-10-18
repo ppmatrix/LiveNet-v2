@@ -6,6 +6,7 @@ from app.inventory.models import (
     GroupRule,
     Policy,
     PolicyVersion,
+    PolicyAssignment,
     Resource,
     ResourceIdentifier,
     ResourceRelation,
@@ -13,4 +14,4 @@ from app.inventory.models import (
     Tag,
 )
 
-__all__ = ["Group", "GroupMembership", "GroupRule", "Policy", "PolicyVersion", "Resource", "ResourceIdentifier", "ResourceRelation", "ResourceTag", "Tag"]
+__all__ = ["Group", "GroupMembership", "GroupRule", "Policy", "PolicyVersion", "PolicyAssignment", "Resource", "ResourceIdentifier", "ResourceRelation", "ResourceTag", "Tag"]

@@ -1083,3 +1083,137 @@ e reavaliação.
 
 A conclusão da F0.65B não representa a conclusão
 funcional da INV-06A.
+### F0.65C — inventory.policy_assignments
+
+**Estado:** Implementada e validada em ambiente de testes.
+
+**Contrato de referência:** INV-06A / DAT-10A / F0.65C-C01.
+
+**Migração Alembic:** `f065c01a7230`, dependente de
+`e65b01a7c230`.
+
+A tabela `inventory.policy_assignments` representa
+atribuições temporais de versões de políticas a três
+âmbitos: global, grupo e recurso.
+
+Colunas implementadas:
+
+- `id UUID` — chave primária, gerada pela aplicação.
+- `policy_version_id UUID` — FK obrigatória para
+  `inventory.policy_versions`.
+- `scope_type VARCHAR(32)` — obrigatório; valores
+  `global`, `group` ou `resource`.
+- `group_id UUID` — FK opcional para `inventory.groups`.
+- `resource_id UUID` — FK opcional para `inventory.resources`.
+- `priority INTEGER` — obrigatório, sem default.
+- `valid_from TIMESTAMPTZ` — obrigatório.
+- `valid_until TIMESTAMPTZ` — opcional.
+- `created_at TIMESTAMPTZ` — obrigatório, default `now()`.
+
+As três FKs não possuem eliminação em cascata.
+
+### F0.65C-C01 — Integridade das atribuições
+
+**Estado:** Aprovada e implementada.
+
+A constraint `ck_policy_assignments_scope` garante:
+
+- `global`: `group_id` e `resource_id` nulos.
+- `group`: `group_id` obrigatório e `resource_id` nulo.
+- `resource`: `resource_id` obrigatório e `group_id` nulo.
+
+A constraint `ck_policy_assignments_validity` exige
+`valid_until > valid_from`, quando `valid_until` existe.
+
+A validade temporal utiliza intervalos semiabertos
+`[valid_from, valid_until)`. A ausência de `valid_until`
+representa um intervalo sem limite superior definido.
+
+A decisão F0.65C-C01 impede sobreposições temporais
+da mesma versão de política no mesmo destino.
+
+Foram implementadas três constraints de exclusão GiST
+parciais:
+
+- `ex_policy_assignments_global_overlap`:
+  mesma `policy_version_id`, âmbito `global`.
+- `ex_policy_assignments_group_overlap`:
+  mesma `policy_version_id` e `group_id`,
+  âmbito `group`.
+- `ex_policy_assignments_resource_overlap`:
+  mesma `policy_version_id` e `resource_id`,
+  âmbito `resource`.
+
+Cada exclusão compara os intervalos através de
+`tstzrange(valid_from, valid_until, '[)')` e do
+operador de sobreposição `&&`.
+
+As constraints utilizam filtros `WHERE` por âmbito,
+evitando problemas de comparação com identificadores
+nulos nos restantes âmbitos.
+
+A extensão PostgreSQL `btree_gist` é necessária
+e encontrava-se instalada na base de testes,
+na versão 1.7.
+
+A coexistência temporal de versões diferentes é
+permitida. A resolução de prioridades, conflitos e
+precedências pertence à futura camada de serviços.
+
+A precedência arquitetural prevista na INV-06A é:
+`resource > group > global`.
+
+A prioridade explícita entre grupos, a resolução
+determinística de empates e a sinalização de conflitos
+incompatíveis continuam por implementar.
+
+Não foram acrescentadas nesta fase regras de
+imutabilidade, publicação ou aprovação das atribuições.
+
+### Validação da F0.65C
+
+**Estado:** Concluída em ambiente de testes.
+
+Validações realizadas:
+
+- 10 testes estruturais específicos de `PolicyAssignment`.
+- 120 testes Python aprovados na suite completa.
+- Sintaxe Python e cadeia Alembic verificadas.
+- SQL PostgreSQL do modelo compilado e inspecionado.
+- Migração aplicada exclusivamente em `livenet_f0_test`.
+- Estrutura PostgreSQL confirmada: 9 colunas e
+  9 constraints, incluindo 3 exclusões GiST parciais.
+- Rejeição de combinações inválidas de âmbito.
+- Rejeição de intervalos temporais invertidos.
+- Rejeição de sobreposições da mesma versão e destino
+  nos três âmbitos.
+- Aceitação de intervalos consecutivos nos três âmbitos.
+- Coexistência de versões diferentes nos três âmbitos.
+- Testes funcionais executados com `ROLLBACK`.
+- Confirmação de zero atribuições persistidas.
+- Downgrade para `e65b01a7c230` validado.
+- Remoção da tabela no downgrade confirmada.
+- Reaplicação do upgrade para `f065c01a7230` validada.
+
+A base principal `livenet` não recebeu esta migração.
+
+### Estado da INV-06A após a F0.65C
+
+A implementação física encontra-se validada para:
+
+- F0.65A: `inventory.policies`.
+- F0.65B: `inventory.policy_versions`.
+- F0.65C: `inventory.policy_assignments`.
+
+Permanece por implementar na fase física seguinte:
+
+- F0.65D: `inventory.effective_configs`.
+
+Continuam pendentes os serviços de atribuição e
+resolução de políticas, validação semântica das
+definições, publicação e aprovação, cálculo de
+configurações efetivas, rastreabilidade, RBAC,
+auditoria, aplicação e reavaliação.
+
+A conclusão da F0.65C não representa a conclusão
+funcional da INV-06A.

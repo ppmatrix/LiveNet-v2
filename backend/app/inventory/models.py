@@ -820,3 +820,109 @@ class PolicyVersion(Base):
         UUID(as_uuid=True),
         nullable=True,
     )
+
+
+
+class PolicyAssignment(Base):
+    """Atribuição temporal de uma versão de política a um âmbito."""
+
+    __tablename__ = "policy_assignments"
+    __table_args__ = (
+        CheckConstraint(
+            "(scope_type = 'global' AND group_id IS NULL "
+            "AND resource_id IS NULL) OR "
+            "(scope_type = 'group' AND group_id IS NOT NULL "
+            "AND resource_id IS NULL) OR "
+            "(scope_type = 'resource' AND group_id IS NULL "
+            "AND resource_id IS NOT NULL)",
+            name="ck_policy_assignments_scope",
+        ),
+        CheckConstraint(
+            "valid_until IS NULL OR valid_until > valid_from",
+            name="ck_policy_assignments_validity",
+        ),
+        ExcludeConstraint(
+            ("policy_version_id", "="),
+            (
+                text("tstzrange(valid_from, valid_until, '[)')"),
+                "&&",
+            ),
+            where=text("scope_type = 'global'"),
+            name="ex_policy_assignments_global_overlap",
+            using="gist",
+        ),
+        ExcludeConstraint(
+            ("policy_version_id", "="),
+            ("group_id", "="),
+            (
+                text("tstzrange(valid_from, valid_until, '[)')"),
+                "&&",
+            ),
+            where=text("scope_type = 'group'"),
+            name="ex_policy_assignments_group_overlap",
+            using="gist",
+        ),
+        ExcludeConstraint(
+            ("policy_version_id", "="),
+            ("resource_id", "="),
+            (
+                text("tstzrange(valid_from, valid_until, '[)')"),
+                "&&",
+            ),
+            where=text("scope_type = 'resource'"),
+            name="ex_policy_assignments_resource_overlap",
+            using="gist",
+        ),
+        {"schema": "inventory"},
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+
+    policy_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.policy_versions.id"),
+        nullable=False,
+    )
+
+    scope_type: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+    )
+
+    group_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.groups.id"),
+        nullable=True,
+    )
+
+    resource_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("inventory.resources.id"),
+        nullable=True,
+    )
+
+    priority: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+
+    valid_from: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    valid_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=utc_now,
+        server_default=func.now(),
+    )
