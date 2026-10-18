@@ -175,7 +175,7 @@ the next development component.
 
 **Remaining work:**
 - F0.66B: transactional audit infrastructure and integration
-  tests (implemented locally; publication pending).
+  tests (implemented, validated and published).
 - Functional instrumentation of domain services remains pending.
 - PostgreSQL permission policy.
 - Operational retention and cleanup procedures.
@@ -188,7 +188,7 @@ the next development component.
 
 ## F0.66B — Transactional audit service
 
-**Status:** Implemented and validated locally; commit and publication pending.
+**Status:** Implemented, validated, committed and published.
 
 **Approved contract:** INV-08A / F0.66-C02.
 
@@ -227,6 +227,7 @@ the next development component.
   resources and zero residual audit events.
 
 **Validation evidence:**
+- Implementation commit: `de9f4f3`, published to `origin/main`.
 - Backend unit/regression tests: 162/162 passed.
 - PostgreSQL integration tests: 3/3 passed.
 - Python syntax validation passed.
