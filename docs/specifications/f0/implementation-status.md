@@ -144,3 +144,40 @@ approved decisions.
 Complete the F0 gap analysis and validate the implementation
 sequence against the approved Technical Plan before starting
 the next development component.
+
+## F0.66A — Centralized audit physical baseline
+
+**Status:** Physical implementation validated.
+
+**Approved contract:** INV-08A / F0.66-C01.
+
+**Implementation:**
+- PostgreSQL schema: `audit`.
+- Table: `audit.events`, with 12 columns.
+- SQLAlchemy model: `app.audit.models.AuditEvent`.
+- Alembic revision: `f066a01a7230`.
+- Previous revision: `f065d01a7230`.
+- Seven constraints: primary key and six CHECK constraints.
+- Three indexes for chronological, entity and correlation queries.
+- PostgreSQL trigger `trg_audit_events_immutable` rejects UPDATE and DELETE.
+- Function `audit.prevent_event_mutation()` implements the trigger.
+
+**Validation evidence:**
+- Migration applied successfully to `livenet_f0_test`.
+- Five PostgreSQL functional checks passed.
+- Test events rolled back without persistence.
+- Downgrade to `f065d01a7230` validated.
+- Upgrade to `f066a01a7230` validated.
+- Audit table and trigger restored successfully.
+- Backend regression suite: 130/130 tests passed.
+- SQLAlchemy metadata registration validated.
+
+**Remaining work:**
+- F0.66B: transactional integration with domain services.
+- PostgreSQL permission policy.
+- Operational retention and cleanup procedures.
+- Transactional Outbox physical contract and implementation.
+- Additional integrated tests for atomicity and idempotency.
+
+**Safety:** All migration operations were restricted to
+`livenet_f0_test`. The main `livenet` database was not migrated.
