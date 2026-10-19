@@ -8,6 +8,7 @@ from contextlib import contextmanager
 import fcntl
 import os
 import stat
+import sys
 
 
 LOCK_FILENAME = ".authorization.lock"
@@ -99,7 +100,25 @@ def acquire_authorization_lock(directory_fd: int):
             yield
 
         finally:
-            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            active_error = sys.exception()
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            except BaseException as unlock_error:
+                if active_error is None:
+                    raise
+                active_error.add_note(
+                    "Falha adicional ao libertar bloqueio: "
+                    f"{type(unlock_error).__name__}: {unlock_error}"
+                )
 
     finally:
-        os.close(lock_fd)
+        active_error = sys.exception()
+        try:
+            os.close(lock_fd)
+        except BaseException as close_error:
+            if active_error is None:
+                raise
+            active_error.add_note(
+                "Falha adicional ao fechar descritor de bloqueio: "
+                f"{type(close_error).__name__}: {close_error}"
+            )

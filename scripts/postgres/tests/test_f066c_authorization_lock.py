@@ -427,3 +427,184 @@ def test_lock_directory_fsync_failure_recovery(directory_fd):
     assert (before.st_dev, before.st_ino) == (
         after.st_dev, after.st_ino
     )
+
+
+
+def test_unlock_failure_preserves_body_error(directory_fd):
+    """Uma falha de unlock nao deve ocultar a falha original."""
+    from unittest.mock import patch
+
+    fd, _ = directory_fd
+    original_flock = fcntl.flock
+
+    def fail_unlock(lock_fd, operation):
+        if operation == fcntl.LOCK_UN:
+            raise OSError("simulated unlock failure")
+        return original_flock(lock_fd, operation)
+
+    with patch(
+        "f066c_authorization_lock.fcntl.flock",
+        side_effect=fail_unlock,
+    ):
+        with pytest.raises(
+            OSError,
+            match="simulated body failure",
+        ):
+            with acquire_authorization_lock(fd):
+                raise OSError("simulated body failure")
+
+
+def test_unlock_failure_without_body_error(directory_fd):
+    """Uma falha de unlock deve ser comunicada ao chamador."""
+    from unittest.mock import patch
+
+    fd, _ = directory_fd
+    original_flock = fcntl.flock
+
+    def fail_unlock(lock_fd, operation):
+        if operation == fcntl.LOCK_UN:
+            raise OSError("simulated unlock failure")
+        return original_flock(lock_fd, operation)
+
+    with patch(
+        "f066c_authorization_lock.fcntl.flock",
+        side_effect=fail_unlock,
+    ):
+        with pytest.raises(
+            OSError,
+            match="simulated unlock failure",
+        ):
+            with acquire_authorization_lock(fd):
+                pass
+
+
+
+def test_unlock_failure_records_note(directory_fd):
+    """A excecao original conserva a nota sobre falha de unlock."""
+    from unittest.mock import patch
+
+    fd, _ = directory_fd
+    original_flock = fcntl.flock
+
+    def fail_unlock(lock_fd, operation):
+        if operation == fcntl.LOCK_UN:
+            raise OSError("simulated unlock failure")
+        return original_flock(lock_fd, operation)
+
+    with patch(
+        "f066c_authorization_lock.fcntl.flock",
+        side_effect=fail_unlock,
+    ):
+        with pytest.raises(
+            OSError,
+            match="simulated body failure",
+        ) as captured:
+            with acquire_authorization_lock(fd):
+                raise OSError("simulated body failure")
+
+    assert any(
+        "simulated unlock failure" in note
+        for note in getattr(captured.value, "__notes__", [])
+    )
+
+
+def test_close_failure_preserves_body_error(directory_fd):
+    """Falha de close nao deve ocultar a excecao da operacao."""
+    from unittest.mock import patch
+
+    fd, _ = directory_fd
+    original_close = os.close
+
+    def fail_close(target_fd):
+        if target_fd != fd:
+            original_close(target_fd)
+            raise OSError("simulated close failure")
+        return original_close(target_fd)
+
+    with patch(
+        "f066c_authorization_lock.os.close",
+        side_effect=fail_close,
+    ):
+        with pytest.raises(
+            OSError,
+            match="simulated body failure",
+        ):
+            with acquire_authorization_lock(fd):
+                raise OSError("simulated body failure")
+
+
+
+def test_simultaneous_unlock_and_close_failure(directory_fd):
+    """A falha de unlock prevalece sobre a falha posterior de close."""
+    from unittest.mock import patch
+
+    fd, _ = directory_fd
+    original_flock = fcntl.flock
+    original_close = os.close
+
+    def fail_unlock(lock_fd, operation):
+        if operation == fcntl.LOCK_UN:
+            raise OSError("simulated unlock failure")
+        return original_flock(lock_fd, operation)
+
+    def fail_close(target_fd):
+        original_close(target_fd)
+        if target_fd != fd:
+            raise OSError("simulated close failure")
+
+    with patch(
+        "f066c_authorization_lock.fcntl.flock",
+        side_effect=fail_unlock,
+    ), patch(
+        "f066c_authorization_lock.os.close",
+        side_effect=fail_close,
+    ):
+        with pytest.raises(
+            OSError,
+            match="simulated unlock failure",
+        ) as captured:
+            with acquire_authorization_lock(fd):
+                pass
+
+    assert any(
+        "simulated close failure" in note
+        for note in getattr(captured.value, "__notes__", [])
+    )
+
+
+def test_simultaneous_body_unlock_and_close_failure(directory_fd):
+    """A falha original conserva as duas notas de diagnostico."""
+    from unittest.mock import patch
+
+    fd, _ = directory_fd
+    original_flock = fcntl.flock
+    original_close = os.close
+
+    def fail_unlock(lock_fd, operation):
+        if operation == fcntl.LOCK_UN:
+            raise OSError("simulated unlock failure")
+        return original_flock(lock_fd, operation)
+
+    def fail_close(target_fd):
+        original_close(target_fd)
+        if target_fd != fd:
+            raise OSError("simulated close failure")
+
+    with patch(
+        "f066c_authorization_lock.fcntl.flock",
+        side_effect=fail_unlock,
+    ), patch(
+        "f066c_authorization_lock.os.close",
+        side_effect=fail_close,
+    ):
+        with pytest.raises(
+            OSError,
+            match="simulated body failure",
+        ) as captured:
+            with acquire_authorization_lock(fd):
+                raise OSError("simulated body failure")
+
+    notes = getattr(captured.value, "__notes__", [])
+
+    assert any("simulated unlock failure" in note for note in notes)
+    assert any("simulated close failure" in note for note in notes)

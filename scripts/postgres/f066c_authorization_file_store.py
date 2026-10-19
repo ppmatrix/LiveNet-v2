@@ -3,12 +3,12 @@
 Sem acesso ao PostgreSQL ou execucao administrativa.
 """
 
-import fcntl
 import os
 import stat
 from uuid import uuid4
 
 from f066c_authorization import AdministrativeAuthorization
+from f066c_authorization_lock import acquire_authorization_lock
 from f066c_authorization_storage import serialize_authorization
 
 
@@ -59,81 +59,99 @@ def create_authorization_file(
         | os.O_CLOEXEC
     )
 
-    fcntl.flock(directory_fd, fcntl.LOCK_EX)
-
     temporary_created = False
     published = False
     publication_error = None
     cleanup_error = None
-    unlock_error = None
+    lock_error = None
 
     try:
-        file_fd = os.open(
-            temporary,
-            flags,
-            0o600,
-            dir_fd=directory_fd,
-        )
-        temporary_created = True
+        with acquire_authorization_lock(directory_fd):
+            try:
+                file_fd = os.open(
+                    temporary,
+                    flags,
+                    0o600,
+                    dir_fd=directory_fd,
+                )
+                temporary_created = True
 
-        try:
-            info = os.fstat(file_fd)
+                try:
+                    info = os.fstat(file_fd)
 
-            if (
-                info.st_uid != os.getuid()
-                or stat.S_IMODE(info.st_mode) != 0o600
-            ):
-                raise PermissionError("Ficheiro temporario inseguro")
+                    if (
+                        info.st_uid != os.getuid()
+                        or stat.S_IMODE(info.st_mode) != 0o600
+                    ):
+                        raise PermissionError(
+                            "Ficheiro temporario inseguro"
+                        )
 
-            offset = 0
+                    offset = 0
 
-            while offset < len(payload):
-                written = os.write(file_fd, payload[offset:])
+                    while offset < len(payload):
+                        written = os.write(file_fd, payload[offset:])
 
-                if written <= 0:
-                    raise OSError("Escrita incompleta")
+                        if written <= 0:
+                            raise OSError("Escrita incompleta")
 
-                offset += written
+                        offset += written
 
-            os.fsync(file_fd)
+                    os.fsync(file_fd)
 
-        finally:
-            os.close(file_fd)
+                finally:
+                    os.close(file_fd)
 
-        os.link(
-            temporary,
-            filename,
-            src_dir_fd=directory_fd,
-            dst_dir_fd=directory_fd,
-            follow_symlinks=False,
-        )
-        published = True
+                os.link(
+                    temporary,
+                    filename,
+                    src_dir_fd=directory_fd,
+                    dst_dir_fd=directory_fd,
+                    follow_symlinks=False,
+                )
+                published = True
 
-        os.fsync(directory_fd)
+                os.fsync(directory_fd)
+
+            except OSError as exc:
+                publication_error = exc
+
+            finally:
+                if temporary_created:
+                    try:
+                        os.unlink(temporary, dir_fd=directory_fd)
+                        os.fsync(directory_fd)
+                    except OSError as exc:
+                        cleanup_error = exc
 
     except OSError as exc:
-        publication_error = exc
-
-    finally:
-        try:
-            if temporary_created:
-                try:
-                    os.unlink(temporary, dir_fd=directory_fd)
-                    os.fsync(directory_fd)
-                except OSError as exc:
-                    cleanup_error = exc
-        finally:
-            try:
-                fcntl.flock(directory_fd, fcntl.LOCK_UN)
-            except OSError as exc:
-                unlock_error = exc
+        lock_error = exc
 
     if published and (
-        publication_error or cleanup_error or unlock_error
+        publication_error or cleanup_error or lock_error
     ):
-        raise AuthorizationPublicationUncertain(filename) from (
-            publication_error or cleanup_error or unlock_error
+        primary_error = (
+            publication_error or cleanup_error or lock_error
         )
+
+        for label, additional_error in (
+            ("publicacao", publication_error),
+            ("limpeza", cleanup_error),
+            ("bloqueio", lock_error),
+        ):
+            if (
+                additional_error is not None
+                and additional_error is not primary_error
+            ):
+                primary_error.add_note(
+                    f"Falha adicional de {label}: "
+                    f"{type(additional_error).__name__}: "
+                    f"{additional_error}"
+                )
+
+        raise AuthorizationPublicationUncertain(
+            filename
+        ) from primary_error
 
     if publication_error:
         raise publication_error
@@ -141,7 +159,7 @@ def create_authorization_file(
     if cleanup_error:
         raise cleanup_error
 
-    if unlock_error:
-        raise unlock_error
+    if lock_error:
+        raise lock_error
 
     return filename

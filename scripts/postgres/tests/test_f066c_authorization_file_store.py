@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 
 from f066c_authorization import create_authorization
+from f066c_authorization_lock import acquire_authorization_lock
 from f066c_authorization_file_store import (
     AuthorizationPublicationUncertain,
     create_authorization_file,
@@ -23,6 +24,10 @@ def storage(tmp_path):
     directory_fd = open_authorization_directory(base)
     directory = base / "livenet-v2" / "f066c-authorizations"
 
+    # Criar e sincronizar o bloqueio antes da injecao de falhas.
+    with acquire_authorization_lock(directory_fd):
+        pass
+
     try:
         yield directory_fd, directory
     finally:
@@ -36,7 +41,9 @@ def authorization():
 
 
 def assert_no_files(directory: Path):
-    assert list(directory.iterdir()) == []
+    assert sorted(p.name for p in directory.iterdir()) == [
+        ".authorization.lock"
+    ]
 
 
 def test_write_failure_cleanup(storage, authorization):
@@ -130,7 +137,7 @@ def test_first_directory_fsync_failure(storage, authorization):
     filename = f"{authorization.authorization_id}.json"
 
     assert (directory / filename).is_file()
-    assert sorted(p.name for p in directory.iterdir()) == [filename]
+    assert sorted(p.name for p in directory.iterdir()) == [".authorization.lock", filename]
     assert calls == 2
 
 
@@ -166,7 +173,7 @@ def test_cleanup_directory_fsync_failure(storage, authorization):
     filename = f"{authorization.authorization_id}.json"
 
     assert (directory / filename).is_file()
-    assert sorted(p.name for p in directory.iterdir()) == [filename]
+    assert sorted(p.name for p in directory.iterdir()) == [".authorization.lock", filename]
     assert calls == 2
 
 
@@ -232,18 +239,19 @@ def test_publication_and_cleanup_failure(storage, authorization):
 
 
 def test_unlock_failure_after_publication(storage, authorization):
-    directory_fd, directory = storage
+    """Falha real de LOCK_UN apos publicacao implica resultado incerto."""
     import fcntl
 
+    directory_fd, directory = storage
     original_flock = fcntl.flock
 
     def fail_unlock(fd, operation):
         if operation == fcntl.LOCK_UN:
-            raise OSError("simulated unlock failure")
+            raise OSError("simulated dedicated unlock failure")
         return original_flock(fd, operation)
 
     with patch(
-        "f066c_authorization_file_store.fcntl.flock",
+        "f066c_authorization_lock.fcntl.flock",
         side_effect=fail_unlock,
     ):
         with pytest.raises(
@@ -251,4 +259,287 @@ def test_unlock_failure_after_publication(storage, authorization):
         ) as captured:
             create_authorization_file(directory_fd, authorization)
 
-    assert (directory / captured.value.filename).exists()
+    assert captured.value.filename == (
+        f"{authorization.authorization_id}.json"
+    )
+    assert (directory / captured.value.filename).is_file()
+    assert sorted(p.name for p in directory.iterdir()) == [
+        ".authorization.lock",
+        captured.value.filename,
+    ]
+
+
+def test_publication_uses_dedicated_lock(storage, authorization):
+    """A publicacao deve adquirir o bloqueio dedicado."""
+    from contextlib import contextmanager
+    from unittest.mock import patch
+
+    directory_fd, _ = storage
+    acquisitions = []
+
+    @contextmanager
+    def tracked_lock(fd):
+        acquisitions.append(fd)
+        yield
+
+    with patch(
+        "f066c_authorization_file_store.acquire_authorization_lock",
+        tracked_lock,
+        create=True,
+    ):
+        create_authorization_file(directory_fd, authorization)
+
+    assert acquisitions == [directory_fd]
+
+
+def test_dedicated_unlock_failure_after_publication(
+    storage, authorization
+):
+    """Falha ao libertar lock apos publicar implica resultado incerto."""
+    from contextlib import contextmanager
+    from unittest.mock import patch
+
+    directory_fd, directory = storage
+
+    @contextmanager
+    def failing_lock(fd):
+        yield
+        raise OSError("simulated dedicated unlock failure")
+
+    with patch(
+        "f066c_authorization_file_store.acquire_authorization_lock",
+        failing_lock,
+        create=True,
+    ):
+        with pytest.raises(
+            AuthorizationPublicationUncertain,
+        ):
+            create_authorization_file(directory_fd, authorization)
+
+    filename = f"{authorization.authorization_id}.json"
+    assert (directory / filename).exists()
+
+
+
+def test_lock_acquisition_failure_no_publication(
+    storage, authorization
+):
+    """Uma falha na aquisicao nao pode criar uma autorizacao."""
+    from contextlib import contextmanager
+
+    directory_fd, directory = storage
+
+    @contextmanager
+    def failing_acquisition(fd):
+        assert fd == directory_fd
+        raise OSError("simulated lock acquisition failure")
+        yield
+
+    with patch(
+        "f066c_authorization_file_store.acquire_authorization_lock",
+        failing_acquisition,
+    ):
+        with pytest.raises(
+            OSError,
+            match="simulated lock acquisition failure",
+        ):
+            create_authorization_file(directory_fd, authorization)
+
+    assert sorted(p.name for p in directory.iterdir()) == [
+        ".authorization.lock"
+    ]
+
+
+
+def test_duplicate_publication_preserves_original(
+    storage, authorization
+):
+    """Uma segunda publicacao nao substitui o ficheiro existente."""
+    directory_fd, directory = storage
+
+    filename = create_authorization_file(
+        directory_fd,
+        authorization,
+    )
+
+    target = directory / filename
+
+    original_content = target.read_bytes()
+    original_stat = target.stat()
+
+    with pytest.raises(FileExistsError):
+        create_authorization_file(
+            directory_fd,
+            authorization,
+        )
+
+    current_stat = target.stat()
+
+    assert target.read_bytes() == original_content
+    assert current_stat.st_ino == original_stat.st_ino
+    assert current_stat.st_dev == original_stat.st_dev
+
+    assert sorted(p.name for p in directory.iterdir()) == [
+        ".authorization.lock",
+        filename,
+    ]
+
+
+
+def test_concurrent_duplicate_publication(storage, authorization):
+    """Duas publicacoes concorrentes nao substituem a autorizacao."""
+    import threading
+
+    from f066c_authorization_storage import deserialize_authorization
+
+    directory_fd, directory = storage
+
+    barrier = threading.Barrier(3, timeout=10)
+    results = []
+    results_lock = threading.Lock()
+
+    def worker():
+        fd = None
+        outcome = None
+
+        try:
+            fd = os.open(
+                directory,
+                os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC,
+            )
+
+            barrier.wait()
+
+            filename = create_authorization_file(
+                fd,
+                authorization,
+            )
+            outcome = ("success", filename)
+
+        except FileExistsError:
+            outcome = ("duplicate", None)
+
+        except BaseException as exc:
+            outcome = ("error", repr(exc))
+
+        finally:
+            if fd is not None:
+                os.close(fd)
+
+            with results_lock:
+                results.append(outcome)
+
+    threads = [
+        threading.Thread(target=worker, daemon=True)
+        for _ in range(2)
+    ]
+
+    for thread in threads:
+        thread.start()
+
+    barrier.wait()
+
+    for thread in threads:
+        thread.join(timeout=10)
+
+    assert all(not thread.is_alive() for thread in threads)
+    assert len(results) == 2
+
+    assert sorted(result[0] for result in results) == [
+        "duplicate",
+        "success",
+    ], results
+
+    filename = f"{authorization.authorization_id}.json"
+    target = directory / filename
+
+    assert target.is_file()
+
+    restored = deserialize_authorization(target.read_text())
+    assert restored == authorization
+
+    assert sorted(p.name for p in directory.iterdir()) == [
+        ".authorization.lock",
+        filename,
+    ]
+
+
+
+def test_combined_write_and_unlock_failure(storage, authorization):
+    """A falha de escrita deve prevalecer sobre a falha de unlock."""
+    import fcntl
+
+    directory_fd, directory = storage
+    original_flock = fcntl.flock
+
+    def fail_unlock(fd, operation):
+        if operation == fcntl.LOCK_UN:
+            raise OSError("simulated unlock failure")
+        return original_flock(fd, operation)
+
+    with (
+        patch(
+            "f066c_authorization_file_store.os.write",
+            side_effect=OSError("simulated write failure"),
+        ),
+        patch(
+            "f066c_authorization_lock.fcntl.flock",
+            side_effect=fail_unlock,
+        ),
+    ):
+        with pytest.raises(OSError) as captured:
+            create_authorization_file(directory_fd, authorization)
+
+    assert "simulated write failure" in str(captured.value)
+    assert sorted(p.name for p in directory.iterdir()) == [
+        ".authorization.lock"
+    ]
+
+
+def test_combined_publication_fsync_and_unlock_failure(
+    storage, authorization
+):
+    """Uma publicacao incerta conserva ambas as falhas."""
+    import fcntl
+
+    directory_fd, directory = storage
+    original_fsync = os.fsync
+    original_flock = fcntl.flock
+
+    def fail_publication_fsync(fd):
+        if fd == directory_fd:
+            raise OSError("simulated publication fsync failure")
+        return original_fsync(fd)
+
+    def fail_unlock(fd, operation):
+        if operation == fcntl.LOCK_UN:
+            raise OSError("simulated unlock failure")
+        return original_flock(fd, operation)
+
+    with (
+        patch(
+            "f066c_authorization_file_store.os.fsync",
+            side_effect=fail_publication_fsync,
+        ),
+        patch(
+            "f066c_authorization_lock.fcntl.flock",
+            side_effect=fail_unlock,
+        ),
+    ):
+        with pytest.raises(
+            AuthorizationPublicationUncertain,
+        ) as captured:
+            create_authorization_file(directory_fd, authorization)
+
+    filename = f"{authorization.authorization_id}.json"
+
+    assert captured.value.filename == filename
+    assert (directory / filename).is_file()
+
+    details = repr(captured.value.__cause__)
+    details += " " + " ".join(
+        getattr(captured.value.__cause__, "__notes__", [])
+    )
+
+    assert "simulated publication fsync failure" in details
+    assert "simulated unlock failure" in details
