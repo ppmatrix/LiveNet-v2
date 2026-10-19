@@ -12,6 +12,17 @@ from f066c_authorization import AdministrativeAuthorization
 from f066c_authorization_storage import serialize_authorization
 
 
+
+class AuthorizationPublicationUncertain(OSError):
+    """Publicacao efetuada, mas durabilidade nao confirmada."""
+
+    def __init__(self, filename: str):
+        self.filename = filename
+        super().__init__(
+            f"Durabilidade da autorizacao nao confirmada: {filename}"
+        )
+
+
 def create_authorization_file(
     directory_fd: int,
     authorization: AdministrativeAuthorization,
@@ -52,6 +63,9 @@ def create_authorization_file(
 
     temporary_created = False
     published = False
+    publication_error = None
+    cleanup_error = None
+    unlock_error = None
 
     try:
         file_fd = os.open(
@@ -97,12 +111,37 @@ def create_authorization_file(
 
         os.fsync(directory_fd)
 
-        return filename
+    except OSError as exc:
+        publication_error = exc
 
     finally:
         try:
             if temporary_created:
-                os.unlink(temporary, dir_fd=directory_fd)
-                os.fsync(directory_fd)
+                try:
+                    os.unlink(temporary, dir_fd=directory_fd)
+                    os.fsync(directory_fd)
+                except OSError as exc:
+                    cleanup_error = exc
         finally:
-            fcntl.flock(directory_fd, fcntl.LOCK_UN)
+            try:
+                fcntl.flock(directory_fd, fcntl.LOCK_UN)
+            except OSError as exc:
+                unlock_error = exc
+
+    if published and (
+        publication_error or cleanup_error or unlock_error
+    ):
+        raise AuthorizationPublicationUncertain(filename) from (
+            publication_error or cleanup_error or unlock_error
+        )
+
+    if publication_error:
+        raise publication_error
+
+    if cleanup_error:
+        raise cleanup_error
+
+    if unlock_error:
+        raise unlock_error
+
+    return filename
