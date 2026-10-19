@@ -34,6 +34,21 @@ def run_migrations_offline():
 def run_migrations_online():
     from sqlalchemy import create_engine
 
+    def execute_migrations(connection):
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+        )
+
+        with context.begin_transaction():
+            context.run_migrations()
+
+    external_connection = config.attributes.get("connection")
+
+    if external_connection is not None:
+        execute_migrations(external_connection)
+        return
+
     engine = create_engine(
         get_database_url(),
         poolclass=pool.NullPool,
@@ -41,13 +56,7 @@ def run_migrations_online():
 
     try:
         with engine.connect() as connection:
-            context.configure(
-                connection=connection,
-                target_metadata=target_metadata,
-            )
-
-            with context.begin_transaction():
-                context.run_migrations()
+            execute_migrations(connection)
     finally:
         engine.dispose()
 

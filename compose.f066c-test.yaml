@@ -1,0 +1,39 @@
+name: livenetv2-f066c
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: "no"
+
+    environment:
+      POSTGRES_DB: livenet_f0_test
+      POSTGRES_USER: livenet
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+
+    secrets:
+      - db_password
+
+    volumes:
+      - f066c_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U livenet -d livenet_f0_test
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - f066c_backend
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+
+volumes:
+  f066c_postgres_data:
+
+networks:
+  f066c_backend:
+    internal: true

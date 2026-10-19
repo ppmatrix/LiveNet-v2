@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "$#" -ne 0 ]]; then
+    echo "Uso: $0" >&2
+    exit 2
+fi
+
+EXPECTED_ID="8d005f6c658e7e0a5d6512eb5333c6c936c19b227f1e5d51f02ce3cf2c770ce3"
+EXPECTED_PROJECT="livenetv2-f066c"
+EXPECTED_NETWORK="livenetv2-f066c_f066c_backend"
+EXPECTED_IMAGE="postgres:16-alpine"
+
+cd "$(dirname "$0")/../.."
+
+container_id="$(
+    docker compose -f compose.f066c-test.yaml ps -q db
+)"
+
+if [[ -z "$container_id" || "$container_id" != "$EXPECTED_ID" ]]; then
+    echo "ERRO: ID do contentor nao corresponde ao validado." >&2
+    exit 1
+fi
+
+inspect_format='{{.State.Running}}|{{.State.Health.Status}}|{{index .Config.Labels "com.docker.compose.project"}}|{{index .Config.Labels "com.docker.compose.service"}}|{{.Config.Image}}'
+
+details="$(docker inspect "$container_id" --format "$inspect_format")"
+IFS='|' read -r running health project service image <<< "$details"
+
+if [[ "$running" != "true" ||
+      "$health" != "healthy" ||
+      "$project" != "$EXPECTED_PROJECT" ||
+      "$service" != "db" ||
+      "$image" != "$EXPECTED_IMAGE" ]]; then
+    echo "ERRO: estado ou identidade do contentor invalido." >&2
+    exit 1
+fi
+
+network="$(
+    docker inspect "$container_id" \
+      --format '{{range $name, $_ := .NetworkSettings.Networks}}{{$name}}{{end}}'
+)"
+
+if [[ "$network" != "$EXPECTED_NETWORK" ]]; then
+    echo "ERRO: rede Docker inesperada." >&2
+    exit 1
+fi
+
+echo "PASS: identidade Docker isolada validada."
+echo "Modo preflight: nenhuma ligacao PostgreSQL executada."
