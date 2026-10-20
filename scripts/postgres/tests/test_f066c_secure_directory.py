@@ -259,3 +259,132 @@ def test_descriptor_rejects_unsafe_permissions(tmp_path):
             )
     finally:
         os.close(parent_fd)
+
+
+def test_descriptor_creation_fsyncs_parent(
+    tmp_path, monkeypatch
+):
+    """A criacao de um subdiretorio sincroniza o pai."""
+    original_fsync = os.fsync
+    synchronized = []
+
+    def observe_fsync(fd):
+        info = os.fstat(fd)
+        if stat.S_ISDIR(info.st_mode):
+            synchronized.append((info.st_dev, info.st_ino))
+        return original_fsync(fd)
+
+    monkeypatch.setattr(os, "fsync", observe_fsync)
+
+    parent_fd = os.open(
+        tmp_path,
+        os.O_RDONLY | os.O_DIRECTORY,
+    )
+
+    try:
+        parent_info = os.fstat(parent_fd)
+        parent_identity = (
+            parent_info.st_dev,
+            parent_info.st_ino,
+        )
+
+        child_fd = create_secure_subdirectories_at(
+            parent_fd,
+            ("new-private",),
+        )
+        os.close(child_fd)
+
+        assert parent_identity in synchronized
+        assert (tmp_path / "new-private").is_dir()
+    finally:
+        os.close(parent_fd)
+
+
+def test_descriptor_existing_directory_no_creation_fsync(
+    tmp_path, monkeypatch
+):
+    """Diretorio existente nao exige fsync por nova criacao."""
+    child = tmp_path / "existing"
+    child.mkdir(mode=0o700)
+
+    original_fsync = os.fsync
+    synchronized = []
+
+    def observe_fsync(fd):
+        synchronized.append(fd)
+        return original_fsync(fd)
+
+    monkeypatch.setattr(os, "fsync", observe_fsync)
+
+    parent_fd = os.open(
+        tmp_path,
+        os.O_RDONLY | os.O_DIRECTORY,
+    )
+
+    try:
+        child_fd = create_secure_subdirectories_at(
+            parent_fd,
+            ("existing",),
+        )
+        os.close(child_fd)
+    finally:
+        os.close(parent_fd)
+
+    assert synchronized == []
+
+
+def test_descriptor_creation_fsync_failure(
+    tmp_path, monkeypatch
+):
+    """Falha de fsync e propagada; o diretorio pode existir."""
+    original_fsync = os.fsync
+    failed = []
+
+    parent_fd = os.open(
+        tmp_path,
+        os.O_RDONLY | os.O_DIRECTORY,
+    )
+
+    parent_info = os.fstat(parent_fd)
+    parent_identity = (parent_info.st_dev, parent_info.st_ino)
+
+    def fail_parent_fsync(fd):
+        info = os.fstat(fd)
+        identity = (info.st_dev, info.st_ino)
+
+        if identity == parent_identity and not failed:
+            failed.append(True)
+            raise OSError("Falha simulada de fsync")
+
+        return original_fsync(fd)
+
+    monkeypatch.setattr(os, "fsync", fail_parent_fsync)
+
+    try:
+        with pytest.raises(OSError, match="Falha simulada de fsync"):
+            create_secure_subdirectories_at(
+                parent_fd,
+                ("new-private",),
+            )
+
+        assert failed
+        assert (tmp_path / "new-private").is_dir()
+
+        # O descritor do chamador continua valido.
+        assert os.fstat(parent_fd).st_ino == parent_info.st_ino
+
+        # Uma nova abertura valida o diretorio existente.
+        child_fd = create_secure_subdirectories_at(
+            parent_fd,
+            ("new-private",),
+        )
+
+        try:
+            child_info = os.fstat(child_fd)
+            assert stat.S_ISDIR(child_info.st_mode)
+            assert stat.S_IMODE(child_info.st_mode) == 0o700
+        finally:
+            os.close(child_fd)
+
+    finally:
+        os.close(parent_fd)

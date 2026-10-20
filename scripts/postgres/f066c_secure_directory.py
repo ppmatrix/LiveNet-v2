@@ -250,8 +250,11 @@ def create_secure_subdirectories_at(
 
     try:
         for component in components:
+            created = False
+
             try:
                 os.mkdir(component, mode=0o700, dir_fd=fd)
+                created = True
             except FileExistsError:
                 pass
 
@@ -270,6 +273,13 @@ def create_secure_subdirectories_at(
             ):
                 os.close(next_fd)
                 raise PermissionError("Subdiretorio inseguro")
+
+            if created:
+                try:
+                    os.fsync(fd)
+                except BaseException:
+                    os.close(next_fd)
+                    raise
 
             os.close(fd)
             fd = next_fd
