@@ -19,6 +19,7 @@ from sqlalchemy.sql.elements import ColumnElement
 from werkzeug.exceptions import HTTPException
 
 from app.core.database import create_database_engine, create_session_factory
+from app.security.errors import SecurityError
 from app.inventory.access import DenyInventoryAccess, InventoryIdentity
 from app.inventory import service
 from app.inventory.schemas import (
@@ -65,6 +66,8 @@ def handle_validation_error(error):
 
 @inventory_bp.errorhandler(Exception)
 def handle_unexpected_error(error):
+    if isinstance(error, SecurityError):
+        return _error(error.code, error.error_code, error.description)
     if isinstance(error, HTTPException):
         response = error.get_response()
         response.data = current_app.json.dumps({"error": {

@@ -3,7 +3,8 @@ from flask import Flask
 from .config import CONFIG_MAP, get_config_name
 
 
-def create_app(config_name=None, *, inventory_access=None, inventory_session_factory=None):
+def create_app(config_name=None, *, inventory_access=None, inventory_session_factory=None,
+               security_config=None, security_session_factory=None):
     """Create the app. Inventory denies access until real identity/RBAC is wired.
 
     Keyword dependencies are for trusted integration and isolated tests only;
@@ -19,6 +20,8 @@ def create_app(config_name=None, *, inventory_access=None, inventory_session_fac
 
     app = Flask(__name__)
     app.config.from_object(CONFIG_MAP[config_name])
+    if security_config is not None:
+        app.config.update(security_config)
 
     from .health.routes import health_bp
     app.register_blueprint(
@@ -27,8 +30,11 @@ def create_app(config_name=None, *, inventory_access=None, inventory_session_fac
     )
 
     from .inventory.routes import inventory_bp, InventoryDependencies
+    from .security.routes import init_security
+    session_access = init_security(app, security_session_factory)
     app.extensions["inventory"] = InventoryDependencies(
-        inventory_access, inventory_session_factory,
+        inventory_access if inventory_access is not None else session_access,
+        inventory_session_factory,
     )
     app.register_blueprint(inventory_bp, url_prefix="/api/v1/inventory")
 
