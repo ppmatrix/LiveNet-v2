@@ -1,7 +1,7 @@
 """M1.2B preparation and disabled P2 execution contract.
 
 Target configuration and supplied observations are NOT execution authorization.
-P2C-1 tests the workflow with doubles only. No engine, credentials, environment
+R2 tests the workflow with doubles only. No engine, credentials, environment
 authorization switch or operational CLI is provided.
 """
 
@@ -11,6 +11,7 @@ from hashlib import sha256
 import json
 from pathlib import Path
 import re
+import time
 
 from alembic.config import Config
 from sqlalchemy import inspect, text
@@ -26,6 +27,9 @@ PROJECT = "livenetv2-m12b-test"
 DATABASE = "livenet_m12b_test"
 BASELINE = "f066a01a7230"
 SYSTEM_IDENTIFIER = "7699783234487926818"
+INSPECTOR_USER = "livenet_m12b_inspector"
+FINAL_OWNER = "livenet_m12b_security_owner"
+EVIDENCE_TTL_SECONDS = 5.0
 FORBIDDEN_DATABASES = frozenset({"livenet", "livenet_f0_test", "livenet_auth03_test"})
 BASELINE_TABLES = frozenset(
     {("inventory", name) for name in (
@@ -52,6 +56,7 @@ class ExecutionAuthorization:
     database: str = DATABASE
     system_identifier: str = SYSTEM_IDENTIFIER
     revision: str = INITIAL_REVISION
+    inspector_user: str = INSPECTOR_USER
 
 
 AUTHORIZATION = ExecutionAuthorization()
@@ -59,17 +64,19 @@ AUTHORIZATION = ExecutionAuthorization()
 
 @dataclass(frozen=True)
 class ExecutionPorts:
-    """Trusted future adapters; P2C-1 supplies only test doubles.
+    """Trusted future adapters; R2 supplies only test doubles.
 
     attest(target) returns project/volume/network/internal/published_ports.
     connect(target, read_only=...) returns a fresh SQLAlchemy Connection.
     upgrade(config, revision) is the Alembic command adapter.
+    inspector_connect(target, identity=INSPECTOR_USER, read_only=True) is separate.
     No default adapter opens a connection or reads a credential.
     """
 
     attest: object
     connect: object
     upgrade: object
+    inspector_connect: object = None
 
 
 def require(condition, message):
@@ -211,7 +218,8 @@ def require_execution_authorization(plan):
             "Execucao bloqueada desde P1; P2C-1 nao ativa operacoes reais")
     require(isinstance(plan, PreparationPlan), "Plano obrigatorio")
     require((AUTHORIZATION.project, AUTHORIZATION.database, AUTHORIZATION.system_identifier,
-             AUTHORIZATION.revision) == (PROJECT, DATABASE, SYSTEM_IDENTIFIER, INITIAL_REVISION),
+             AUTHORIZATION.revision, AUTHORIZATION.inspector_user)
+            == (PROJECT, DATABASE, SYSTEM_IDENTIFIER, INITIAL_REVISION, INSPECTOR_USER),
             "Contrato de autorizacao divergente")
     require((plan.target.project, plan.target.database, plan.target.system_identifier, plan.destination)
             == (PROJECT, DATABASE, SYSTEM_IDENTIFIER, INITIAL_REVISION), "Destino nao autorizado")
@@ -231,7 +239,7 @@ def validate_environment(plan, ports):
     }, "Proveniencia do ambiente divergente")
 
 
-def identify_postgresql(connection, plan):
+def identify_postgresql(connection, plan, *, inspector=False):
     require(connection.dialect.name == "postgresql" and connection.in_transaction() is True,
             "Ligacao PostgreSQL externa transacional obrigatoria")
     row = connection.execute(text("""
@@ -242,8 +250,9 @@ def identify_postgresql(connection, plan):
                current_setting('search_path') AS search_path,
                current_setting('transaction_read_only') AS read_only
     """)).mappings().one()
+    actor = INSPECTOR_USER if inspector else plan.target.migration_user
     require((row["database"], row["current_user"], row["session_user"], row["system_identifier"], row["port"])
-            == (DATABASE, plan.target.migration_user, plan.target.migration_user, SYSTEM_IDENTIFIER, 5432),
+            == (DATABASE, actor, actor, SYSTEM_IDENTIFIER, 5432),
             "Identidade PostgreSQL divergente")
     require(type(row["server_version_num"]) is int and 160000 <= row["server_version_num"] < 170000,
             "PostgreSQL 16 obrigatorio")
@@ -282,6 +291,7 @@ def verify_privileges(connection):
           NOT EXISTS (SELECT 1 FROM pg_roles other WHERE other.rolname <> current_user
                       AND pg_has_role(current_user, other.oid, 'MEMBER')) AS no_memberships,
           has_database_privilege(current_user,current_database(),'CREATE') AS create_schema,
+          NOT has_database_privilege(current_user,current_database(),'TEMPORARY') AS no_temporary,
           has_schema_privilege(current_user,'public','CREATE') AS create_ledger,
           NOT EXISTS (SELECT 1 FROM pg_database d WHERE d.datname=current_database()
                       AND d.datdba=r.oid) AS not_database_owner,
@@ -289,28 +299,37 @@ def verify_privileges(connection):
                       AND n.nspowner=r.oid) AS not_protected_owner,
           NOT has_schema_privilege(current_user,'inventory','CREATE')
             AND NOT has_schema_privilege(current_user,'audit','CREATE') AS no_protected_ddl,
+          NOT has_schema_privilege(current_user,'inventory','USAGE')
+            AND NOT has_schema_privilege(current_user,'audit','USAGE') AS no_protected_usage,
+          NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                      WHERE n.nspname IN ('inventory','audit') AND c.relkind IN ('r','p','v','m','f')
+                        AND (has_table_privilege(current_user,c.oid,'SELECT')
+                             OR has_any_column_privilege(current_user,c.oid,'SELECT'))) AS no_protected_reads,
           NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
                       WHERE n.nspname IN ('inventory','audit') AND c.relkind IN ('r','p','v','m','f') AND
                       (c.relowner=r.oid OR has_table_privilege(current_user,c.oid,
-                        'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))) AS no_protected_writes
+                        'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR
+                       has_any_column_privilege(current_user,c.oid,'INSERT,UPDATE,REFERENCES'))) AS no_protected_writes
         FROM pg_roles r WHERE r.rolname=current_user
     """)).mappings().one()
-    require(set(row) == {"limited_role", "no_memberships", "create_schema", "create_ledger",
-                         "not_database_owner", "not_protected_owner", "no_protected_ddl", "no_protected_writes"}
+    require(set(row) == {"limited_role", "no_memberships", "create_schema", "create_ledger", "no_temporary",
+                         "not_database_owner", "not_protected_owner", "no_protected_ddl", "no_protected_writes",
+                         "no_protected_usage", "no_protected_reads"}
             and all(value is True for value in row.values()), "Privilegios migrator inseguros ou insuficientes")
 
 
 def acquire_migration_lock(connection):
     require(connection.execute(text(
-        "SELECT pg_try_advisory_xact_lock(1295073858, 6601)")).scalar_one() is True,
+        "SELECT pg_try_advisory_xact_lock(1295073858, 6602)")).scalar_one() is True,
         "Lock de migracao indisponivel")
 
 
 def protected_fingerprint(connection):
     """Catalog structure and empty row counts, never application row contents."""
     catalog = connection.execute(text("""
-        SELECT n.nspname,c.relname,c.relkind,c.relowner,c.relacl::text,
-          (SELECT json_agg(row(a.attname,format_type(a.atttypid,a.atttypmod),a.attnotnull,
+        SELECT n.nspname,n.nspowner,n.nspacl::text,c.relname,c.relkind,c.relowner,c.relacl::text,
+          c.relrowsecurity,c.relforcerowsecurity,c.reloptions,
+          (SELECT json_agg(row(a.attname,format_type(a.atttypid,a.atttypmod),a.attnotnull,a.attacl::text,
                     pg_get_expr(d.adbin,d.adrelid)) ORDER BY a.attnum)
            FROM pg_attribute a LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum
            WHERE a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped),
@@ -329,10 +348,166 @@ def protected_fingerprint(connection):
         WHERE n.nspname IN ('inventory','audit') ORDER BY n.nspname,p.oid
     """)).all()
     for schema, table in sorted(BASELINE_TABLES - {("public", "alembic_version")}):
-        require(connection.execute(text(f'SELECT count(*) FROM "{schema}"."{table}"')).scalar_one() == 0,
+        require(connection.execute(text(f'SELECT count("id") FROM "{schema}"."{table}"')).scalar_one() == 0,
                 "Baseline descartavel deve permanecer vazia")
     return sha256(json.dumps([list(map(tuple, catalog)), list(map(tuple, routines))],
                              sort_keys=True, default=str).encode()).hexdigest()
+
+
+def verify_inspector_privileges(connection):
+    row = connection.execute(text("""
+        SELECT NOT (r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolreplication
+                    OR r.rolbypassrls) AS limited,
+          NOT EXISTS (SELECT 1 FROM pg_roles other WHERE other.oid<>r.oid
+                      AND pg_has_role(current_user,other.oid,'MEMBER')) AS no_memberships,
+          NOT has_database_privilege(current_user,current_database(),'CREATE,TEMPORARY') AS no_database_ddl,
+          NOT EXISTS (SELECT 1 FROM pg_database d WHERE d.datdba=r.oid) AS owns_no_database,
+          NOT EXISTS (SELECT 1 FROM pg_proc p WHERE p.proowner=r.oid) AS owns_no_routine,
+          NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                      WHERE n.nspname IN ('inventory','audit')
+                        AND (c.relrowsecurity OR c.relforcerowsecurity)) AS no_row_security,
+          NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                      JOIN pg_attribute a ON a.attrelid=c.oid
+                      WHERE n.nspname !~ '^pg_' AND n.nspname<>'information_schema'
+                        AND c.relkind IN ('r','p','v','m','f') AND a.attnum>0 AND NOT a.attisdropped
+                        AND has_column_privilege(current_user,c.oid,a.attnum,'SELECT')
+                        AND NOT ((n.nspname IN ('inventory','audit') AND a.attname='id') OR
+                          (n.nspname='public' AND c.relname='alembic_version'
+                           AND a.attname='version_num'))) AS no_excess_reads,
+          NOT EXISTS (SELECT 1 FROM pg_namespace n WHERE n.nspname !~ '^pg_' AND
+                      (n.nspowner=r.oid OR has_schema_privilege(current_user,n.oid,'CREATE'))) AS no_schema_ddl,
+          NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                      WHERE n.nspname !~ '^pg_' AND n.nspname<>'information_schema'
+                        AND c.relkind IN ('r','p','v','m','f') AND
+                        (c.relowner=r.oid OR has_table_privilege(current_user,c.oid,
+                         'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR
+                         has_any_column_privilege(current_user,c.oid,'INSERT,UPDATE,REFERENCES'))) AS no_writes
+        FROM pg_roles r WHERE r.rolname=current_user
+    """)).mappings().one()
+    require(set(row) == {"limited", "no_memberships", "no_database_ddl", "owns_no_database", "owns_no_routine", "no_excess_reads", "no_row_security",
+                         "no_schema_ddl", "no_writes"} and all(v is True for v in row.values()),
+            "Inspetor deve ter apenas privilegios de leitura")
+
+
+def inspect_compliance(connection, plan, *, installed):
+    """Only the inspector reads inventory/audit rows. No security row access."""
+    row = identify_postgresql(connection, plan, inspector=True)
+    require(row["read_only"] == "on", "Inspetor exige transacao read-only")
+    verify_inspector_privileges(connection)
+    schemas = set(connection.execute(text("""
+        SELECT nspname FROM pg_namespace WHERE nspname !~ '^pg_' AND nspname<>'information_schema'
+    """)).scalars())
+    relations = set(tuple(r) for r in connection.execute(text("""
+        SELECT n.nspname,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+        WHERE n.nspname !~ '^pg_' AND n.nspname<>'information_schema'
+          AND c.relkind IN ('r','p','v','m','S','f')
+    """)))
+    expected_schemas = {"public", "inventory", "audit"}
+    expected_relations = set(BASELINE_TABLES)
+    if installed:
+        expected_schemas.add("security")
+        expected_relations |= {("security", n) for n in TABLE_NAMES} | {(VERSION_SCHEMA, VERSION_TABLE)}
+    require(schemas == expected_schemas and relations == expected_relations, "Estado de conformidade divergente")
+    revision = tuple(connection.execute(text(
+        "SELECT version_num FROM public.alembic_version ORDER BY version_num")).scalars())
+    require(revision == (BASELINE,), "Baseline de conformidade divergente")
+    return protected_fingerprint(connection)
+
+
+@dataclass(frozen=True)
+class _InspectionEvidence:
+    operation: object
+    binding: tuple
+    fingerprint: str
+    issued_at: float
+    expires_at: float
+
+
+class _ComplianceSession:
+    """Process-local authority, not a portable proof or cryptographic receipt.
+
+    No externally supplied evidence is accepted. Object identity, source connection,
+    context and fresh catalog reads bind the single-use evidence to this operation.
+    Trusted adapters/Python process and cooperative administrative exclusion remain
+    prerequisites. This protocol cannot fence a hostile superuser.
+    """
+
+    def __init__(self, connection, plan):
+        self.connection = connection
+        self.plan = plan
+        self.operation = object()
+        self.evidence = None
+        self.baseline = None
+        self.locked = False
+        self.closed = False
+
+    def _binding(self, plan):
+        return (plan, INSPECTOR_USER)
+
+    def _read(self, *, installed=False, acquire=False):
+        require(not self.closed and self.connection.in_transaction() is False,
+                "Sessao inspetor indisponivel ou transacao reutilizada")
+        transaction = self.connection.begin()
+        try:
+            row = identify_postgresql(self.connection, self.plan, inspector=True)
+            require(row["read_only"] == "on", "Inspetor deve ser read-only")
+            if acquire:
+                require(self.connection.execute(text(
+                    "SELECT pg_try_advisory_lock(1295073858, 6601)")).scalar_one() is True,
+                    "Lock de conformidade indisponivel")
+                self.locked = True
+            require(self.locked, "Lock de conformidade obrigatorio")
+            require(self.connection.execute(text("""
+                SELECT EXISTS (SELECT 1 FROM pg_locks WHERE locktype='advisory'
+                  AND pid=pg_backend_pid() AND classid=1295073858 AND objid=6601
+                  AND objsubid=2 AND mode='ExclusiveLock' AND granted)
+            """)).scalar_one() is True, "Sessao perdeu lock de conformidade")
+            return inspect_compliance(self.connection, self.plan, installed=installed)
+        finally:
+            # Ends the read-only snapshot; the session advisory lock survives.
+            transaction.rollback()
+
+    def issue(self):
+        require(self.evidence is None and self.baseline is None, "Operacao ja iniciada")
+        self.baseline = self._read(acquire=True)
+        now = time.monotonic()
+        self.evidence = _InspectionEvidence(self.operation, self._binding(self.plan),
+            self.baseline, now, now + EVIDENCE_TTL_SECONDS)
+        return self.evidence
+
+    def consume(self, evidence, plan):
+        now = time.monotonic()
+        require(evidence is self.evidence and isinstance(evidence, _InspectionEvidence)
+                and evidence.operation is self.operation and evidence.binding == self._binding(plan)
+                and evidence.issued_at <= now <= evidence.expires_at,
+                "Evidencia forjada, expirada ou fora do contexto")
+        require(self._read() == evidence.fingerprint, "Estado alterado apos inspecao")
+        require(time.monotonic() <= evidence.expires_at, "Inspecao excedeu validade temporal")
+        self.evidence = None
+
+    def verify_unchanged(self, *, installed):
+        require(self.baseline is not None and self.evidence is None,
+                "Handoff deve ter sido consumido")
+        require(self._read(installed=installed) == self.baseline, "inventory/audit alterados")
+
+    def close(self):
+        self.evidence = None
+        self.closed = True
+        # Dedicated, unpooled adapter must physically close this session. Explicit
+        # unlock is checked as well; failures are surfaced for reconciliation.
+        try:
+            if self.locked:
+                require(self.connection.execute(text(
+                    "SELECT pg_advisory_unlock(1295073858, 6601)")).scalar_one() is True,
+                    "Falha ao libertar lock de conformidade")
+        finally:
+            self.connection.close()
+
+
+def _open_compliance(plan, ports):
+    require(callable(ports.inspector_connect), "Adaptador inspetor explicito obrigatorio")
+    connection = ports.inspector_connect(plan.target, identity=INSPECTOR_USER, read_only=True)
+    return _ComplianceSession(connection, plan)
 
 
 def canonical_check(expression):
@@ -434,11 +609,13 @@ def execute_security_migration(plan, ports=None):
     require_execution_authorization(plan)
     validate_plan(plan)
     require(isinstance(ports, ExecutionPorts), "Adaptadores explicitos obrigatorios")
-    connection = verification = transaction = None
+    connection = verification = transaction = compliance = None
     commit_attempted = committed = False
     failure = None
     try:
         validate_environment(plan, ports)
+        compliance = _open_compliance(plan, ports)
+        evidence = compliance.issue()
         connection = ports.connect(plan.target, read_only=False)
         require(connection.in_transaction() is False, "Ligacao inicial deve estar sem transacao")
         transaction = connection.begin()
@@ -447,13 +624,13 @@ def execute_security_migration(plan, ports=None):
         acquire_migration_lock(connection)
         validate_observation(plan, read_database_state(connection, plan), phase="before")
         verify_privileges(connection)
-        baseline = protected_fingerprint(connection)
         validate_plan(plan)
+        compliance.consume(evidence, plan)
         run_alembic(plan, connection, ports)
         require(connection.in_transaction() is True, "Alembic encerrou transacao externa")
         validate_observation(plan, read_database_state(connection, plan), phase="after")
         validate_physical_security(connection)
-        require(protected_fingerprint(connection) == baseline, "inventory/audit alterados")
+        compliance.verify_unchanged(installed=False)
         commit_attempted = True
         transaction.commit()
         committed = True
@@ -470,7 +647,7 @@ def execute_security_migration(plan, ports=None):
         require(identity["read_only"] == "on", "Verificacao deve ser read-only")
         validate_observation(plan, read_database_state(verification, plan), phase="after")
         validate_physical_security(verification)
-        require(protected_fingerprint(verification) == baseline, "Persistencia inventory/audit divergente")
+        compliance.verify_unchanged(installed=True)
     except Exception:
         failure = "reconcile_required" if commit_attempted else "rolled_back"
         if transaction is not None and not committed:
@@ -479,7 +656,7 @@ def execute_security_migration(plan, ports=None):
             except Exception:
                 failure = "reconcile_required"
     finally:
-        for resource in (verification, connection):
+        for resource in (verification, connection, compliance):
             if resource is not None:
                 try:
                     resource.close()

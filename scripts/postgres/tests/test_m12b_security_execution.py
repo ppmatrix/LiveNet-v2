@@ -98,7 +98,8 @@ def test_privileges_are_fail_closed(unsafe):
     connection = Mock()
     connection.execute.return_value.mappings.return_value.one.return_value = dict.fromkeys(
         ['limited_role','no_memberships','create_schema','create_ledger','not_database_owner',
-         'not_protected_owner','no_protected_ddl','no_protected_writes'], not unsafe)
+         'not_protected_owner','no_protected_ddl','no_protected_writes',
+         'no_protected_usage','no_protected_reads','no_temporary'], not unsafe)
     if unsafe:
         with pytest.raises(executor.Refused):
             executor.verify_privileges(connection)
@@ -135,6 +136,23 @@ def workflow(monkeypatch, plan, identity):
     monkeypatch.setattr(executor, "verify_privileges", lambda c: events.append("privileges"))
     fingerprint = Mock(side_effect=lambda c: events.append("fingerprint") or "protected")
     monkeypatch.setattr(executor, "protected_fingerprint", fingerprint)
+    compliance = Mock()
+    inspector = Mock(name='inspector')
+    baseline = []
+    def issue():
+        events.append('inspect_issue')
+        baseline.append(fingerprint(inspector))
+        return object()
+    def consume(evidence, current_plan):
+        events.append('inspect_consume')
+        executor.require(fingerprint(inspector) == baseline[0], 'changed')
+    def verify(*, installed):
+        events.append('inspect_post' if installed else 'inspect_precommit')
+        executor.require(fingerprint(inspector) == baseline[0], 'changed')
+    compliance.issue.side_effect = issue
+    compliance.consume.side_effect = consume
+    compliance.verify_unchanged.side_effect = verify
+    monkeypatch.setattr(executor, '_open_compliance', lambda p, ports: compliance)
     physical = Mock(side_effect=lambda c: events.append("physical"))
     monkeypatch.setattr(executor, "validate_physical_security", physical)
     def upgrade(config, revision):
@@ -152,6 +170,9 @@ def test_commit_order_new_connection_and_safe_report(plan, workflow):
     report = executor.execute_security_migration(plan, ports)
     assert events.index("physical") < events.index("commit") < events.index("close_write")
     assert events.index("lock") < events.index("alembic")
+    assert events.index('inspect_issue') < events.index('lock')
+    assert events.index('inspect_consume') < events.index('alembic')
+    assert events.index('inspect_precommit') < events.index('commit') < events.index('inspect_post')
     assert events.count("physical") == 2 and report["status"] == "verified"
     assert ports.connect.call_args_list[0].kwargs == {"read_only": False}
     assert ports.connect.call_args_list[1].kwargs == {"read_only": True}
