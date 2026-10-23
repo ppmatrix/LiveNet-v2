@@ -1,8 +1,8 @@
-"""M1.2B-P1 preparation only: no connections, SQL or migration execution.
+"""M1.2B preparation and disabled P2 execution contract.
 
 Target configuration and supplied observations are NOT execution authorization.
-P2 must collect observations on the validated connection and implement the
-transaction, locking, physical inspection and operational approval separately.
+P2C-1 tests the workflow with doubles only. No engine, credentials, environment
+authorization switch or operational CLI is provided.
 """
 
 import ast
@@ -13,9 +13,11 @@ from pathlib import Path
 import re
 
 from alembic.config import Config
+from sqlalchemy import inspect, text
+from sqlalchemy.dialects import postgresql
 
 from security_migrations.contract import (
-    INITIAL_REVISION, TABLE_NAMES, VERSION_SCHEMA, VERSION_TABLE, validate_configuration,
+    INITIAL_REVISION, TABLE_NAMES, VERSION_SCHEMA, VERSION_TABLE, security_metadata, validate_configuration,
 )
 
 
@@ -23,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PROJECT = "livenetv2-m12b-test"
 DATABASE = "livenet_m12b_test"
 BASELINE = "f066a01a7230"
+SYSTEM_IDENTIFIER = "7699783234487926818"
 FORBIDDEN_DATABASES = frozenset({"livenet", "livenet_f0_test", "livenet_auth03_test"})
 BASELINE_TABLES = frozenset(
     {("inventory", name) for name in (
@@ -35,6 +38,38 @@ BASELINE_TABLES = frozenset(
 
 class Refused(ValueError):
     pass
+
+
+class ExecutionFailed(Refused):
+    """Sanitized failure: driver exceptions can contain credentials or SQL."""
+
+
+@dataclass(frozen=True)
+class ExecutionAuthorization:
+    # Activation requires a deliberate reviewed source change in P2C-2.
+    execution_enabled: bool = False
+    project: str = PROJECT
+    database: str = DATABASE
+    system_identifier: str = SYSTEM_IDENTIFIER
+    revision: str = INITIAL_REVISION
+
+
+AUTHORIZATION = ExecutionAuthorization()
+
+
+@dataclass(frozen=True)
+class ExecutionPorts:
+    """Trusted future adapters; P2C-1 supplies only test doubles.
+
+    attest(target) returns project/volume/network/internal/published_ports.
+    connect(target, read_only=...) returns a fresh SQLAlchemy Connection.
+    upgrade(config, revision) is the Alembic command adapter.
+    No default adapter opens a connection or reads a credential.
+    """
+
+    attest: object
+    connect: object
+    upgrade: object
 
 
 def require(condition, message):
@@ -92,7 +127,7 @@ def validate_target(config):
             "Endpoint de teste inesperado")
     identifier = config["system_identifier"]
     require(isinstance(identifier, str) and re.fullmatch(r"[1-9][0-9]{0,19}", identifier)
-            and int(identifier) <= 2**64 - 1,
+            and int(identifier) <= 2**64 - 1 and identifier == SYSTEM_IDENTIFIER,
             "Identificador PostgreSQL explicito obrigatorio")
     require(config["migration_user"] == "livenet_m12b_migrator"
             and config["application_user"] == "livenet_m12b_app", "Identidades separadas obrigatorias")
@@ -133,7 +168,7 @@ def prepare_plan(config, *, confirmed_baseline=None):
     content = {"target": asdict(target), "application_revision": BASELINE,
                "source": None, "destination": INITIAL_REVISION,
                "version_table": VERSION_TABLE, "version_schema": VERSION_SCHEMA,
-               "required_search_path": ("pg_catalog", "public"), "sources": sources}
+               "required_search_path": ("public",), "sources": sources}
     digest = sha256(json.dumps(content, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     return PreparationPlan(**{**content, "target": target}, digest=digest)
 
@@ -171,9 +206,290 @@ def execution_contract(plan):
             "application_credentials_are_authorization": False}
 
 
-def execute_security_migration(*args, **kwargs):
-    raise Refused("Execucao bloqueada em M1.2B-P1; integracao PostgreSQL exige M1.2B-P2 autorizada")
+def require_execution_authorization(plan):
+    require(AUTHORIZATION.execution_enabled is True,
+            "Execucao bloqueada desde P1; P2C-1 nao ativa operacoes reais")
+    require(isinstance(plan, PreparationPlan), "Plano obrigatorio")
+    require((AUTHORIZATION.project, AUTHORIZATION.database, AUTHORIZATION.system_identifier,
+             AUTHORIZATION.revision) == (PROJECT, DATABASE, SYSTEM_IDENTIFIER, INITIAL_REVISION),
+            "Contrato de autorizacao divergente")
+    require((plan.target.project, plan.target.database, plan.target.system_identifier, plan.destination)
+            == (PROJECT, DATABASE, SYSTEM_IDENTIFIER, INITIAL_REVISION), "Destino nao autorizado")
+
+
+def validate_plan(plan):
+    require(isinstance(plan, PreparationPlan), "Plano obrigatorio")
+    # Re-read reviewed sources; reject stale, modified or forged plans.
+    expected = prepare_plan(asdict(plan.target), confirmed_baseline=BASELINE)
+    require(plan == expected, "Plano ou fontes divergentes")
+
+
+def validate_environment(plan, ports):
+    require(ports.attest(plan.target) == {
+        "project": PROJECT, "volume": PROJECT + "_m12b_postgres_data",
+        "network": PROJECT + "_m12b_backend", "internal": True, "published_ports": (),
+    }, "Proveniencia do ambiente divergente")
+
+
+def identify_postgresql(connection, plan):
+    require(connection.dialect.name == "postgresql" and connection.in_transaction() is True,
+            "Ligacao PostgreSQL externa transacional obrigatoria")
+    row = connection.execute(text("""
+        SELECT current_database() AS database, current_user AS current_user,
+               session_user AS session_user, inet_server_port() AS port,
+               current_setting('server_version_num')::integer AS server_version_num,
+               (SELECT system_identifier::text FROM pg_control_system()) AS system_identifier,
+               current_setting('search_path') AS search_path,
+               current_setting('transaction_read_only') AS read_only
+    """)).mappings().one()
+    require((row["database"], row["current_user"], row["session_user"], row["system_identifier"], row["port"])
+            == (DATABASE, plan.target.migration_user, plan.target.migration_user, SYSTEM_IDENTIFIER, 5432),
+            "Identidade PostgreSQL divergente")
+    require(type(row["server_version_num"]) is int and 160000 <= row["server_version_num"] < 170000,
+            "PostgreSQL 16 obrigatorio")
+    require(row["search_path"] == "public", "search_path explicito public obrigatorio")
+    return row
+
+
+def read_database_state(connection, plan):
+    row = identify_postgresql(connection, plan)
+    schemas = frozenset(connection.execute(text("""
+        SELECT nspname FROM pg_namespace
+        WHERE nspname !~ '^pg_' AND nspname <> 'information_schema'
+    """)).scalars())
+    relations = frozenset(tuple(r) for r in connection.execute(text("""
+        SELECT n.nspname, c.relname FROM pg_class c
+        JOIN pg_namespace n ON n.oid=c.relnamespace
+        WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema'
+          AND c.relkind IN ('r','p','v','m','S','f')
+    """)))
+    application = tuple(connection.execute(text(
+        "SELECT version_num FROM public.alembic_version ORDER BY version_num")).scalars())
+    security = ()
+    if (VERSION_SCHEMA, VERSION_TABLE) in relations:
+        security = tuple(connection.execute(text(
+            "SELECT version_num FROM public.alembic_security_version ORDER BY version_num")).scalars())
+    return ObservedState(row["database"], row["system_identifier"], row["current_user"],
+                         row["session_user"], row["server_version_num"], application,
+                         security, schemas, relations)
+
+
+def verify_privileges(connection):
+    # Minimal catalog reads, no grants or role provisioning here.
+    row = connection.execute(text("""
+        SELECT NOT (r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolreplication
+                    OR r.rolbypassrls) AS limited_role,
+          NOT EXISTS (SELECT 1 FROM pg_roles other WHERE other.rolname <> current_user
+                      AND pg_has_role(current_user, other.oid, 'MEMBER')) AS no_memberships,
+          has_database_privilege(current_user,current_database(),'CREATE') AS create_schema,
+          has_schema_privilege(current_user,'public','CREATE') AS create_ledger,
+          NOT EXISTS (SELECT 1 FROM pg_database d WHERE d.datname=current_database()
+                      AND d.datdba=r.oid) AS not_database_owner,
+          NOT EXISTS (SELECT 1 FROM pg_namespace n WHERE n.nspname IN ('inventory','audit','public')
+                      AND n.nspowner=r.oid) AS not_protected_owner,
+          NOT has_schema_privilege(current_user,'inventory','CREATE')
+            AND NOT has_schema_privilege(current_user,'audit','CREATE') AS no_protected_ddl,
+          NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                      WHERE n.nspname IN ('inventory','audit') AND c.relkind IN ('r','p','v','m','f') AND
+                      (c.relowner=r.oid OR has_table_privilege(current_user,c.oid,
+                        'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))) AS no_protected_writes
+        FROM pg_roles r WHERE r.rolname=current_user
+    """)).mappings().one()
+    require(set(row) == {"limited_role", "no_memberships", "create_schema", "create_ledger",
+                         "not_database_owner", "not_protected_owner", "no_protected_ddl", "no_protected_writes"}
+            and all(value is True for value in row.values()), "Privilegios migrator inseguros ou insuficientes")
+
+
+def acquire_migration_lock(connection):
+    require(connection.execute(text(
+        "SELECT pg_try_advisory_xact_lock(1295073858, 6601)")).scalar_one() is True,
+        "Lock de migracao indisponivel")
+
+
+def protected_fingerprint(connection):
+    """Catalog structure and empty row counts, never application row contents."""
+    catalog = connection.execute(text("""
+        SELECT n.nspname,c.relname,c.relkind,c.relowner,c.relacl::text,
+          (SELECT json_agg(row(a.attname,format_type(a.atttypid,a.atttypmod),a.attnotnull,
+                    pg_get_expr(d.adbin,d.adrelid)) ORDER BY a.attnum)
+           FROM pg_attribute a LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum
+           WHERE a.attrelid=c.oid AND a.attnum>0 AND NOT a.attisdropped),
+          (SELECT json_agg(row(con.conname,pg_get_constraintdef(con.oid),con.convalidated)
+                           ORDER BY con.conname) FROM pg_constraint con WHERE con.conrelid=c.oid),
+          (SELECT json_agg(pg_get_indexdef(i.indexrelid) ORDER BY i.indexrelid)
+           FROM pg_index i WHERE i.indrelid=c.oid),
+          (SELECT json_agg(pg_get_triggerdef(t.oid) ORDER BY t.tgname)
+           FROM pg_trigger t WHERE t.tgrelid=c.oid AND NOT t.tgisinternal)
+        FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+        WHERE n.nspname IN ('inventory','audit') ORDER BY n.nspname,c.relname
+    """)).all()
+    routines = connection.execute(text("""
+        SELECT n.nspname,p.proname,p.proowner,p.proacl::text,pg_get_functiondef(p.oid)
+        FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+        WHERE n.nspname IN ('inventory','audit') ORDER BY n.nspname,p.oid
+    """)).all()
+    for schema, table in sorted(BASELINE_TABLES - {("public", "alembic_version")}):
+        require(connection.execute(text(f'SELECT count(*) FROM "{schema}"."{table}"')).scalar_one() == 0,
+                "Baseline descartavel deve permanecer vazia")
+    return sha256(json.dumps([list(map(tuple, catalog)), list(map(tuple, routines))],
+                             sort_keys=True, default=str).encode()).hexdigest()
+
+
+def canonical_check(expression):
+    """Only the nine reviewed checks: each has AND or OR, never both.
+
+    PostgreSQL adds parentheses, text casts and rewrites IN as ANY(ARRAY).
+    Parenthesis flattening is restricted to these single-connective templates;
+    it must not be generalized to arbitrary checks with mixed precedence.
+    """
+    literals = []
+    def literal(match):
+        literals.append(match.group())
+        return f"literal_{len(literals)}"
+    value = re.sub(r"'(?:''|[^'])*'", literal, expression).lower()
+    require(not (re.search(r'\band\b', value) and re.search(r'\bor\b', value)),
+            "CHECK com precedencia nao suportada")
+    value = re.sub(r'::(?:character varying|text)(?:\[\])?', '', value)
+    value = re.sub(r'\s+', '', value)
+    value = re.sub(r'[()\[\]]', '', value)
+    return value.replace('=anyarray', 'in'), tuple(literals)
+
+
+def validate_physical_security(connection):
+    inspector = inspect(connection)
+    metadata = security_metadata()
+    require(set(inspector.get_table_names(schema="security")) == TABLE_NAMES, "Tabelas security divergentes")
+    for name in sorted(TABLE_NAMES):
+        table = metadata.tables["security." + name]
+        columns = inspector.get_columns(name, schema="security")
+        require([c["name"] for c in columns] == list(table.c.keys()), "Colunas security divergentes")
+        for actual in columns:
+            expected = table.c[actual["name"]]
+            require(str(actual["type"].compile(dialect=postgresql.dialect()))
+                    == str(expected.type.compile(dialect=postgresql.dialect()))
+                    and actual["nullable"] == expected.nullable and actual["default"] is None
+                    and not actual.get("identity") and not actual.get("computed"), "Tipo/default/nulabilidade divergente")
+        pk = inspector.get_pk_constraint(name, schema="security")
+        require(pk["constrained_columns"] == list(table.primary_key.columns.keys())
+                and pk["name"] == "pk_security_" + name, "PK divergente")
+        foreign = inspector.get_foreign_keys(name, schema="security")
+        expected_foreign = [] if name not in {"login_sessions", "global_role_grants"} else [{
+            "name": "fk_security_" + name + "_user_id_local_users", "columns": ["user_id"],
+        }]
+        require(len(foreign) == len(expected_foreign), "FK divergente")
+        for actual, expected in zip(foreign, expected_foreign):
+            require(actual["name"] == expected["name"] and actual["constrained_columns"] == expected["columns"]
+                    and actual["referred_schema"] == "security" and actual["referred_table"] == "local_users"
+                    and actual["referred_columns"] == ["id"] and not actual.get("options"), "FK divergente")
+        from sqlalchemy import CheckConstraint, UniqueConstraint
+        require({(u["name"], tuple(u["column_names"])) for u in inspector.get_unique_constraints(name, schema="security")}
+                == {(u.name, tuple(u.columns.keys())) for u in table.constraints if isinstance(u, UniqueConstraint)}, "UNIQUE divergente")
+        require({(c["name"], canonical_check(c["sqltext"])) for c in inspector.get_check_constraints(name, schema="security")}
+                == {(c.name, canonical_check(str(c.sqltext))) for c in table.constraints if isinstance(c, CheckConstraint)}, "CHECK divergente")
+        indexes = [i for i in inspector.get_indexes(name, schema="security") if not i.get("duplicates_constraint")]
+        for index in indexes:
+            options = index.get("dialect_options", {})
+            require(not index.get("column_sorting") and not index.get("expressions")
+                    and set(options) <= {"postgresql_include", "postgresql_using"}
+                    and not options.get("postgresql_include")
+                    and options.get("postgresql_using", "btree") == "btree", "Semantica indice divergente")
+        require({(i["name"], tuple(i["column_names"]), i["unique"]) for i in indexes}
+                == {(i.name, tuple(i.columns.keys()), i.unique) for i in table.indexes}, "Indices divergentes")
+        require(connection.execute(text(f'SELECT count(*) FROM security."{name}"')).scalar_one() == 0,
+                "Tabelas security devem estar vazias")
+    ledger = inspector.get_columns(VERSION_TABLE, schema=VERSION_SCHEMA)
+    require(len(ledger) == 1 and ledger[0]["name"] == "version_num" and not ledger[0]["nullable"]
+            and str(ledger[0]["type"]) == "VARCHAR(32)" and ledger[0]["default"] is None
+            and not ledger[0].get("identity") and not ledger[0].get("computed"),
+            "Estrutura ledger divergente")
+    require(inspector.get_pk_constraint(VERSION_TABLE, schema=VERSION_SCHEMA)["constrained_columns"]
+            == ["version_num"], "PK ledger divergente")
+    owners = connection.execute(text("""
+        SELECT NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+          JOIN pg_roles r ON r.oid=c.relowner WHERE
+          (n.nspname='security' OR (n.nspname='public' AND c.relname='alembic_security_version'))
+          AND r.rolname <> current_user)
+          AND EXISTS (SELECT 1 FROM pg_namespace n JOIN pg_roles r ON r.oid=n.nspowner
+                      WHERE n.nspname='security' AND r.rolname=current_user)
+          AND NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON n.oid=c.connamespace
+                          WHERE n.nspname='security' AND (NOT c.convalidated OR c.condeferrable))
+          AND NOT EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+                          WHERE n.nspname='security')
+          AND NOT EXISTS (SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid
+                          JOIN pg_namespace n ON n.oid=c.relnamespace
+                          WHERE n.nspname='security' AND NOT t.tgisinternal)
+    """)).scalar_one()
+    require(owners is True, "Ownership/objetos security inesperados")
+
+
+def run_alembic(plan, connection, ports):
+    require_execution_authorization(plan)
+    config = security_configuration()
+    config.attributes["connection"] = connection
+    ports.upgrade(config, INITIAL_REVISION)
+
+
+def execute_security_migration(plan, ports=None):
+    # First action, before touching supplied adapters, sources or credentials.
+    require_execution_authorization(plan)
+    validate_plan(plan)
+    require(isinstance(ports, ExecutionPorts), "Adaptadores explicitos obrigatorios")
+    connection = verification = transaction = None
+    commit_attempted = committed = False
+    failure = None
+    try:
+        validate_environment(plan, ports)
+        connection = ports.connect(plan.target, read_only=False)
+        require(connection.in_transaction() is False, "Ligacao inicial deve estar sem transacao")
+        transaction = connection.begin()
+        identity = identify_postgresql(connection, plan)
+        require(identity["read_only"] == "off", "Transacao de migracao deve permitir escrita")
+        acquire_migration_lock(connection)
+        validate_observation(plan, read_database_state(connection, plan), phase="before")
+        verify_privileges(connection)
+        baseline = protected_fingerprint(connection)
+        validate_plan(plan)
+        run_alembic(plan, connection, ports)
+        require(connection.in_transaction() is True, "Alembic encerrou transacao externa")
+        validate_observation(plan, read_database_state(connection, plan), phase="after")
+        validate_physical_security(connection)
+        require(protected_fingerprint(connection) == baseline, "inventory/audit alterados")
+        commit_attempted = True
+        transaction.commit()
+        committed = True
+        migration_driver = connection.connection.driver_connection
+        connection.close()
+        validate_environment(plan, ports)
+        verification = ports.connect(plan.target, read_only=True)
+        require(verification is not connection and verification.in_transaction() is False,
+                "Persistencia exige nova ligacao sem transacao anterior")
+        require(verification.connection.driver_connection is not migration_driver,
+                "Persistencia exige nova ligacao fisica")
+        verification.begin()
+        identity = identify_postgresql(verification, plan)
+        require(identity["read_only"] == "on", "Verificacao deve ser read-only")
+        validate_observation(plan, read_database_state(verification, plan), phase="after")
+        validate_physical_security(verification)
+        require(protected_fingerprint(verification) == baseline, "Persistencia inventory/audit divergente")
+    except Exception:
+        failure = "reconcile_required" if commit_attempted else "rolled_back"
+        if transaction is not None and not committed:
+            try:
+                transaction.rollback()
+            except Exception:
+                failure = "reconcile_required"
+    finally:
+        for resource in (verification, connection):
+            if resource is not None:
+                try:
+                    resource.close()
+                except Exception:
+                    failure = "reconcile_required"
+    if failure:
+        raise ExecutionFailed(f"Migracao security recusada: {failure}; sem retry automatico") from None
+    return {"status": "verified", "database": DATABASE, "system_identifier": SYSTEM_IDENTIFIER,
+            "application_revision": BASELINE, "security_revision": INITIAL_REVISION}
 
 
 if __name__ == "__main__":
-    raise SystemExit("M1.2B-P1 apenas prepara contratos; nao existe CLI operacional")
+    raise SystemExit("M1.2B-P2C-1 offline; nao existe CLI operacional")

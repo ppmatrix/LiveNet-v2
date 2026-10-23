@@ -2,6 +2,10 @@
 
 ## Decisão e âmbito
 
+Evolução offline do executor: ver [M1.2B-P2C-1](m12b-p2c1-security-executor.md).
+O texto abaixo descreve P1; P2C-1 substitui o search_path planeado por `public`
+e implementa o fluxo transacional, mantendo a execução real desativada.
+
 A decisão M1.2B-D01 separa a evolução de `security` da cadeia aplicacional.
 A cadeia existente permanece `base -> ... -> f066a01a7230 -> f067a01a7230`
 (f067 é AUTH-03 local). A configuração `backend/alembic-security.ini` carrega

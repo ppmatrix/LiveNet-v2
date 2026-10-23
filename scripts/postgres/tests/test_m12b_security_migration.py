@@ -10,7 +10,7 @@ from security_migrations.contract import INITIAL_REVISION, TABLE_NAMES, VERSION_
 @pytest.fixture
 def target():
     return {"project": preparation.PROJECT, "database": preparation.DATABASE, "host": "db", "port": 5432,
-            "system_identifier": "1234567890123456789", "migration_user": "livenet_m12b_migrator",
+            "system_identifier": preparation.SYSTEM_IDENTIFIER, "migration_user": "livenet_m12b_migrator",
             "application_user": "livenet_m12b_app"}
 
 
@@ -40,6 +40,7 @@ def test_reject_other_databases(target, database):
     ("project", "livenetv2-auth03-test"), ("host", "localhost"), ("port", 5433), ("port", True),
     ("system_identifier", ""), ("system_identifier", "automatic"), ("system_identifier", None),
     ("system_identifier", "18446744073709551616"),
+    ("system_identifier", "1234567890123456789"),
     ("migration_user", "livenet"), ("application_user", "livenet_m12b_migrator"),
     ("database", []),
 ])
@@ -67,7 +68,7 @@ def test_plan_is_deterministic_and_not_authorization(target, plan):
     assert plan.destination == INITIAL_REVISION and plan.source is None
     assert plan.application_revision == preparation.BASELINE
     assert (plan.version_schema, plan.version_table) == ("public", "alembic_security_version")
-    assert len(plan.digest) == 64 and plan.required_search_path == ("pg_catalog", "public")
+    assert len(plan.digest) == 64 and plan.required_search_path == ("public",)
     assert all("backend/migrations/" not in name and "auth03" not in name for name, _ in plan.sources)
     contract = preparation.execution_contract(plan)
     assert contract["execution_enabled"] is False
