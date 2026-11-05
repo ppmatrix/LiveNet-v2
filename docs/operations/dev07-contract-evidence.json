@@ -1,0 +1,388 @@
+{
+  "authority": "audit evidence and review proposal only; no execution or trust approval",
+  "head": "647179c928888adfeef0f69f582fd13c5fc17350",
+  "contracts": {
+    "authority": "source evidence only; no approval or execution permission",
+    "auth03": {
+      "manifest_sha256": "7a9993faba2af675f46bd53daea96f9e4980624c3ef07f4d5af6cdfdfbe7c326",
+      "manifest_entries": 31,
+      "expected_entries": 52,
+      "missing": [
+        "backend/app/dedicated.py",
+        "backend/app/inventory/access.py",
+        "backend/app/inventory/routes.py",
+        "backend/app/inventory/schemas.py",
+        "backend/app/inventory/service.py",
+        "backend/app/postgres_tls.py",
+        "backend/app/readiness.py",
+        "backend/app/readiness_postgres/__init__.py",
+        "backend/app/readiness_postgres/adapter.py",
+        "backend/app/readiness_postgres/evaluate.py",
+        "backend/app/readiness_postgres/policy.py",
+        "backend/app/readiness_postgres/queries.py",
+        "backend/app/security/__init__.py",
+        "backend/app/security/access.py",
+        "backend/app/security/csrf.py",
+        "backend/app/security/errors.py",
+        "backend/app/security/models.py",
+        "backend/app/security/policy.py",
+        "backend/app/security/routes.py",
+        "backend/app/security/service.py",
+        "backend/app/trusted_proxy.py"
+      ],
+      "extra": [],
+      "mismatches": [
+        {
+          "path": "backend/app/__init__.py",
+          "manifest_sha256": "74c51facab8fd44eacc4260429c6182ea53cd6f30bf8715f633b0ccd334fd0b2",
+          "actual_sha256": "0b5d3abe007956211c0bd8167641a991388f9dd0a50d6873124e91c0ed001862"
+        },
+        {
+          "path": "backend/app/config.py",
+          "manifest_sha256": "1801c76af1d3f7bdfcc30b831883ac0b1e36d66ccf92886192ad5d5d6d72fbbd",
+          "actual_sha256": "05e82252427e37e47bf0e40162f1377e95a26a0297d6725261df83266c2535f9"
+        },
+        {
+          "path": "backend/app/core/model_registry.py",
+          "manifest_sha256": "28419b14eabd1d041c1ba21e1fb3a4466522910c474c4eeb6e15f141374bdeb6",
+          "actual_sha256": "6b9db8825e03e894b4f07870459c2ad64cf14687e1abfcddc255bca77a0efb19"
+        },
+        {
+          "path": "backend/requirements.txt",
+          "manifest_sha256": "70820b980a6e044ab90cb8d59cef38a6ac8d905faeeac0a24a9ed656196c4c04",
+          "actual_sha256": "aba67440c5f8caf5d3acb0f7aeee7afcaab5afdad4cab0760f90cde7d818bc6c"
+        }
+      ]
+    },
+    "migration_graphs": {
+      "application": [
+        {
+          "path": "backend/migrations/versions/38d641dcd780_create_inventory_resource_relations.py",
+          "revision": "38d641dcd780",
+          "down_revision": "4f625db33d6d",
+          "sha256": "44888d9186c5e0c17edaad34e1db3e1cedbfde83c0e14db6349a7e8fedf2cf98"
+        },
+        {
+          "path": "backend/migrations/versions/44e7eb855b5a_create_inventory_group_rules.py",
+          "revision": "44e7eb855b5a",
+          "down_revision": "ba06dd956da9",
+          "sha256": "19a7573916902015349045813003b3fd9d057c77e6b4ccad0a5e51a0b12b567f"
+        },
+        {
+          "path": "backend/migrations/versions/4f625db33d6d_create_inventory_resource_identifiers.py",
+          "revision": "4f625db33d6d",
+          "down_revision": "af62df027d9d",
+          "sha256": "dddc5fec81ab2b7859af76292f52b75a16dbd00d310221cc619235762ca65224"
+        },
+        {
+          "path": "backend/migrations/versions/7c4e2a91b605_create_inventory_tags.py",
+          "revision": "7c4e2a91b605",
+          "down_revision": "44e7eb855b5a",
+          "sha256": "103a4e643911ae119145e64c5d4ffc051d92c2c2f301d069fb5a4564699cd2c1"
+        },
+        {
+          "path": "backend/migrations/versions/9e1b7c42a630_create_inventory_resource_tags.py",
+          "revision": "9e1b7c42a630",
+          "down_revision": "7c4e2a91b605",
+          "sha256": "430c334e882de7b96164beb2672122f684daa6cc1895f4fd29ef5485570221b2"
+        },
+        {
+          "path": "backend/migrations/versions/af62df027d9d_create_inventory_resources_baseline.py",
+          "revision": "af62df027d9d",
+          "down_revision": null,
+          "sha256": "b0fbafbf23e18b15b336980b21cfed9271f215578578a3af0d671358747d9d50"
+        },
+        {
+          "path": "backend/migrations/versions/ba06dd956da9_create_inventory_group_memberships.py",
+          "revision": "ba06dd956da9",
+          "down_revision": "da34876e4210",
+          "sha256": "2033a4a846105d5d3398d5f7d952d821286ac10600dbd23f2190cede948a16a8"
+        },
+        {
+          "path": "backend/migrations/versions/c4a91e7b205d_create_inventory_policies.py",
+          "revision": "c4a91e7b205d",
+          "down_revision": "9e1b7c42a630",
+          "sha256": "6ad79c6718897b2b0a3122d21d28e2ab3ffb1e3504b547114aa76fde9ab97425"
+        },
+        {
+          "path": "backend/migrations/versions/da34876e4210_create_inventory_groups.py",
+          "revision": "da34876e4210",
+          "down_revision": "38d641dcd780",
+          "sha256": "2e7f4713b450421c84d3f741cb02418bec6e8759536fb61f72963b32419ec09b"
+        },
+        {
+          "path": "backend/migrations/versions/e65b01a7c230_create_inventory_policy_versions.py",
+          "revision": "e65b01a7c230",
+          "down_revision": "c4a91e7b205d",
+          "sha256": "b0ef045cd58e0385e0b73f4c6fee4482b2ac59047283597c7d0e8a39074c7949"
+        },
+        {
+          "path": "backend/migrations/versions/f065c01a7230_create_inventory_policy_assignments.py",
+          "revision": "f065c01a7230",
+          "down_revision": "e65b01a7c230",
+          "sha256": "7278fe16f3fbba63ccb01c41ee64e134043eec610a1feada63eb6b5218a52bf2"
+        },
+        {
+          "path": "backend/migrations/versions/f065d01a7230_create_inventory_effective_configs.py",
+          "revision": "f065d01a7230",
+          "down_revision": "f065c01a7230",
+          "sha256": "bc8f1e333315eaffd199df4f18a8b71e0e16c85034e707f93399465a184c9dda"
+        },
+        {
+          "path": "backend/migrations/versions/f066a01a7230_create_audit_events_baseline.py",
+          "revision": "f066a01a7230",
+          "down_revision": "f065d01a7230",
+          "sha256": "f3c128ae862ab8c19a9e3a75b93d653857e8560bb0fb4d41d7be9892d12de86f"
+        },
+        {
+          "path": "backend/migrations/versions/f067a01a7230_create_authorization_integrity_anchors.py",
+          "revision": "f067a01a7230",
+          "down_revision": "f066a01a7230",
+          "sha256": "2556db6186f6002285386727acb9803c73547787248c071a4cf9f0fdc91c1ec1"
+        }
+      ],
+      "security": [
+        {
+          "path": "backend/security_migrations/versions/b12b01a7230_create_security.py",
+          "revision": "b12b01a7230",
+          "down_revision": null,
+          "sha256": "3f29c6e630955f2548a7a0a481aa182deda1014cd4fdfbaa2fe39e55db356481"
+        }
+      ]
+    }
+  },
+  "file_provenance": [
+    {
+      "path": "backend/app/dedicated.py",
+      "tracked": false,
+      "current_sha256": "1a4472e6f06937da0966dccf36542b2ed79a0d4505a019b1b18c192de00e7a2c",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "classification": "local artifact: prior report/request provenance, not a Git attestation"
+    },
+    {
+      "path": "backend/app/inventory/access.py",
+      "tracked": true,
+      "current_sha256": "36a5c4d296d843501a6c520499b1f3420cb7d530c7f52dbab2645f9f508f7230",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "24ea3601b36423d2cd0f68b6a1e07619e3377b3e feat(inventory): implement M1.1 resource REST API",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": []
+    },
+    {
+      "path": "backend/app/inventory/routes.py",
+      "tracked": true,
+      "current_sha256": "eb3b427c34fc2f32cf50869a94cb82fa60de282bac46f8175833827482f24830",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": []
+    },
+    {
+      "path": "backend/app/inventory/schemas.py",
+      "tracked": true,
+      "current_sha256": "1cabfe694f36c70f5191937070e3b0b67f54b25e5d66864f9e7a492ea9f8bca5",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "24ea3601b36423d2cd0f68b6a1e07619e3377b3e feat(inventory): implement M1.1 resource REST API",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": []
+    },
+    {
+      "path": "backend/app/inventory/service.py",
+      "tracked": true,
+      "current_sha256": "030950ae2b4f8b0d48cf7d880cd3975ac5528554b4fb111814e42a34a4814e1c",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "24ea3601b36423d2cd0f68b6a1e07619e3377b3e feat(inventory): implement M1.1 resource REST API",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": []
+    },
+    {
+      "path": "backend/app/postgres_tls.py",
+      "tracked": false,
+      "current_sha256": "ca3566de364821d1f676954f6ce28646683c6a873da7b58a94c8ccc8c8d10b19",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "classification": "local artifact: prior report/request provenance, not a Git attestation"
+    },
+    {
+      "path": "backend/app/readiness.py",
+      "tracked": false,
+      "current_sha256": "b91aeb511c7699b98493d6d70545b43e705b022b73734d4713de97e7edf4f69c",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "classification": "local artifact: prior report/request provenance, not a Git attestation"
+    },
+    {
+      "path": "backend/app/readiness_postgres/__init__.py",
+      "tracked": false,
+      "current_sha256": "7df4b413bf7470326d725b74aa8b3ebab175e86e825203b78601ff0f966afcc1",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "classification": "local artifact: prior report/request provenance, not a Git attestation"
+    },
+    {
+      "path": "backend/app/readiness_postgres/adapter.py",
+      "tracked": false,
+      "current_sha256": "fe40580c13d92ac68a28b25528932261c127210efb62d4ae18f940b5dd0e8aaf",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "classification": "local artifact: prior report/request provenance, not a Git attestation"
+    },
+    {
+      "path": "backend/app/readiness_postgres/evaluate.py",
+      "tracked": false,
+      "current_sha256": "0137f9343672a95fc0138b9e6ac5207fdb23b468162dce65b5867fd2758210d5",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "classification": "local artifact: prior report/request provenance, not a Git attestation"
+    },
+    {
+      "path": "backend/app/readiness_postgres/policy.py",
+      "tracked": false,
+      "current_sha256": "7dc4100d063e4cb3c09957e8fb117f2b84fddc7b5b28f73f57422061042bff81",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "classification": "local artifact: prior report/request provenance, not a Git attestation"
+    },
+    {
+      "path": "backend/app/readiness_postgres/queries.py",
+      "tracked": false,
+      "current_sha256": "9ddad5dc61f2c5f81ca5db8e410064e506b9a93607b3f2cde3add86c3ad1ed2b",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "classification": "local artifact: prior report/request provenance, not a Git attestation"
+    },
+    {
+      "path": "backend/app/security/__init__.py",
+      "tracked": true,
+      "current_sha256": "708f803fc69da2555dfc1f5b2911ea7cd81b2ae9696d13041d2ac4c045c50ee0",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": []
+    },
+    {
+      "path": "backend/app/security/access.py",
+      "tracked": true,
+      "current_sha256": "95570f1bd16179f19013669bc9039a414e15193a03ec697e25b5fccdaa4987c0",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": []
+    },
+    {
+      "path": "backend/app/security/csrf.py",
+      "tracked": true,
+      "current_sha256": "6c7ee69a3a7fea36d9fc8ec7314186aaa3d0b422b00ccc47dded844092148d8c",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": []
+    },
+    {
+      "path": "backend/app/security/errors.py",
+      "tracked": true,
+      "current_sha256": "3b6b8f45bea6603b71e15328c1006dd7e7db2343109afed86018be6f55c1cc7e",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": []
+    },
+    {
+      "path": "backend/app/security/models.py",
+      "tracked": true,
+      "current_sha256": "cf4b247d04831018ca5156cbe12e7fc9924883694587584972892f7d9e716c5c",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": []
+    },
+    {
+      "path": "backend/app/security/policy.py",
+      "tracked": true,
+      "current_sha256": "b42edd0deee71cf92454e5ee49a32e854575249f2bb82014b221551cbdd6f7e5",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": []
+    },
+    {
+      "path": "backend/app/security/routes.py",
+      "tracked": true,
+      "current_sha256": "1e8cffc5258db57d1e0662c0442f1168f217ccc509fe7f9f787e08a4ad316749",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": []
+    },
+    {
+      "path": "backend/app/security/service.py",
+      "tracked": true,
+      "current_sha256": "231cbc88f372071a5fe946ecf164afdd9c7f39d0f6a0edf6f960c29b152c0747",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": []
+    },
+    {
+      "path": "backend/app/trusted_proxy.py",
+      "tracked": false,
+      "current_sha256": "1078a580402a3d2cddb15e5e8797f4e63c5444cb4cba9a8ecfde0dd47d505375",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "classification": "local artifact: prior report/request provenance, not a Git attestation"
+    },
+    {
+      "path": "backend/app/__init__.py",
+      "tracked": true,
+      "current_sha256": "0b5d3abe007956211c0bd8167641a991388f9dd0a50d6873124e91c0ed001862",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": [
+        "4d85240af69c2e43b078623e892358d0e0dad6cc"
+      ]
+    },
+    {
+      "path": "backend/app/config.py",
+      "tracked": true,
+      "current_sha256": "05e82252427e37e47bf0e40162f1377e95a26a0297d6725261df83266c2535f9",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": [
+        "4d85240af69c2e43b078623e892358d0e0dad6cc"
+      ]
+    },
+    {
+      "path": "backend/app/core/model_registry.py",
+      "tracked": true,
+      "current_sha256": "6b9db8825e03e894b4f07870459c2ad64cf14687e1abfcddc255bca77a0efb19",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": [
+        "9069aa39913e9be9b87f136ed07acb1992f252f7"
+      ]
+    },
+    {
+      "path": "backend/requirements.txt",
+      "tracked": true,
+      "current_sha256": "aba67440c5f8caf5d3acb0f7aeee7afcaab5afdad4cab0760f90cde7d818bc6c",
+      "attestation": "NOT_APPROVED_BY_MANIFEST",
+      "last_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+      "matches_HEAD": true,
+      "classification": "committed source without current manifest attestation",
+      "expected_hash_matches_located_commits": [
+        "07bd81799c1fd97e78772f65394d806b897bd9bf"
+      ]
+    }
+  ],
+  "unauthorized_security_change": "NOT_ESTABLISHED; absence of attestation is not proof of unauthorized origin"
+}

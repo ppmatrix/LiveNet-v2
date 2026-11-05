@@ -1,0 +1,11 @@
+{
+  "x-dev06-state": "BLOCKED: explicit TLS overlay; inherited exit-78 guards remain; no operational activation",
+  "services": {
+    "backend": {
+      "command": ["gunicorn", "--config", "/app/gunicorn_container.conf.py", "dedicated_wsgi:create_tls_app('/run/livenet/backend.json')"],
+      "volumes": [
+        {"type": "bind", "source": "${DEV06_POSTGRES_CA_FILE:?Required absolute reviewed PostgreSQL CA certificate path}", "target": "/run/livenet/ca.crt", "read_only": true, "bind": {"create_host_path": false}}
+      ]
+    }
+  }
+}

@@ -1,3 +1,8 @@
+> DEV-07 (2026-10-25): React real construído e testado em Node 24 isolado,
+> servido por Caddy HTTPS e exercitado em Chromium com CA validada. Login
+> persistente continua bloqueado; ver [relatório DEV-07](../docs/operations/dev07-react-integration.md).
+> O conteúdo anterior descreve o contexto histórico da implementação.
+
 # LiveNet v2 — interface inicial M1.3B-IMP1
 
 React, TypeScript strict, Vite e React Router. Fetch nativo, sem biblioteca de
