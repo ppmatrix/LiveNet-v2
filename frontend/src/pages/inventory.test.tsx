@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { failure, json, mockHttp, page, resource, user } from '../test/http';
@@ -169,5 +169,48 @@ describe('inventário e detalhe', () => {
     await userEvent.selectOptions(screen.getByLabelText('Tipo de recurso'), 'service');
     await screen.findByRole('heading', { name: 'Nenhum recurso encontrado' });
     expect(signals[0]?.aborted).toBe(true);
+  });
+
+  it.each(['sucesso', 'erro'] as const)('mantém os resultados atuais após %s tardio do pedido anterior', async outcome => {
+    let finishOld!: (value: Response) => void;
+    let failOld!: (reason: Error) => void;
+    let finishCurrent!: (value: Response) => void;
+    let oldSignal: AbortSignal | null | undefined;
+    const oldResponse = new Promise<Response>((resolve, reject) => {
+      finishOld = resolve;
+      failOld = reject;
+    });
+    const currentResponse = new Promise<Response>(resolve => { finishCurrent = resolve; });
+    const currentResource = { ...resource, id: '35ac1e56-f429-41ca-b357-4bac757daf91',
+      display_name: 'Serviço atual', resource_type: 'service' };
+    inventoryHttp((url, options) => {
+      if (url.searchParams.get('resource_type') === 'service') return currentResponse;
+      oldSignal = options.signal;
+      // Deliberately ignore cancellation so the old request can still complete.
+      return oldResponse;
+    });
+
+    renderApp();
+    await screen.findByText('A carregar os recursos…');
+    expect(oldSignal?.aborted).toBe(false);
+    await userEvent.selectOptions(screen.getByLabelText('Tipo de recurso'), 'service');
+    expect(oldSignal?.aborted).toBe(true);
+
+    await act(async () => { finishCurrent(json(page([currentResource]))); });
+    expect(screen.getByRole('link', { name: /Serviço atual/ })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+    await act(async () => {
+      if (outcome === 'sucesso') finishOld(json(page([resource], { total: 51 })));
+      else failOld(new TypeError('Falha do pedido antigo'));
+    });
+    expect(screen.getByRole('link', { name: /Serviço atual/ })).toBeInTheDocument();
+    expect(screen.getByText(currentResource.id)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Router do laboratório/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(resource.id)).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByText('A carregar os recursos…')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Tipo de recurso')).toHaveValue('service');
+    expect(screen.getByRole('button', { name: 'Seguinte' })).toBeDisabled();
   });
 });
