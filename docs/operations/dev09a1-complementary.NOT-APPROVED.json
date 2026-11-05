@@ -1,0 +1,46 @@
+{
+  "type": "DEV09A1_COMPLEMENTARY_REVIEW_PROPOSAL",
+  "status": "NOT_APPROVED",
+  "active": false,
+  "executable": false,
+  "auth03_reference_sha256": "4819c697b7d12f7ab5cbb1fdfa9cf4c3fd0e98e93b53a60337296cc84036fc29",
+  "meaning": "Documentary source-integrity proposal only. Not AUTH-BOOT-02, G4 authorization, a signature, execution approval or an active verifier input.",
+  "required_sources": {
+    "backend/alembic-security.ini": "f43ed86b68499b4fb25d75421b30b75251433162b684a7e6a525274718fc0394",
+    "backend/security_migrations/__init__.py": "b450bd910d335f6ec45152bf01af5e8def18616670a430585aad3b7d5e81f677",
+    "backend/security_migrations/contract.py": "0a29cbc074907a4b9023709a7a8770ea5a48e1d000bcd0197255d4dcf49fb41b",
+    "backend/security_migrations/env.py": "0bafe798a46070a53ae27ba627e099004d0a3caec143538fe3e114f16a9e90c5",
+    "backend/security_migrations/versions/b12b01a7230_create_security.py": "3f29c6e630955f2548a7a0a481aa182deda1014cd4fdfbaa2fe39e55db356481",
+    "scripts/postgres/g4/contracts.py": "04531a6b9f2a33d2c6334dc025ef18b750014305716a9283e81db44dad257ffc",
+    "scripts/postgres/m12b_security_adapters.py": "66e2fa3ea5fccdcb6b4f3555babd2cd78dd3d8f6ddb2253d9687ef9ac584cba6",
+    "scripts/postgres/m12b_security_coordinator.py": "33415d4b4c51dbb03a6f67332cc77c63aebc87b7a8f90ba20da1abd79d7a012c",
+    "scripts/postgres/m12b_security_migration.py": "c2608a2c8d0391dc3e5960fe797d4c8f77be5165475cb0058de4f66dd51ed9fe",
+    "scripts/postgres/dev09a1_controlled.py": "f339f9bca8d910d1b5159448cd1aa079c566402c710ab279e71d18792ea5687e",
+    "scripts/postgres/g4/__init__.py": "72d36a952dcc361e7692ba1d8034d69bb6aaaf0a62e6d3b6f72d1488129bd337"
+  },
+  "blocked_sources": [
+    "scripts/postgres/m12b_security_coordinator.py",
+    "scripts/postgres/m12b_security_migration.py"
+  ],
+  "new_source_review_required": [
+    "scripts/postgres/dev09a1_controlled.py",
+    "scripts/dedicated/dev09a1_preflight.py",
+    "scripts/dedicated/dev09a1_fixture_probe.py",
+    "backend/tests/test_dev09a1_controlled.py"
+  ],
+  "external_dependencies": "stdlib plus existing Alembic/SQLAlchemy/psycopg and approved backend models; operational image/dependency closure not attested.",
+  "not_ready_for_operational_approval": [
+    "Historical target binding and mandatory gates cannot be changed here.",
+    "No authenticated external authorization authority or approved concrete target evidence.",
+    "New runtime image/source closure and durable operation registry/recovery channel require reviewed implementation."
+  ],
+  "human_action": "Review exact source bytes and blocked integration proposal. Approval of this document alone must not activate migrations.",
+  "additional_dependency_review": {
+    "path": "scripts/postgres/g4/__init__.py",
+    "purpose": "Package initializer loaded with g4.contracts; docstring only, no I/O. Outside historical 27, explicitly included for package integrity.",
+    "git_state": "untracked",
+    "provenance": "Preexisting local byte-identical file; no commit provenance.",
+    "recommendation": "ACEITAR_TECHNICAL_REVIEW_ONLY",
+    "tests": "scripts/postgres/tests/test_g4_boundaries.py in passing offline regression"
+  }
+}
