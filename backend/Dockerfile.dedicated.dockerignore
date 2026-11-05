@@ -1,0 +1,8 @@
+**
+!app/**/*.py
+!requirements.txt
+!requirements-dedicated.txt
+!requirements-container.constraints.txt
+!requirements-container.lock
+!dedicated_wsgi.py
+!gunicorn_container.conf.py

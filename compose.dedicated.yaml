@@ -1,0 +1,74 @@
+{
+  "name": "${DEV04_PROJECT:?Pending distinct approved project name}",
+  "x-dev04-state": "BLOCKED: descriptor only; all entrypoints exit 78; no activation authorized",
+  "services": {
+    "web": {
+      "image": "${DEV04_CADDY_IMAGE:?Pending approved Caddy 2.11.7 image digest}",
+      "build": {"context": "./infra/dedicated", "dockerfile": "Dockerfile.caddy", "args": {"DEV05_CADDY_BASE_IMAGE": "${DEV05_CADDY_BASE_IMAGE:?Required digest-pinned official Caddy source}"}},
+      "pull_policy": "never",
+      "profiles": ["dev04-blocked"],
+      "restart": "no",
+      "entrypoint": ["/bin/sh", "-c", "exit 78"],
+      "command": ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"],
+      "user": "10002:10002",
+      "read_only": true,
+      "cap_drop": ["ALL"],
+      "security_opt": ["no-new-privileges:true"],
+      "environment": {"XDG_DATA_HOME": "/data", "XDG_CONFIG_HOME": "/config", "LIVENET_ALLOWED_CLIENTS": "${DEV05_ALLOWED_CLIENTS:?Required explicitly approved internal client CIDRs separated by spaces}"},
+      "ports": [{"target": 8443, "published": "8443", "host_ip": "${DEV04_HTTPS_BIND_IP:?Pending approved host HTTPS address}", "protocol": "tcp"}],
+      "volumes": [
+        {"type": "bind", "source": "${DEV04_FRONTEND_DIST:?Pending absolute reviewed frontend build path}", "target": "/srv", "read_only": true, "bind": {"create_host_path": false}},
+        {"type": "bind", "source": "./infra/dedicated/Caddyfile", "target": "/etc/caddy/Caddyfile", "read_only": true, "bind": {"create_host_path": false}},
+        {"type": "volume", "source": "caddy_data", "target": "/data", "volume": {"nocopy": true}}
+      ],
+      "tmpfs": ["/config:rw,noexec,nosuid,nodev,size=16m,mode=1777", "/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777"],
+      "networks": {"edge": {}, "api": {"ipv4_address": "${DEV04_CADDY_IPV4:?Pending exact approved Caddy peer on API network}"}}
+    },
+    "backend": {
+      "image": "${DEV04_BACKEND_IMAGE:?Pending reviewed dedicated backend image reference}",
+      "pull_policy": "never",
+      "build": {"context": "./backend", "dockerfile": "Dockerfile.dedicated", "args": {"DEV04_PYTHON_IMAGE": "${DEV04_PYTHON_IMAGE:?Pending approved Python 3.12 slim image digest}"}},
+      "profiles": ["dev04-blocked"],
+      "restart": "no",
+      "entrypoint": ["/bin/sh", "-c", "exit 78"],
+      "command": ["gunicorn", "--config", "/app/gunicorn_container.conf.py", "dedicated_wsgi:create_app('/run/livenet/backend.json')"],
+      "user": "10001:10001",
+      "read_only": true,
+      "cap_drop": ["ALL"],
+      "security_opt": ["no-new-privileges:true"],
+      "volumes": [
+        {"type": "bind", "source": "${DEV04_BACKEND_CONFIG:?Pending absolute private backend JSON path}", "target": "/run/livenet/backend.json", "read_only": true, "bind": {"create_host_path": false}},
+        {"type": "bind", "source": "${DEV04_RUNTIME_PASSWORD_FILE:?Pending absolute private runtime credential path}", "target": "/run/livenet/runtime_password", "read_only": true, "bind": {"create_host_path": false}},
+        {"type": "bind", "source": "${DEV04_CSRF_KEY_FILE:?Pending absolute private CSRF key path}", "target": "/run/livenet/csrf_key", "read_only": true, "bind": {"create_host_path": false}}
+      ],
+      "tmpfs": ["/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777"],
+      "networks": {"api": {}, "data": {}}
+    },
+    "db": {
+      "image": "${DEV04_POSTGRES_IMAGE:?Pending approved PostgreSQL 16 image digest}",
+      "pull_policy": "never",
+      "profiles": ["dev04-blocked"],
+      "restart": "no",
+      "entrypoint": ["/bin/sh", "-c", "exit 78"],
+      "command": ["postgres"],
+      "environment": {
+        "POSTGRES_DB": "${DEV04_DB_NAME:?Pending approved dedicated database name}",
+        "POSTGRES_USER": "${DEV04_DB_BOOTSTRAP_ROLE:?Pending separately approved administration role}",
+        "POSTGRES_PASSWORD_FILE": "/run/postgres-bootstrap/password",
+        "POSTGRES_INITDB_ARGS": "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+      },
+      "security_opt": ["no-new-privileges:true"],
+      "volumes": [
+        {"type": "volume", "source": "postgres_data", "target": "/var/lib/postgresql/data", "volume": {"nocopy": true}},
+        {"type": "bind", "source": "${DEV04_PG_ADMIN_PASSWORD_FILE:?Pending absolute separately approved administration credential path}", "target": "/run/postgres-bootstrap/password", "read_only": true, "bind": {"create_host_path": false}}
+      ],
+      "networks": {"data": {}}
+    }
+  },
+  "volumes": {"postgres_data": {}, "caddy_data": {}},
+  "networks": {
+    "edge": {"driver": "bridge"},
+    "api": {"driver": "bridge", "internal": true, "ipam": {"config": [{"subnet": "${DEV04_API_SUBNET:?Pending non-overlapping approved API subnet}"}]}},
+    "data": {"driver": "bridge", "internal": true, "ipam": {"config": [{"subnet": "${DEV04_DATA_SUBNET:?Pending distinct approved data subnet}"}]}}
+  }
+}

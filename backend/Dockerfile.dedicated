@@ -1,0 +1,20 @@
+# Dedicated runtime; DEV-05B uses a platform-specific hash-locked wheel set.
+# A reviewed Python 3.12 slim image reference with digest must be supplied.
+ARG DEV04_PYTHON_IMAGE
+FROM ${DEV04_PYTHON_IMAGE}
+
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /app
+
+COPY requirements-container.lock ./
+RUN pip install --index-url https://pypi.org/simple --only-binary=:all: --require-hashes --no-cache-dir --no-compile -r requirements-container.lock
+RUN pip check
+
+# Allowlisted runtime sources only: no migrations, credentials or host config.
+COPY app ./app
+COPY dedicated_wsgi.py gunicorn_container.conf.py ./
+
+USER 10001:10001
+EXPOSE 8000
+HEALTHCHECK NONE
+CMD ["gunicorn", "--config", "/app/gunicorn_container.conf.py", "dedicated_wsgi:create_app('/run/livenet/backend.json')"]

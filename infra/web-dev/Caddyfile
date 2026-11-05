@@ -1,0 +1,41 @@
+{
+	admin off
+	persist_config off
+	auto_https disable_redirects
+	skip_install_trust
+	https_port 8443
+	servers {
+		protocols h1 h2
+	}
+}
+
+https://livenet-v2.home.arpa:8443 {
+	tls internal
+	root * /srv
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+	}
+
+	# Reserve both the exact API root and all its descendants before UI handling.
+	@api path /api/v1 /api/v1/*
+	handle @api {
+		header Content-Type "application/json; charset=utf-8"
+		header Cache-Control "no-store"
+		respond `{"error":{"code":"api_unavailable","message":"API indisponível nesta etapa."}}` 503
+	}
+
+	# SPA fallback is restricted to the currently implemented UI routes.
+	@ui path / /login /login/ /inventory /inventory/*
+	handle @ui {
+		header Cache-Control "no-store"
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Existing assets are served normally; unknown paths/assets remain HTTP 404.
+	handle {
+		file_server
+	}
+}

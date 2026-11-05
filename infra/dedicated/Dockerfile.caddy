@@ -1,0 +1,7 @@
+# Required digest-pinned official Caddy source. No packages or downloads added.
+ARG DEV05_CADDY_BASE_IMAGE
+FROM ${DEV05_CADDY_BASE_IMAGE}
+# Port 8443 needs no privileged capability. The upstream file capability would
+# make exec fail with EPERM under cap_drop ALL; never grant it to work around this.
+RUN setcap -r /usr/bin/caddy
+USER 10002:10002

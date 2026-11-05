@@ -1,0 +1,53 @@
+{
+	admin off
+	persist_config off
+	auto_https disable_redirects
+	skip_install_trust
+	https_port 8443
+	servers {
+		strict_sni_host on
+		protocols h1 h2
+	}
+}
+
+# Explicit client CIDRs are required; descriptor remains operationally blocked.
+https://livenet-v2.home.arpa:8443 {
+	tls internal
+	root * /srv
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+	}
+
+	route {
+		@outside not remote_ip {$LIVENET_ALLOWED_CLIENTS}
+		respond @outside 403
+
+		@api path /api/v1 /api/v1/*
+		handle @api {
+			route {
+				# Strip incoming forwarding claims BEFORE constructing proxy headers.
+				request_header -Forwarded
+				request_header -X-Forwarded-*
+				reverse_proxy backend:8000 {
+					header_up Host livenet-v2.home.arpa:8443
+					header_up X-Forwarded-Host livenet-v2.home.arpa:8443
+					header_up X-Forwarded-Proto https
+					header_up X-Forwarded-For {http.request.remote.host}
+					header_up X-Forwarded-Port 8443
+				}
+			}
+		}
+
+		@ui path / /login /login/ /inventory /inventory/*
+		handle @ui {
+			header Cache-Control no-store
+			try_files {path} /index.html
+			file_server
+		}
+
+		handle {
+			file_server
+		}
+	}
+}
