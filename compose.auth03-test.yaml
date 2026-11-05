@@ -1,0 +1,39 @@
+name: livenetv2-auth03-test
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: "no"
+
+    environment:
+      POSTGRES_DB: livenet_auth03_test
+      POSTGRES_USER: livenet
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+
+    secrets:
+      - db_password
+
+    volumes:
+      - auth03_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U livenet -d livenet_auth03_test
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - auth03_backend
+
+secrets:
+  db_password:
+    file: ./secrets/auth03_db_password.txt
+
+volumes:
+  auth03_postgres_data:
+
+networks:
+  auth03_backend:
+    internal: true

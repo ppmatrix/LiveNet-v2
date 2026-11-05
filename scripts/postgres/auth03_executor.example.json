@@ -1,0 +1,15 @@
+{
+  "project": "livenetv2-auth03-test",
+  "database": "livenet_auth03_test",
+  "system_identifier": "7698845469694267426",
+  "username": "livenet",
+  "host": "livenetv2-auth03-test-db-1",
+  "container_id": "PREENCHER_ID_COMPLETO_VALIDADO_DO_DB",
+  "network_id": "PREENCHER_ID_COMPLETO_VALIDADO_DA_REDE",
+  "db_image_id": "PREENCHER_SHA256_VALIDADO_DA_IMAGEM_DB",
+  "executor_id": "PREENCHER_ID_COMPLETO_VALIDADO_DO_EXECUTOR",
+  "executor_image_id": "PREENCHER_SHA256_VALIDADO_DA_IMAGEM_EXECUTOR",
+  "volume_created_at": "PREENCHER_CREATEDAT_VALIDADO_DO_VOLUME",
+  "uid": 10001,
+  "gid": 10001
+}

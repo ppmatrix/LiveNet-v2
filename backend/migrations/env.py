@@ -45,6 +45,10 @@ def run_migrations_online():
 
     external_connection = config.attributes.get("connection")
 
+    if (config.attributes.get("auth03_require_external_connection")
+            and external_connection is None):
+        raise RuntimeError("AUTH-03 exige ligacao Alembic externa explicita")
+
     if external_connection is not None:
         execute_migrations(external_connection)
         return

@@ -1,0 +1,419 @@
+"""Executor exclusivo AUTH-03. Etapa 209D.24: mutacoes sempre bloqueadas.
+
+CLI host -> preflight Docker -> docker exec no executor previamente criado.
+Nenhuma operacao corre ao importar este modulo. Nao depende de F0.66C.
+"""
+
+import argparse
+from dataclasses import dataclass
+from hashlib import sha256
+import ipaddress
+import json
+import os
+from pathlib import Path
+import re
+import stat
+import subprocess
+import sys
+import time
+
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import URL
+from sqlalchemy.pool import NullPool
+
+
+ROOT = Path(__file__).resolve().parents[2]
+PROJECT = "livenetv2-auth03-test"
+DATABASE = "livenet_auth03_test"
+SYSTEM_IDENTIFIER = "7698845469694267426"
+DB_CONTAINER = PROJECT + "-db-1"
+NETWORK = PROJECT + "_auth03_backend"
+VOLUME = PROJECT + "_auth03_postgres_data"
+PREVIOUS = "f066a01a7230"
+AUTH03 = "f067a01a7230"
+MANIFEST = "scripts/postgres/auth03_executor_integrity.json"
+SECRET = "/run/secrets/auth03_db_password"
+READ_OPERATIONS = ("inspect", "verify-revision")
+MUTATIONS = {
+    "upgrade-baseline": (None, PREVIOUS),
+    "upgrade-auth03": (PREVIOUS, AUTH03),
+    "downgrade-auth03": (AUTH03, PREVIOUS),
+}
+OPERATIONS = ("preflight", *READ_OPERATIONS, *MUTATIONS)
+
+
+class Refused(Exception):
+    """Erro deliberadamente sem detalhes externos ou credenciais."""
+
+
+def require(condition, message):
+    if not condition:
+        raise Refused(message)
+
+
+def operation_gate(operation):
+    require(operation in OPERATIONS, "Operacao nao permitida")
+    # Nao existe flag, variavel, ficheiro ou token que habilite DDL nesta etapa.
+    require(operation not in MUTATIONS, "Mutacoes bloqueadas na etapa 209D.24")
+
+
+@dataclass(frozen=True)
+class MigrationPlan:
+    operation: str
+    source: str | None
+    target: str
+
+
+def migration_plan(operation, source, target):
+    """Validacao pura do plano futuro; nao concede autorizacao operacional."""
+    require(operation in MUTATIONS, "Operacao modificadora desconhecida")
+    require((source, target) == MUTATIONS[operation], "Origem/destino nao permitidos")
+    return MigrationPlan(operation, source, target)
+
+
+def authorization_scope(plan, config, bundle_digest):
+    """Campos a vincular numa futura autorizacao externa; nao emite aprovacao."""
+    migration_plan(plan.operation, plan.source, plan.target)
+    validate_config(config)
+    return {
+        "project": PROJECT, "database": DATABASE,
+        "system_identifier": SYSTEM_IDENTIFIER,
+        "container_id": config["container_id"],
+        "network_id": config["network_id"], "volume": VOLUME,
+        "volume_created_at": config["volume_created_at"],
+        "executor_id": config["executor_id"],
+        "operation": plan.operation, "source": plan.source, "target": plan.target,
+        "bundle_sha256": bundle_digest,
+    }
+
+
+def private_read(path, max_bytes=16384):
+    """Leitura limitada, no mesmo fd, sem symlink; adapta padroes locais F066C."""
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
+    try:
+        before = os.fstat(fd)
+        require(stat.S_ISREG(before.st_mode), "Ficheiro privado irregular")
+        require(before.st_uid == os.getuid(), "Proprietario de ficheiro inesperado")
+        require(stat.S_IMODE(before.st_mode) == 0o600, "Ficheiro exige modo 0600")
+        require(before.st_nlink == 1 and before.st_size <= max_bytes, "Ficheiro privado inseguro")
+        payload = os.read(fd, max_bytes + 1)
+        after = os.fstat(fd)
+        require(
+            (before.st_size, before.st_mtime_ns, before.st_ctime_ns)
+            == (after.st_size, after.st_mtime_ns, after.st_ctime_ns)
+            and len(payload) == before.st_size,
+            "Ficheiro alterado durante leitura",
+        )
+        return payload
+    finally:
+        os.close(fd)
+
+
+def validate_config(config):
+    fixed = {
+        "project": PROJECT, "database": DATABASE,
+        "system_identifier": SYSTEM_IDENTIFIER,
+        "username": "livenet", "host": DB_CONTAINER,
+    }
+    keys = set(fixed) | {
+        "container_id", "network_id", "db_image_id", "executor_id",
+        "executor_image_id", "volume_created_at", "uid", "gid",
+    }
+    require(isinstance(config, dict) and set(config) == keys, "Configuracao incompleta ou desconhecida")
+    require(all(config[k] == v for k, v in fixed.items()), "Identidade AUTH-03 nao autorizada")
+    for key in ("container_id", "network_id", "executor_id"):
+        require(isinstance(config[key], str) and re.fullmatch(r"[0-9a-f]{64}", config[key]), "ID Docker invalido")
+    for key in ("db_image_id", "executor_image_id"):
+        require(isinstance(config[key], str) and re.fullmatch(r"sha256:[0-9a-f]{64}", config[key]), "Imagem nao fixada")
+    require(isinstance(config["volume_created_at"], str) and bool(config["volume_created_at"]), "Volume sem proveniencia")
+    for key in ("uid", "gid"):
+        require(type(config[key]) is int and config[key] > 0, "Executor exige UID/GID nao privilegiado")
+    return config
+
+
+def verify_bundle(root=ROOT):
+    """Manifesto revisto, nunca regenerado automaticamente durante execucao."""
+    raw = (root / MANIFEST).read_bytes()
+    manifest = json.loads(raw)
+    expected = {
+        str(path.relative_to(root))
+        for directory in ("backend/app", "backend/migrations")
+        for path in (root / directory).rglob("*.py")
+    } | {"backend/alembic.ini", "backend/requirements.txt",
+         "scripts/postgres/auth03_alembic_executor.py"}
+    require(set(manifest) == expected, "Conjunto de fontes divergente do manifesto")
+    for name, digest in manifest.items():
+        path = root / name
+        require(not path.is_symlink() and path.is_file(), "Fonte irregular")
+        require(sha256(path.read_bytes()).hexdigest() == digest, "Integridade de fontes divergente")
+    return sha256(raw).hexdigest()
+
+
+def docker_json(kind, identifier):
+    result = subprocess.run(
+        ["docker", kind, "inspect", identifier], capture_output=True,
+        text=True, timeout=15, check=False,
+    )
+    require(result.returncode == 0, "Inspecao Docker falhou")
+    payload = json.loads(result.stdout)
+    require(isinstance(payload, list) and len(payload) == 1, "Resposta Docker inesperada")
+    return payload[0]
+
+
+def labels_match(labels, logical_key, logical_value):
+    return (labels.get("com.docker.compose.project") == PROJECT
+            and labels.get("com.docker.compose." + logical_key) == logical_value)
+
+
+def validate_docker(config, db, network, volume, runner):
+    """Somente dados Docker previamente recolhidos; funcao testavel offline."""
+    require(db["Id"] == config["container_id"] and db["Name"] == "/" + DB_CONTAINER, "Container DB inesperado")
+    require(db["Image"] == config["db_image_id"] and db["Config"]["Image"] == "postgres:16-alpine", "Imagem DB inesperada")
+    require(labels_match(db["Config"].get("Labels", {}), "service", "db"), "Projeto/servico DB inesperado")
+    require(db["State"]["Running"] and db["State"]["Health"]["Status"] == "healthy", "DB indisponivel")
+    for container in (db, runner):
+        require(not container["HostConfig"].get("PortBindings")
+                and not any(container["NetworkSettings"].get("Ports", {}).values()), "Portas publicadas")
+        require(not container["HostConfig"].get("Privileged")
+                and container["HostConfig"].get("NetworkMode") not in ("host", "none"), "Isolamento Docker invalido")
+        require(set(container["NetworkSettings"]["Networks"]) == {NETWORK}, "Rede adicional ou incorreta")
+        require(container["NetworkSettings"]["Networks"][NETWORK]["NetworkID"] == config["network_id"], "ID de rede incorreto")
+    require(network["Id"] == config["network_id"] and network["Name"] == NETWORK
+            and network["Internal"] and network["Driver"] == "bridge"
+            and labels_match(network.get("Labels", {}), "network", "auth03_backend"), "Proveniencia da rede invalida")
+    require(set(network.get("Containers", {})) == {config["container_id"], config["executor_id"]}, "Membros inesperados na rede")
+    require(volume["Name"] == VOLUME and volume["Driver"] == "local"
+            and not volume.get("Options")
+            and volume["CreatedAt"] == config["volume_created_at"]
+            and labels_match(volume.get("Labels", {}), "volume", "auth03_postgres_data"), "Proveniencia do volume invalida")
+    mounts = db["Mounts"]
+    data = [m for m in mounts if m["Destination"] == "/var/lib/postgresql/data"]
+    require(len(data) == 1 and data[0]["Type"] == "volume" and data[0]["Name"] == VOLUME, "Mount de dados invalido")
+    db_secret = [m for m in mounts if m["Destination"] == "/run/secrets/db_password"]
+    secret_source = str(ROOT / "secrets/auth03_db_password.txt")
+    require(len(mounts) == 2 and len(db_secret) == 1
+            and db_secret[0]["Type"] == "bind" and not db_secret[0]["RW"]
+            and db_secret[0]["Source"] == secret_source, "Secret DB inesperado")
+    environment = dict(item.split("=", 1) for item in db["Config"]["Env"] if "=" in item)
+    require(environment.get("POSTGRES_DB") == DATABASE and environment.get("POSTGRES_USER") == "livenet"
+            and environment.get("POSTGRES_PASSWORD_FILE") == "/run/secrets/db_password"
+            and "POSTGRES_PASSWORD" not in environment, "Configuracao DB inesperada")
+    require(runner["Id"] == config["executor_id"] and runner["Image"] == config["executor_image_id"]
+            and runner["State"]["Running"] and runner["Name"] == "/" + PROJECT + "-executor-1"
+            and labels_match(runner["Config"].get("Labels", {}), "service", "executor"), "Executor inesperado")
+    host_config = runner["HostConfig"]
+    require(runner["Config"]["User"] == f'{config["uid"]}:{config["gid"]}'
+            and host_config.get("ReadonlyRootfs")
+            and "ALL" in host_config.get("CapDrop", [])
+            and not host_config.get("CapAdd")
+            and "no-new-privileges:true" in host_config.get("SecurityOpt", [])
+            and not host_config.get("PidMode") and not host_config.get("Devices"), "Privilegios do executor inseguros")
+    runner_mounts = [m for m in runner["Mounts"] if m["Type"] != "tmpfs"]
+    require(len(runner_mounts) == 1 and runner_mounts[0]["Type"] == "bind"
+            and runner_mounts[0]["Destination"] == SECRET
+            and runner_mounts[0]["Source"] == secret_source and not runner_mounts[0]["RW"], "Mounts do executor inseguros")
+    require(not any(item.split("=", 1)[0].startswith(("PG", "DATABASE_", "F066C_", "AUTH03_"))
+                    for item in runner["Config"].get("Env", [])), "Ambiente implicito no executor")
+    return str(ipaddress.IPv4Address(db["NetworkSettings"]["Networks"][NETWORK]["IPAddress"]))
+
+
+def host_preflight(config):
+    db = docker_json("container", config["container_id"])
+    network = docker_json("network", config["network_id"])
+    volume = docker_json("volume", VOLUME)
+    runner = docker_json("container", config["executor_id"])
+    address = validate_docker(config, db, network, volume, runner)
+    secret = ROOT / "secrets/auth03_db_password.txt"
+    info = secret.lstat()  # Metadados apenas; o host nao le a password.
+    require(stat.S_ISREG(info.st_mode) and info.st_nlink == 1
+            and stat.S_IMODE(info.st_mode) == 0o600 and info.st_uid == config["uid"], "Secret host inseguro")
+    return {"db_ipv4": address, "issued_at": time.time(), "bundle_sha256": verify_bundle()}
+
+
+def alembic_config(connection):
+    """Sem ficheiro ini/logging externo, sem URL e sem fallback de producao."""
+    require(connection is not None, "Ligacao Alembic obrigatoria")
+    config = Config()
+    config.set_main_option("script_location", str(ROOT / "backend/migrations"))
+    config.attributes["connection"] = connection
+    config.attributes["auth03_require_external_connection"] = True
+    return config
+
+
+def invoke_migration(connection, plan):
+    """Interface preparada mas irremediavelmente bloqueada nesta versao."""
+    migration_plan(plan.operation, plan.source, plan.target)
+    operation_gate(plan.operation)
+    # A ativacao futura exige implementar e rever a autorizacao operacional.
+    # Este ramo so pode tornar-se alcancavel mediante alteracao revista de codigo.
+    config = alembic_config(connection)
+    if plan.operation == "downgrade-auth03":
+        command.downgrade(config, PREVIOUS)
+    else:
+        command.upgrade(config, plan.target)
+
+
+def future_transaction_preflight(connection, plan, config, address):
+    """Primitiva futura: mesma transacao para lock, identidade, origem e DDL.
+
+    Nao e exposta por CLI, nao autoriza nem executa migracoes.
+    """
+    migration_plan(plan.operation, plan.source, plan.target)
+    validate_config(config)
+    verify_bundle()
+    require(connection.in_transaction(), "Transacao exterior obrigatoria")
+    require(connection.execute(text(
+        "SELECT pg_catalog.pg_try_advisory_xact_lock(209024, 3)"
+    )).scalar_one(), "Outra operacao AUTH-03 em curso")
+    state = read_database_state(connection, config, address)
+    require(state["revision"] == plan.source, "Revisao de origem inesperada")
+    return state
+
+
+def read_database_state(connection, config, address):
+    row = connection.execute(text(
+        "SELECT current_database(), current_user, session_user, "
+        "inet_server_addr()::text, inet_server_port(), "
+        "current_setting('server_version_num')::integer"
+    )).one()
+    row = tuple(row)
+    require(isinstance(row[3], str) and isinstance(address, str), "Endereco IPv4 da sessao PostgreSQL invalido")
+    try:
+        server_address = ipaddress.IPv4Interface(row[3]).ip
+        docker_address = ipaddress.IPv4Address(address)
+    except ValueError:
+        raise Refused("Endereco IPv4 da sessao PostgreSQL invalido") from None
+    require(row[:3] + (server_address,) + row[4:]
+            == (DATABASE, "livenet", "livenet", docker_address, 5432, 160010),
+            "Identidade da sessao PostgreSQL inesperada")
+    require(connection.execute(text(
+        "SELECT pg_catalog.has_function_privilege(current_user, "
+        "'pg_catalog.pg_control_system()', 'EXECUTE')"
+    )).scalar_one(), "Consulta de identidade PostgreSQL indisponivel")
+    identifier = str(connection.execute(text(
+        "SELECT system_identifier FROM pg_catalog.pg_control_system()"
+    )).scalar_one())
+    require(identifier == config["system_identifier"] == SYSTEM_IDENTIFIER, "Identificador PostgreSQL incorreto")
+    exists = connection.execute(text("SELECT to_regclass('public.alembic_version') IS NOT NULL")).scalar_one()
+    revision = None
+    if exists:
+        revisions = connection.execute(text("SELECT version_num FROM public.alembic_version")).scalars().all()
+        require(len(revisions) == 1 and revisions[0] in (PREVIOUS, AUTH03), "Estado Alembic inesperado")
+        revision = revisions[0]
+    relations = connection.execute(text(
+        "SELECT n.nspname, c.relname FROM pg_catalog.pg_class c "
+        "JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace "
+        "WHERE n.nspname NOT IN ('pg_catalog', 'information_schema') "
+        "AND n.nspname NOT LIKE 'pg_toast%' AND n.nspname NOT LIKE 'pg_temp%' "
+        "AND c.relkind IN ('r', 'p', 'v', 'm', 'S', 'f') ORDER BY 1, 2"
+    )).all()
+    if revision is None:
+        require(not relations, "Base sem revisao contem relacoes inesperadas")
+    schemas = set(connection.execute(text(
+        "SELECT nspname FROM pg_catalog.pg_namespace "
+        "WHERE nspname NOT LIKE 'pg_%' AND nspname <> 'information_schema'"
+    )).scalars().all())
+    expected_schemas = {"public"}
+    if revision is not None:
+        expected_schemas |= {"inventory", "audit"}
+    if revision == AUTH03:
+        expected_schemas.add("authorization")
+        require(("authorization", "authorization_integrity_anchors") in relations,
+                "Tabela AUTH-03 ausente")
+    require(schemas == expected_schemas, "Esquemas de origem inesperados")
+    return {"revision": revision, "relations": [list(row) for row in relations]}
+
+
+def runner_read(operation, config, evidence, expected_revision=None):
+    operation_gate(operation)
+    require(operation in READ_OPERATIONS, "Operacao de runner invalida")
+    validate_config(config)
+    require(expected_revision in (None, PREVIOUS, AUTH03, "empty"), "Revisao esperada nao permitida")
+    require(operation != "verify-revision" or expected_revision is not None, "Revisao esperada obrigatoria")
+    require(not any(key.startswith(("PG", "DATABASE_", "F066C_", "AUTH03_")) for key in os.environ), "Ambiente PostgreSQL implicito proibido")
+    require(0 <= time.time() - evidence["issued_at"] <= 30, "Preflight expirado")
+    require(verify_bundle() == evidence["bundle_sha256"], "Bundle diferente do host")
+    address = str(ipaddress.IPv4Address(evidence["db_ipv4"]))
+    password = private_read(SECRET, 8192).decode("utf-8").rstrip("\r\n")
+    require(password and "\n" not in password and "\r" not in password, "Formato de secret invalido")
+    url = URL.create("postgresql+psycopg", username="livenet", password=password,
+                     host=address, port=5432, database=DATABASE)
+    engine = create_engine(url, poolclass=NullPool, echo=False, hide_parameters=True,
+                           connect_args={"connect_timeout": 5, "options": "-c default_transaction_read_only=on -c statement_timeout=10000 -c lock_timeout=2000"})
+    try:
+        with engine.connect() as connection:
+            transaction = connection.begin()
+            try:
+                state = read_database_state(connection, config, address)
+                if operation == "verify-revision":
+                    require(state["revision"] == (None if expected_revision == "empty" else expected_revision), "Revisao diferente da esperada")
+                return state
+            finally:
+                transaction.rollback()
+    finally:
+        engine.dispose()
+
+
+def host_run(operation, config, expected_revision=None):
+    operation_gate(operation)  # Antes de Docker, secrets ou sockets.
+    validate_config(config)
+    require(expected_revision in (None, PREVIOUS, AUTH03, "empty"), "Revisao esperada nao permitida")
+    require(operation != "verify-revision" or expected_revision is not None, "Revisao esperada obrigatoria")
+    first = host_preflight(config)
+    if operation == "preflight":
+        return {"docker_preflight": "validated", "postgresql": "not-contacted"}
+    # Segunda recolha imediatamente antes de exec: IDs, mount e IP devem manter-se.
+    second = host_preflight(config)
+    require(first["db_ipv4"] == second["db_ipv4"]
+            and first["bundle_sha256"] == second["bundle_sha256"], "Ambiente alterado entre preflights")
+    payload = json.dumps({"config": config, "evidence": second})
+    command = ["docker", "exec", "-i", config["executor_id"], "python",
+               "/opt/auth03/scripts/postgres/auth03_alembic_executor.py", "--runner", operation]
+    if expected_revision is not None:
+        command += ["--expected-revision", expected_revision]
+    result = subprocess.run(command, input=payload, text=True, capture_output=True, timeout=45, check=False)
+    require(result.returncode == 0, "Inspecao no executor falhou; sem retry")
+    third = host_preflight(config)
+    require(third["db_ipv4"] == second["db_ipv4"]
+            and third["bundle_sha256"] == second["bundle_sha256"], "Ambiente alterado durante inspecao")
+    state = json.loads(result.stdout)
+    require(isinstance(state, dict) and set(state) == {"revision", "relations"}, "Resposta do executor invalida")
+    # A saida publica nao reencaminha stdout/stderr externos nem dados arbitrarios.
+    require(state["revision"] in (None, PREVIOUS, AUTH03), "Revisao devolvida invalida")
+    return {"revision": state["revision"], "inspection": "validated"}
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--runner", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--config", type=Path)
+    parser.add_argument("operation", choices=OPERATIONS)
+    parser.add_argument("--expected-revision", choices=("empty", PREVIOUS, AUTH03))
+    args = parser.parse_args(argv)
+    try:
+        operation_gate(args.operation)
+        if args.runner:
+            require(args.config is None, "Runner recebe contexto apenas por stdin")
+            raw = sys.stdin.buffer.read(65537)
+            require(len(raw) <= 65536, "Contexto excede limite")
+            payload = json.loads(raw)
+            result = runner_read(args.operation, payload["config"], payload["evidence"], args.expected_revision)
+        else:
+            require(args.config is not None, "Configuracao explicita obrigatoria")
+            config = json.loads(private_read(args.config))
+            result = host_run(args.operation, config, args.expected_revision)
+        print(json.dumps(result, sort_keys=True))
+        return 0
+    except Refused as error:
+        print("AUTH-03: " + str(error), file=sys.stderr)
+        return 2
+    except Exception:
+        # Nunca imprimir excecoes DBAPI/Docker/configuracao nem traceback com DSN.
+        print("AUTH-03: falha segura; sem retry; rever o estado antes de nova tentativa", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
