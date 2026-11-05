@@ -1,0 +1,1837 @@
+{
+  "artifact_type": "DEV08B_REVIEW_ENVELOPE_NOT_AN_ACTIVE_MANIFEST",
+  "status": "NOT_APPROVED",
+  "active": false,
+  "executable": false,
+  "digest_algorithm": "SHA256",
+  "payload_serialization": "UTF-8 of json.dumps(payload, sort_keys=True, ensure_ascii=True, separators=(',', ':'), allow_nan=False), without newline",
+  "projection_serialization": "UTF-8 of json.dumps(payload.proposed_manifest, sort_keys=True, ensure_ascii=True, indent=2, allow_nan=False) plus one LF",
+  "payload_sha256": "cde103b540b6f3f99956f92e600c33ec1e96a9bf5865ff589e81ab17e0a0a6f7",
+  "proposed_manifest_sha256": "4819c697b7d12f7ab5cbb1fdfa9cf4c3fd0e98e93b53a60337296cc84036fc29",
+  "payload": {
+    "id": "DEV-08B-AUTH03-CANDIDATE-01",
+    "status": "NOT_APPROVED",
+    "active": false,
+    "executable": false,
+    "date": "2026-10-25",
+    "human_authority": {
+      "source_attachment": "9e646608-e14d-4575-8d04-84eaa4ca6301/Pasted text.txt",
+      "approved_scope": "DEV-08-D01/D02; DEV-08-D03 phase 1 process only",
+      "candidate_content_approved": false
+    },
+    "baseline": {
+      "branch": "main",
+      "head": "647179c928888adfeef0f69f582fd13c5fc17350",
+      "index_sha256": "50d32095da16e2c0e985226625971e890c33d406cbb9b97743a7198905b9541e",
+      "active_manifest_path": "scripts/postgres/auth03_executor_integrity.json",
+      "active_manifest_sha256": "7a9993faba2af675f46bd53daea96f9e4980624c3ef07f4d5af6cdfdfbe7c326"
+    },
+    "scope": "Current verify_bundle exact source set only; metadata and supplemental inventory are not manifest entries. This is not an I2/F03/F04 or G4 authorization format.",
+    "counts": {
+      "proposed_sources": 52,
+      "missing_entries": 21,
+      "hash_replacements": 4,
+      "unchanged_entries": 27,
+      "divergences_tracked_clean": 16,
+      "divergences_local_untracked": 9,
+      "all_sources_local_untracked": 11,
+      "all_sources_tracked_modified": 1,
+      "supplemental_outside_scope": 27
+    },
+    "proposed_manifest": {
+      "backend/alembic.ini": "0f2ce09203f8b1dbc1f02965d85339ad455c22f267e79d79c169e3ec412eb9dc",
+      "backend/app/__init__.py": "0b5d3abe007956211c0bd8167641a991388f9dd0a50d6873124e91c0ed001862",
+      "backend/app/audit/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "backend/app/audit/models.py": "fd65ea8eb10b15193f2706319ff5f4a9ff855a2a769ae1e625766c3886ed4da9",
+      "backend/app/audit/service.py": "89c9fb3b52154b1f5db72c935d70f78d130896c5c5030dc669df3fc8a0ea4e95",
+      "backend/app/config.py": "05e82252427e37e47bf0e40162f1377e95a26a0297d6725261df83266c2535f9",
+      "backend/app/core/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "backend/app/core/database.py": "5da5e8dbd5d439a15292ee41aec36743a31e3c7639f4531c0465c19d3df4f0d1",
+      "backend/app/core/model_registry.py": "6b9db8825e03e894b4f07870459c2ad64cf14687e1abfcddc255bca77a0efb19",
+      "backend/app/core/models.py": "9e6e1e48f5dac830be7c9dd5b903d96d10acdb47db54f5d37425c7eeb79a36ee",
+      "backend/app/dedicated.py": "1a4472e6f06937da0966dccf36542b2ed79a0d4505a019b1b18c192de00e7a2c",
+      "backend/app/health/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "backend/app/health/routes.py": "197204afc1549b4b9fb595bb77b95fc86865872f8109ac495d3b4cc60c543d70",
+      "backend/app/inventory/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "backend/app/inventory/access.py": "36a5c4d296d843501a6c520499b1f3420cb7d530c7f52dbab2645f9f508f7230",
+      "backend/app/inventory/models.py": "cb732cd6c1176201e8277fbad16b0affd268ca7f5b76ad9a5a53586d516df61a",
+      "backend/app/inventory/routes.py": "eb3b427c34fc2f32cf50869a94cb82fa60de282bac46f8175833827482f24830",
+      "backend/app/inventory/schemas.py": "1cabfe694f36c70f5191937070e3b0b67f54b25e5d66864f9e7a492ea9f8bca5",
+      "backend/app/inventory/service.py": "030950ae2b4f8b0d48cf7d880cd3975ac5528554b4fb111814e42a34a4814e1c",
+      "backend/app/postgres_tls.py": "ca3566de364821d1f676954f6ce28646683c6a873da7b58a94c8ccc8c8d10b19",
+      "backend/app/readiness.py": "b91aeb511c7699b98493d6d70545b43e705b022b73734d4713de97e7edf4f69c",
+      "backend/app/readiness_postgres/__init__.py": "7df4b413bf7470326d725b74aa8b3ebab175e86e825203b78601ff0f966afcc1",
+      "backend/app/readiness_postgres/adapter.py": "fe40580c13d92ac68a28b25528932261c127210efb62d4ae18f940b5dd0e8aaf",
+      "backend/app/readiness_postgres/evaluate.py": "0137f9343672a95fc0138b9e6ac5207fdb23b468162dce65b5867fd2758210d5",
+      "backend/app/readiness_postgres/policy.py": "7dc4100d063e4cb3c09957e8fb117f2b84fddc7b5b28f73f57422061042bff81",
+      "backend/app/readiness_postgres/queries.py": "9ddad5dc61f2c5f81ca5db8e410064e506b9a93607b3f2cde3add86c3ad1ed2b",
+      "backend/app/security/__init__.py": "708f803fc69da2555dfc1f5b2911ea7cd81b2ae9696d13041d2ac4c045c50ee0",
+      "backend/app/security/access.py": "95570f1bd16179f19013669bc9039a414e15193a03ec697e25b5fccdaa4987c0",
+      "backend/app/security/csrf.py": "6c7ee69a3a7fea36d9fc8ec7314186aaa3d0b422b00ccc47dded844092148d8c",
+      "backend/app/security/errors.py": "3b6b8f45bea6603b71e15328c1006dd7e7db2343109afed86018be6f55c1cc7e",
+      "backend/app/security/models.py": "cf4b247d04831018ca5156cbe12e7fc9924883694587584972892f7d9e716c5c",
+      "backend/app/security/policy.py": "b42edd0deee71cf92454e5ee49a32e854575249f2bb82014b221551cbdd6f7e5",
+      "backend/app/security/routes.py": "1e8cffc5258db57d1e0662c0442f1168f217ccc509fe7f9f787e08a4ad316749",
+      "backend/app/security/service.py": "231cbc88f372071a5fe946ecf164afdd9c7f39d0f6a0edf6f960c29b152c0747",
+      "backend/app/trusted_proxy.py": "1078a580402a3d2cddb15e5e8797f4e63c5444cb4cba9a8ecfde0dd47d505375",
+      "backend/migrations/env.py": "af7c44a6fb3d2d676a35642171d51b28ef0a233638fdacff754cf6111457d0fb",
+      "backend/migrations/versions/38d641dcd780_create_inventory_resource_relations.py": "44888d9186c5e0c17edaad34e1db3e1cedbfde83c0e14db6349a7e8fedf2cf98",
+      "backend/migrations/versions/44e7eb855b5a_create_inventory_group_rules.py": "19a7573916902015349045813003b3fd9d057c77e6b4ccad0a5e51a0b12b567f",
+      "backend/migrations/versions/4f625db33d6d_create_inventory_resource_identifiers.py": "dddc5fec81ab2b7859af76292f52b75a16dbd00d310221cc619235762ca65224",
+      "backend/migrations/versions/7c4e2a91b605_create_inventory_tags.py": "103a4e643911ae119145e64c5d4ffc051d92c2c2f301d069fb5a4564699cd2c1",
+      "backend/migrations/versions/9e1b7c42a630_create_inventory_resource_tags.py": "430c334e882de7b96164beb2672122f684daa6cc1895f4fd29ef5485570221b2",
+      "backend/migrations/versions/af62df027d9d_create_inventory_resources_baseline.py": "b0fbafbf23e18b15b336980b21cfed9271f215578578a3af0d671358747d9d50",
+      "backend/migrations/versions/ba06dd956da9_create_inventory_group_memberships.py": "2033a4a846105d5d3398d5f7d952d821286ac10600dbd23f2190cede948a16a8",
+      "backend/migrations/versions/c4a91e7b205d_create_inventory_policies.py": "6ad79c6718897b2b0a3122d21d28e2ab3ffb1e3504b547114aa76fde9ab97425",
+      "backend/migrations/versions/da34876e4210_create_inventory_groups.py": "2e7f4713b450421c84d3f741cb02418bec6e8759536fb61f72963b32419ec09b",
+      "backend/migrations/versions/e65b01a7c230_create_inventory_policy_versions.py": "b0ef045cd58e0385e0b73f4c6fee4482b2ac59047283597c7d0e8a39074c7949",
+      "backend/migrations/versions/f065c01a7230_create_inventory_policy_assignments.py": "7278fe16f3fbba63ccb01c41ee64e134043eec610a1feada63eb6b5218a52bf2",
+      "backend/migrations/versions/f065d01a7230_create_inventory_effective_configs.py": "bc8f1e333315eaffd199df4f18a8b71e0e16c85034e707f93399465a184c9dda",
+      "backend/migrations/versions/f066a01a7230_create_audit_events_baseline.py": "f3c128ae862ab8c19a9e3a75b93d653857e8560bb0fb4d41d7be9892d12de86f",
+      "backend/migrations/versions/f067a01a7230_create_authorization_integrity_anchors.py": "2556db6186f6002285386727acb9803c73547787248c071a4cf9f0fdc91c1ec1",
+      "backend/requirements.txt": "aba67440c5f8caf5d3acb0f7aeee7afcaab5afdad4cab0760f90cde7d818bc6c",
+      "scripts/postgres/auth03_alembic_executor.py": "66c18319414c29f49ae163ef86b098924592102b566cd894fd4824933704d00b"
+    },
+    "source_inventory": [
+      {
+        "path": "backend/alembic.ini",
+        "sha256": "0f2ce09203f8b1dbc1f02965d85339ad455c22f267e79d79c169e3ec412eb9dc",
+        "expected_active_sha256": "0f2ce09203f8b1dbc1f02965d85339ad455c22f267e79d79c169e3ec412eb9dc",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "07bd81799c1fd97e78772f65394d806b897bd9bf feat(infra): establish PostgreSQL persistence and Alembic foundation",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/app/__init__.py",
+        "sha256": "0b5d3abe007956211c0bd8167641a991388f9dd0a50d6873124e91c0ed001862",
+        "expected_active_sha256": "74c51facab8fd44eacc4260429c6182ea53cd6f30bf8715f633b0ccd334fd0b2",
+        "difference": "HASH_MISMATCH",
+        "git_state": "tracked_clean",
+        "last_git_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Factory aplicacional integra security e inventory.",
+          "security_impact": "Preserva deny-by-default; inje\u00e7\u00f5es s\u00e3o Python de confian\u00e7a. N\u00e3o executa migra\u00e7\u00f5es/provisionamento. Altera\u00e7\u00e3o M1.2A n\u00e3o \u00e9 aprova\u00e7\u00e3o de ativa\u00e7\u00e3o.",
+          "dependencies": [
+            "config",
+            "health",
+            "security.routes.init_security",
+            "inventory.routes"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/__init__.py:6",
+            "backend/tests/test_security_api.py",
+            "backend/tests/test_inventory_api.py",
+            "backend/tests/test_dedicated_backend.py",
+            "commit M1.2A"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": [
+            "4d85240af69c2e43b078623e892358d0e0dad6cc"
+          ]
+        }
+      },
+      {
+        "path": "backend/app/audit/__init__.py",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "expected_active_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "9069aa39913e9be9b87f136ed07acb1992f252f7 feat(audit): establish immutable audit events baseline",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/app/audit/models.py",
+        "sha256": "fd65ea8eb10b15193f2706319ff5f4a9ff855a2a769ae1e625766c3886ed4da9",
+        "expected_active_sha256": "fd65ea8eb10b15193f2706319ff5f4a9ff855a2a769ae1e625766c3886ed4da9",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "9069aa39913e9be9b87f136ed07acb1992f252f7 feat(audit): establish immutable audit events baseline",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/app/audit/service.py",
+        "sha256": "89c9fb3b52154b1f5db72c935d70f78d130896c5c5030dc669df3fc8a0ea4e95",
+        "expected_active_sha256": "89c9fb3b52154b1f5db72c935d70f78d130896c5c5030dc669df3fc8a0ea4e95",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "de9f4f37c854d927c6e06226b0922a815445f73b feat(audit): implement transactional audit service",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/app/config.py",
+        "sha256": "05e82252427e37e47bf0e40162f1377e95a26a0297d6725261df83266c2535f9",
+        "expected_active_sha256": "1801c76af1d3f7bdfcc30b831883ac0b1e36d66ccf92886192ad5d5d6d72fbbd",
+        "difference": "HASH_MISMATCH",
+        "git_state": "tracked_clean",
+        "last_git_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Defaults seguros e perfis Flask.",
+          "security_impact": "Sem credenciais/origem/bootstrap por omiss\u00e3o; SECURITY_ENABLED=False. O modo production n\u00e3o identifica ambiente f\u00edsico.",
+          "dependencies": [
+            "os.environ LIVENET_ENV no percurso legado",
+            "SecurityPolicy",
+            "factory dedicada"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/config.py:4",
+            "backend/tests/test_security_policy.py",
+            "backend/tests/test_dedicated_backend.py",
+            "commit M1.2A"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": [
+            "4d85240af69c2e43b078623e892358d0e0dad6cc"
+          ]
+        }
+      },
+      {
+        "path": "backend/app/core/__init__.py",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "expected_active_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "07bd81799c1fd97e78772f65394d806b897bd9bf feat(infra): establish PostgreSQL persistence and Alembic foundation",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/app/core/database.py",
+        "sha256": "5da5e8dbd5d439a15292ee41aec36743a31e3c7639f4531c0465c19d3df4f0d1",
+        "expected_active_sha256": "5da5e8dbd5d439a15292ee41aec36743a31e3c7639f4531c0465c19d3df4f0d1",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "de9f4f37c854d927c6e06226b0922a815445f73b feat(audit): implement transactional audit service",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/app/core/model_registry.py",
+        "sha256": "6b9db8825e03e894b4f07870459c2ad64cf14687e1abfcddc255bca77a0efb19",
+        "expected_active_sha256": "28419b14eabd1d041c1ba21e1fb3a4466522910c474c4eeb6e15f141374bdeb6",
+        "difference": "HASH_MISMATCH",
+        "git_state": "tracked_clean",
+        "last_git_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Registo expl\u00edcito de modelos inventory/audit/security.",
+          "security_impact": "S\u00f3 metadata; n\u00e3o confundir import de security com migra\u00e7\u00e3o aplicacional/autogera\u00e7\u00e3o autorizada. \u00c2ncoras authorization n\u00e3o s\u00e3o ORM aqui.",
+          "dependencies": [
+            "audit.models",
+            "inventory.models",
+            "security.models",
+            "core.models.Base"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/core/model_registry.py:1",
+            "AST",
+            "backend/tests/test_security_service.py",
+            "backend/tests/test_inventory_service.py",
+            "commit M1.2A; cadeias Alembic independentes"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": [
+            "9069aa39913e9be9b87f136ed07acb1992f252f7"
+          ]
+        }
+      },
+      {
+        "path": "backend/app/core/models.py",
+        "sha256": "9e6e1e48f5dac830be7c9dd5b903d96d10acdb47db54f5d37425c7eeb79a36ee",
+        "expected_active_sha256": "9e6e1e48f5dac830be7c9dd5b903d96d10acdb47db54f5d37425c7eeb79a36ee",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "d548b0120fadc7f77f91de2e5c7eeee4cc0e497a feat(db): establish central SQLAlchemy declarative metadata",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/app/dedicated.py",
+        "sha256": "1a4472e6f06937da0966dccf36542b2ed79a0d4505a019b1b18c192de00e7a2c",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "untracked",
+        "last_git_commit": null,
+        "matches_last_git_commit": null,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Factory dedicada com configura\u00e7\u00e3o expl\u00edcita e sess\u00e3o lazy partilhada.",
+          "security_impact": "Recusa livenet, valida segredos e libpq; n\u00e3o constr\u00f3i engine no arranque. A op\u00e7\u00e3o sem TLS continua existente: o futuro perfil seguro tem de escolher create_tls_app.",
+          "dependencies": [
+            "app.create_app",
+            "inventory.routes.InventoryDependencies",
+            "security.policy",
+            "TrustedProxy",
+            "PostgresTLS",
+            "readiness"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_SUBJECT_TO_EXPLICIT_LOCAL_SOURCE_REVIEW_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Revis\u00e3o est\u00e1tica e testes offline suportam proposta t\u00e9cnica, mas origem/aprova\u00e7\u00e3o original n\u00e3o foi independentemente atestada.",
+          "evidence": [
+            "backend/app/dedicated.py:151",
+            "backend/tests/test_dedicated_backend.py",
+            "backend/tests/test_dedicated_entrypoint.py",
+            "docs/operations/dev02-dedicated-backend.md; docs/operations/dev06-postgresql-integration.md"
+          ],
+          "provenance_status": "LOCAL_ORIGINAL_AUTHOR_APPROVAL_NOT_INDEPENDENTLY_ATTESTED",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/health/__init__.py",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "expected_active_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "4d85240af69c2e43b078623e892358d0e0dad6cc feat(backend): initialize modular Flask application with configuration and health checks",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/app/health/routes.py",
+        "sha256": "197204afc1549b4b9fb595bb77b95fc86865872f8109ac495d3b4cc60c543d70",
+        "expected_active_sha256": "197204afc1549b4b9fb595bb77b95fc86865872f8109ac495d3b4cc60c543d70",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "4d85240af69c2e43b078623e892358d0e0dad6cc feat(backend): initialize modular Flask application with configuration and health checks",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/app/inventory/__init__.py",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "expected_active_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "14e0ae5216ea92ee8a2f400173e17823f0e18683 feat(inventory): establish initial resources model and migration",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/app/inventory/access.py",
+        "sha256": "36a5c4d296d843501a6c520499b1f3420cb7d530c7f52dbab2645f9f508f7230",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "tracked_clean",
+        "last_git_commit": "24ea3601b36423d2cd0f68b6a1e07619e3377b3e feat(inventory): implement M1.1 resource REST API",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Contrato de identidade e autoriza\u00e7\u00e3o de invent\u00e1rio; default deny.",
+          "security_impact": "Predicados v\u00eam do servidor; DenyInventoryAccess n\u00e3o autentica nem permite acesso.",
+          "dependencies": [
+            "UUID",
+            "SQLAlchemy ColumnElement",
+            "security.access"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/inventory/access.py:15",
+            "backend/tests/test_inventory_api.py",
+            "backend/tests/test_inventory_service.py",
+            "commit M1.1"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/inventory/models.py",
+        "sha256": "cb732cd6c1176201e8277fbad16b0affd268ca7f5b76ad9a5a53586d516df61a",
+        "expected_active_sha256": "cb732cd6c1176201e8277fbad16b0affd268ca7f5b76ad9a5a53586d516df61a",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "3bb63249c2e110c66df359494f95ed412b1b5b4d feat(inventory): add effective policy configurations",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/app/inventory/routes.py",
+        "sha256": "eb3b427c34fc2f32cf50869a94cb82fa60de282bac46f8175833827482f24830",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "tracked_clean",
+        "last_git_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "API resources, pagina\u00e7\u00e3o, scopes e transa\u00e7\u00f5es expl\u00edcitas.",
+          "security_impact": "Autentica\u00e7\u00e3o precede acesso; 404 uniforme e erros sanitizados. POST existe, mas D05 n\u00e3o concede INSERT inventory ao runtime.",
+          "dependencies": [
+            "inventory.access/schemas/service",
+            "security.errors",
+            "core.database",
+            "Flask"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/inventory/routes.py:92",
+            "backend/tests/test_inventory_api.py",
+            "backend/tests/test_security_api.py",
+            "commit M1.2A; D05"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/inventory/schemas.py",
+        "sha256": "1cabfe694f36c70f5191937070e3b0b67f54b25e5d66864f9e7a492ea9f8bca5",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "tracked_clean",
+        "last_git_commit": "24ea3601b36423d2cd0f68b6a1e07619e3377b3e feat(inventory): implement M1.1 resource REST API",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Valida\u00e7\u00e3o de inputs e serializa\u00e7\u00e3o expl\u00edcita.",
+          "security_impact": "Recusa campos desconhecidos, attributes n\u00e3o vazio e pagina\u00e7\u00e3o fora dos limites; n\u00e3o imp\u00f5e autoriza\u00e7\u00e3o.",
+          "dependencies": [
+            "UUID",
+            "datetime",
+            "cat\u00e1logo de tipos/estados"
+          ],
+          "risk": "MEDIO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/inventory/schemas.py:19",
+            "backend/tests/test_inventory_schemas.py",
+            "backend/tests/test_inventory_api.py",
+            "commit M1.1"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/inventory/service.py",
+        "sha256": "030950ae2b4f8b0d48cf7d880cd3975ac5528554b4fb111814e42a34a4814e1c",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "tracked_clean",
+        "last_git_commit": "24ea3601b36423d2cd0f68b6a1e07619e3377b3e feat(inventory): implement M1.1 resource REST API",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Consultas com scope e cria\u00e7\u00e3o de recurso com audit transacional.",
+          "security_impact": "Exige predicado SQL e transa\u00e7\u00e3o do chamador; create/flush n\u00e3o fica autorizado pelo perfil D05 read-only.",
+          "dependencies": [
+            "inventory.models.Resource",
+            "audit.service",
+            "SQLAlchemy"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/inventory/service.py:13",
+            "backend/tests/test_inventory_service.py",
+            "backend/tests/test_inventory_api.py",
+            "commit M1.1"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/postgres_tls.py",
+        "sha256": "ca3566de364821d1f676954f6ce28646683c6a873da7b58a94c8ccc8c8d10b19",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "untracked",
+        "last_git_commit": null,
+        "matches_last_git_commit": null,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Configura\u00e7\u00e3o e leitura controlada da CA PostgreSQL.",
+          "security_impact": "S\u00f3 verify-full; recusa symlinks, paths relativos, CA grav\u00e1vel e overrides; desativa preced\u00eancia GSS. Parsing offline n\u00e3o prova handshake/hostname real.",
+          "dependencies": [
+            "ssl",
+            "filesystem ownership",
+            "libpq/psycopg",
+            "dedicated_wsgi.create_tls_app"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_SUBJECT_TO_EXPLICIT_LOCAL_SOURCE_REVIEW_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Revis\u00e3o est\u00e1tica e testes offline suportam proposta t\u00e9cnica, mas origem/aprova\u00e7\u00e3o original n\u00e3o foi independentemente atestada.",
+          "evidence": [
+            "backend/app/postgres_tls.py:19",
+            "backend/tests/test_postgres_tls.py",
+            "docs/specifications/f0/dev06-postgresql-transport.md; docs/operations/dev06-postgresql-integration.md"
+          ],
+          "provenance_status": "LOCAL_ORIGINAL_AUTHOR_APPROVAL_NOT_INDEPENDENTLY_ATTESTED",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/readiness.py",
+        "sha256": "b91aeb511c7699b98493d6d70545b43e705b022b73734d4713de97e7edf4f69c",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "untracked",
+        "last_git_commit": null,
+        "matches_last_git_commit": null,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Contrato /api/v1/ready e evid\u00eancia tipada.",
+          "security_impact": "Sem checker/seguran\u00e7a/evid\u00eancia v\u00e1lida devolve 503; exige f066/b12, freshness <=5s e privil\u00e9gios. Checker injetado \u00e9 c\u00f3digo de confian\u00e7a, n\u00e3o prova por si.",
+          "dependencies": [
+            "Flask",
+            "monotonic",
+            "PrivilegeEvidence",
+            "factory dedicada"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_SUBJECT_TO_EXPLICIT_LOCAL_SOURCE_REVIEW_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Revis\u00e3o est\u00e1tica e testes offline suportam proposta t\u00e9cnica, mas origem/aprova\u00e7\u00e3o original n\u00e3o foi independentemente atestada.",
+          "evidence": [
+            "backend/app/readiness.py:105",
+            "backend/tests/test_readiness_contract.py",
+            "backend/tests/test_dedicated_backend.py",
+            "docs/operations/dev02-dedicated-backend.md"
+          ],
+          "provenance_status": "LOCAL_ORIGINAL_AUTHOR_APPROVAL_NOT_INDEPENDENTLY_ATTESTED",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/readiness_postgres/__init__.py",
+        "sha256": "7df4b413bf7470326d725b74aa8b3ebab175e86e825203b78601ff0f966afcc1",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "untracked",
+        "last_git_commit": null,
+        "matches_last_git_commit": null,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Declara\u00e7\u00e3o do pacote offline G2.",
+          "security_impact": "S\u00f3 docstring; sem imports, driver, sockets ou registo na factory.",
+          "dependencies": [
+            "restantes componentes G2"
+          ],
+          "risk": "BAIXO",
+          "recommendation": "PROPOSE_INCLUSION_SUBJECT_TO_EXPLICIT_LOCAL_SOURCE_REVIEW_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Revis\u00e3o est\u00e1tica e testes offline suportam proposta t\u00e9cnica, mas origem/aprova\u00e7\u00e3o original n\u00e3o foi independentemente atestada.",
+          "evidence": [
+            "backend/app/readiness_postgres/__init__.py:1",
+            "backend/tests/test_readiness_postgres.py (import do pacote)",
+            "AST",
+            "docs/specifications/f0/m12b-p2b-d05-g2-prep1-readiness-adapter.md"
+          ],
+          "provenance_status": "LOCAL_ORIGINAL_AUTHOR_APPROVAL_NOT_INDEPENDENTLY_ATTESTED",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/readiness_postgres/adapter.py",
+        "sha256": "fe40580c13d92ac68a28b25528932261c127210efb62d4ae18f940b5dd0e8aaf",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "untracked",
+        "last_git_commit": null,
+        "matches_last_git_commit": null,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Orquestra\u00e7\u00e3o offline de evid\u00eancias Q1-Q16, dois sujeitos e cleanup.",
+          "security_impact": "Executor real desativado; tipo OfflineExecutor exato antes das factories. Deadlines n\u00e3o interrompem callbacks hostis; latch/lock s\u00f3 em mem\u00f3ria. Proibida instala\u00e7\u00e3o como checker real.",
+          "dependencies": [
+            "policy",
+            "queries",
+            "evaluate",
+            "doubles expl\u00edcitos",
+            "monotonic"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_SUBJECT_TO_EXPLICIT_LOCAL_SOURCE_REVIEW_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Revis\u00e3o est\u00e1tica e testes offline suportam proposta t\u00e9cnica, mas origem/aprova\u00e7\u00e3o original n\u00e3o foi independentemente atestada.",
+          "evidence": [
+            "backend/app/readiness_postgres/adapter.py:53",
+            "backend/tests/test_readiness_postgres.py",
+            "docs/specifications/f0/m12b-p2b-d05-g2-fix2.md"
+          ],
+          "provenance_status": "LOCAL_ORIGINAL_AUTHOR_APPROVAL_NOT_INDEPENDENTLY_ATTESTED",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/readiness_postgres/evaluate.py",
+        "sha256": "0137f9343672a95fc0138b9e6ac5207fdb23b468162dce65b5867fd2758210d5",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "untracked",
+        "last_git_commit": null,
+        "matches_last_git_commit": null,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Valida\u00e7\u00e3o integral de identidades, schemas, ACLs, owners, estrutura e ledgers.",
+          "security_impact": "Recusa extras/incompletude, PUBLIC indevido e escrita fora da matriz; inclui invent\u00e1rio f\u00edsico e default ACL. Templates e cat\u00e1logo real ainda n\u00e3o validados nesta etapa.",
+          "dependencies": [
+            "policy.MATRIX/BUSINESS_TABLES",
+            "queries.OWNER_CLASSES",
+            "readiness dataclasses"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_SUBJECT_TO_EXPLICIT_LOCAL_SOURCE_REVIEW_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Revis\u00e3o est\u00e1tica e testes offline suportam proposta t\u00e9cnica, mas origem/aprova\u00e7\u00e3o original n\u00e3o foi independentemente atestada.",
+          "evidence": [
+            "backend/app/readiness_postgres/evaluate.py:31",
+            "backend/tests/test_readiness_postgres.py",
+            "docs/specifications/f0/m12b-p2b-d05-g2-fix1.md"
+          ],
+          "provenance_status": "LOCAL_ORIGINAL_AUTHOR_APPROVAL_NOT_INDEPENDENTLY_ATTESTED",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/readiness_postgres/policy.py",
+        "sha256": "7dc4100d063e4cb3c09957e8fb117f2b84fddc7b5b28f73f57422061042bff81",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "untracked",
+        "last_git_commit": null,
+        "matches_last_git_commit": null,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Pol\u00edtica D05 imut\u00e1vel, normaliza\u00e7\u00e3o, digest e limites.",
+          "security_impact": "Digest vincula destino/cat\u00e1logo mas n\u00e3o autentica aprova\u00e7\u00e3o; n\u00e3o transforma dados observados em baseline aprovada. Recusa permiss\u00f5es excessivas mesmo com digest coerente.",
+          "dependencies": [
+            "queries.CATALOG",
+            "evaluate.validate_contract",
+            "JSON can\u00f3nico",
+            "SHA256"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_SUBJECT_TO_EXPLICIT_LOCAL_SOURCE_REVIEW_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Revis\u00e3o est\u00e1tica e testes offline suportam proposta t\u00e9cnica, mas origem/aprova\u00e7\u00e3o original n\u00e3o foi independentemente atestada.",
+          "evidence": [
+            "backend/app/readiness_postgres/policy.py:233",
+            "backend/tests/test_readiness_postgres.py",
+            "docs/specifications/f0/m12b-p2b-d05-g2-prep1-readiness-adapter.md"
+          ],
+          "provenance_status": "LOCAL_ORIGINAL_AUTHOR_APPROVAL_NOT_INDEPENDENTLY_ATTESTED",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/readiness_postgres/queries.py",
+        "sha256": "9ddad5dc61f2c5f81ca5db8e410064e506b9a93607b3f2cde3add86c3ad1ed2b",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "untracked",
+        "last_git_commit": null,
+        "matches_last_git_commit": null,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Templates fixos PG16 de SELECT e limites Q1-Q16.",
+          "security_impact": "Bind parameters para roles, sem SQL arbitr\u00e1rio/DDL/DML; sem executor real. SELECT pode invocar fun\u00e7\u00f5es de cat\u00e1logo que exigem autoriza\u00e7\u00e3o pr\u00f3pria, incluindo pg_control_system; parsing n\u00e3o prova sintaxe/sem\u00e2ntica PG.",
+          "dependencies": [
+            "PG16 catalogs",
+            "pg_control_system",
+            "ledgers independentes",
+            "SQLAlchemy binds"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_SUBJECT_TO_EXPLICIT_LOCAL_SOURCE_REVIEW_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Revis\u00e3o est\u00e1tica e testes offline suportam proposta t\u00e9cnica, mas origem/aprova\u00e7\u00e3o original n\u00e3o foi independentemente atestada.",
+          "evidence": [
+            "backend/app/readiness_postgres/queries.py:11",
+            "backend/tests/test_readiness_postgres.py",
+            "docs/specifications/f0/m12b-p2b-d05-g2-prep1-readiness-adapter.md"
+          ],
+          "provenance_status": "LOCAL_ORIGINAL_AUTHOR_APPROVAL_NOT_INDEPENDENTLY_ATTESTED",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/security/__init__.py",
+        "sha256": "708f803fc69da2555dfc1f5b2911ea7cd81b2ae9696d13041d2ac4c045c50ee0",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "tracked_clean",
+        "last_git_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Declara\u00e7\u00e3o do pacote de autentica\u00e7\u00e3o aplicacional.",
+          "security_impact": "S\u00f3 docstring; distingue autentica\u00e7\u00e3o da aplica\u00e7\u00e3o de AUTH-BOOT/AUTH-03, sem ativa\u00e7\u00e3o.",
+          "dependencies": [
+            "m\u00f3dulos security"
+          ],
+          "risk": "BAIXO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/security/__init__.py:1",
+            "AST",
+            "backend/tests/test_security_api.py (imports)",
+            "commit M1.2A"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/security/access.py",
+        "sha256": "95570f1bd16179f19013669bc9039a414e15193a03ec697e25b5fccdaa4987c0",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "tracked_clean",
+        "last_git_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Liga\u00e7\u00e3o das sess\u00f5es persistentes ao InventoryAccess e RBAC global.",
+          "security_impact": "Usa inventory.open_session salvo inje\u00e7\u00e3o de confian\u00e7a; n\u00e3o aceita roles HTTP. Acesso reader/editor global, n\u00e3o autoriza\u00e7\u00e3o granular futura.",
+          "dependencies": [
+            "security.policy/service",
+            "inventory.access",
+            "Flask request/g"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/security/access.py:12",
+            "backend/tests/test_security_api.py",
+            "backend/tests/test_inventory_api.py",
+            "commit M1.2A"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/security/csrf.py",
+        "sha256": "6c7ee69a3a7fea36d9fc8ec7314186aaa3d0b422b00ccc47dded844092148d8c",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "tracked_clean",
+        "last_git_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Double-submit assinado com v\u00ednculo \u00e0 sess\u00e3o ou pre-login.",
+          "security_impact": "Confere origem, cookie/header em tempo constante e validade temporal; key externa. N\u00e3o dispensa HTTPS/cookies/proxy.",
+          "dependencies": [
+            "itsdangerous",
+            "HMAC/SHA256",
+            "security.policy/errors",
+            "request"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/security/csrf.py:27",
+            "backend/tests/test_security_api.py",
+            "backend/tests/test_security_policy.py",
+            "commit M1.2A"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/security/errors.py",
+        "sha256": "3b6b8f45bea6603b71e15328c1006dd7e7db2343109afed86018be6f55c1cc7e",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "tracked_clean",
+        "last_git_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Erros p\u00fablicos de autentica\u00e7\u00e3o e indisponibilidade.",
+          "security_impact": "Mensagens fixas; sem propaga\u00e7\u00e3o de credenciais ou exce\u00e7\u00f5es de driver.",
+          "dependencies": [
+            "Werkzeug HTTPException",
+            "rotas security/inventory"
+          ],
+          "risk": "MEDIO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/security/errors.py:4",
+            "backend/tests/test_security_api.py",
+            "backend/tests/test_inventory_api.py",
+            "commit M1.2A"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/security/models.py",
+        "sha256": "cf4b247d04831018ca5156cbe12e7fc9924883694587584972892f7d9e716c5c",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "tracked_clean",
+        "last_git_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Quatro modelos de users, sessions, role grants e throttles.",
+          "security_impact": "Import s\u00f3 declara metadata; tokens em hash, constraints e defaults Python, sem contas nem DDL. Persist\u00eancia exige b12 independente.",
+          "dependencies": [
+            "core.models.Base",
+            "SQLAlchemy",
+            "security_migrations b12"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/security/models.py:17",
+            "backend/tests/test_security_service.py",
+            "backend/tests/test_security_api.py",
+            "AST",
+            "commit M1.2A; docs/specifications/f0/m12b-p1-security-migrations.md"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/security/policy.py",
+        "sha256": "b42edd0deee71cf92454e5ee49a32e854575249f2bb82014b221551cbdd6f7e5",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "tracked_clean",
+        "last_git_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Pol\u00edtica expl\u00edcita de origem HTTPS, cookies e tempos.",
+          "security_impact": "Recusa debug, HTTP, origem/key inv\u00e1lidos e cookies inseguros; limites estritos. Aprova\u00e7\u00e3o de bytes n\u00e3o aprova origem operacional nova.",
+          "dependencies": [
+            "urlsplit",
+            "security.errors",
+            "app.config"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/security/policy.py:24",
+            "backend/tests/test_security_policy.py",
+            "backend/tests/test_security_api.py",
+            "commit M1.2A"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/security/routes.py",
+        "sha256": "1e8cffc5258db57d1e0662c0442f1168f217ccc509fe7f9f787e08a4ad316749",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "tracked_clean",
+        "last_git_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "CSRF/login/logout/me, cookies __Host e prote\u00e7\u00e3o de escritas inventory.",
+          "security_impact": "Sem provisionamento; CSRF obrigat\u00f3rio nas muta\u00e7\u00f5es, cookies seguros/HttpOnly/Lax e no-store; indisponibilidade mant\u00e9m 503.",
+          "dependencies": [
+            "security.access/csrf/service/policy",
+            "Flask",
+            "inventory integration"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/security/routes.py:86",
+            "backend/tests/test_security_api.py",
+            "backend/tests/test_dedicated_backend.py",
+            "commit M1.2A"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/security/service.py",
+        "sha256": "231cbc88f372071a5fe946ecf164afdd9c7f39d0f6a0edf6f960c29b152c0747",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "tracked_clean",
+        "last_git_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Autentica\u00e7\u00e3o persistente, sess\u00f5es opacas, scrypt, budgets e auditoria.",
+          "security_impact": "Sess\u00f5es em hash; locks de users/sessions; throttles transacionais antes das credenciais; auditoria. Necessita DML D05 restrito e n\u00e3o apenas SELECT. Doubles n\u00e3o provam grants/locks reais.",
+          "dependencies": [
+            "security.models",
+            "audit.service",
+            "sess\u00e3o SQLAlchemy partilhada",
+            "PostgreSQL UPSERT"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/app/security/service.py:71",
+            "backend/tests/test_security_service.py",
+            "backend/tests/test_security_api.py",
+            "commit M1.2A"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/app/trusted_proxy.py",
+        "sha256": "1078a580402a3d2cddb15e5e8797f4e63c5444cb4cba9a8ecfde0dd47d505375",
+        "expected_active_sha256": null,
+        "difference": "MISSING_ENTRY",
+        "git_state": "untracked",
+        "last_git_commit": null,
+        "matches_last_git_commit": null,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Valida\u00e7\u00e3o do peer e reconstru\u00e7\u00e3o da origem HTTPS.",
+          "security_impact": "S\u00f3 peers expl\u00edcitos e headers permitidos; recusa Forwarded/header extra. Depende de proxy que substitui headers e isolamento real contra acesso direto/spoofing.",
+          "dependencies": [
+            "Werkzeug",
+            "ipaddress",
+            "Caddy",
+            "configura\u00e7\u00e3o Gunicorn sem trust paralelo"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_SUBJECT_TO_EXPLICIT_LOCAL_SOURCE_REVIEW_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Revis\u00e3o est\u00e1tica e testes offline suportam proposta t\u00e9cnica, mas origem/aprova\u00e7\u00e3o original n\u00e3o foi independentemente atestada.",
+          "evidence": [
+            "backend/app/trusted_proxy.py:12",
+            "backend/tests/test_trusted_proxy.py",
+            "backend/tests/test_dedicated_entrypoint.py",
+            "docs/operations/dev02-dedicated-backend.md; docs/operations/dev04-dedicated-integration.md"
+          ],
+          "provenance_status": "LOCAL_ORIGINAL_AUTHOR_APPROVAL_NOT_INDEPENDENTLY_ATTESTED",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_AND_RELATED_OFFLINE_TEST_EVIDENCE",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": []
+        }
+      },
+      {
+        "path": "backend/migrations/env.py",
+        "sha256": "af7c44a6fb3d2d676a35642171d51b28ef0a233638fdacff754cf6111457d0fb",
+        "expected_active_sha256": "af7c44a6fb3d2d676a35642171d51b28ef0a233638fdacff754cf6111457d0fb",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_modified",
+        "last_git_commit": "afb65f7d1b754f65f2ffcaf446af2cbeef4ed02b wip(f066c): checkpoint isolated privilege and authorization security work",
+        "matches_last_git_commit": false,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/38d641dcd780_create_inventory_resource_relations.py",
+        "sha256": "44888d9186c5e0c17edaad34e1db3e1cedbfde83c0e14db6349a7e8fedf2cf98",
+        "expected_active_sha256": "44888d9186c5e0c17edaad34e1db3e1cedbfde83c0e14db6349a7e8fedf2cf98",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "ed45805d4ec489013151becbe3013f02403da05f feat(inventory): add temporal resource relations",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/44e7eb855b5a_create_inventory_group_rules.py",
+        "sha256": "19a7573916902015349045813003b3fd9d057c77e6b4ccad0a5e51a0b12b567f",
+        "expected_active_sha256": "19a7573916902015349045813003b3fd9d057c77e6b4ccad0a5e51a0b12b567f",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "cb7995cbcec66886a382a42ae1235fa0142370e2 feat(inventory): add dynamic group rules",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/4f625db33d6d_create_inventory_resource_identifiers.py",
+        "sha256": "dddc5fec81ab2b7859af76292f52b75a16dbd00d310221cc619235762ca65224",
+        "expected_active_sha256": "dddc5fec81ab2b7859af76292f52b75a16dbd00d310221cc619235762ca65224",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "7f10b02980bc6d12cf4281c2251b706efe959383 feat(inventory): add contextual resource identifiers",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/7c4e2a91b605_create_inventory_tags.py",
+        "sha256": "103a4e643911ae119145e64c5d4ffc051d92c2c2f301d069fb5a4564699cd2c1",
+        "expected_active_sha256": "103a4e643911ae119145e64c5d4ffc051d92c2c2f301d069fb5a4564699cd2c1",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "ba2001693a285c7443b4c54ea559a085e48bf964 feat(inventory): add resource tags catalog",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/9e1b7c42a630_create_inventory_resource_tags.py",
+        "sha256": "430c334e882de7b96164beb2672122f684daa6cc1895f4fd29ef5485570221b2",
+        "expected_active_sha256": "430c334e882de7b96164beb2672122f684daa6cc1895f4fd29ef5485570221b2",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "816a916c6a96ff531bfad0242743447c335eb4d2 feat(inventory): add temporal resource tag assignments",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/af62df027d9d_create_inventory_resources_baseline.py",
+        "sha256": "b0fbafbf23e18b15b336980b21cfed9271f215578578a3af0d671358747d9d50",
+        "expected_active_sha256": "b0fbafbf23e18b15b336980b21cfed9271f215578578a3af0d671358747d9d50",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "14e0ae5216ea92ee8a2f400173e17823f0e18683 feat(inventory): establish initial resources model and migration",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/ba06dd956da9_create_inventory_group_memberships.py",
+        "sha256": "2033a4a846105d5d3398d5f7d952d821286ac10600dbd23f2190cede948a16a8",
+        "expected_active_sha256": "2033a4a846105d5d3398d5f7d952d821286ac10600dbd23f2190cede948a16a8",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "d751d5f8dd4272ab1f6ab797ae9bf1dcd6bdd66d feat(inventory): add resource group memberships",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/c4a91e7b205d_create_inventory_policies.py",
+        "sha256": "6ad79c6718897b2b0a3122d21d28e2ab3ffb1e3504b547114aa76fde9ab97425",
+        "expected_active_sha256": "6ad79c6718897b2b0a3122d21d28e2ab3ffb1e3504b547114aa76fde9ab97425",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "7f8332fb87452f94c86af774158a72bccf940549 feat(inventory): add policies catalog",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/da34876e4210_create_inventory_groups.py",
+        "sha256": "2e7f4713b450421c84d3f741cb02418bec6e8759536fb61f72963b32419ec09b",
+        "expected_active_sha256": "2e7f4713b450421c84d3f741cb02418bec6e8759536fb61f72963b32419ec09b",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "ccd095c0b5a4dfe6d5fbd67926c3331ca1497f1f feat(inventory): add resource groups baseline",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/e65b01a7c230_create_inventory_policy_versions.py",
+        "sha256": "b0ef045cd58e0385e0b73f4c6fee4482b2ac59047283597c7d0e8a39074c7949",
+        "expected_active_sha256": "b0ef045cd58e0385e0b73f4c6fee4482b2ac59047283597c7d0e8a39074c7949",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "43be3640de8d2a3b2cbc7d55524602eb842dc799 feat(inventory): add immutable policy versions",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/f065c01a7230_create_inventory_policy_assignments.py",
+        "sha256": "7278fe16f3fbba63ccb01c41ee64e134043eec610a1feada63eb6b5218a52bf2",
+        "expected_active_sha256": "7278fe16f3fbba63ccb01c41ee64e134043eec610a1feada63eb6b5218a52bf2",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "aea7eaac7d32605f277707614a7d6daae3d0d125 feat(inventory): add temporal policy assignments",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/f065d01a7230_create_inventory_effective_configs.py",
+        "sha256": "bc8f1e333315eaffd199df4f18a8b71e0e16c85034e707f93399465a184c9dda",
+        "expected_active_sha256": "bc8f1e333315eaffd199df4f18a8b71e0e16c85034e707f93399465a184c9dda",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "3bb63249c2e110c66df359494f95ed412b1b5b4d feat(inventory): add effective policy configurations",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/f066a01a7230_create_audit_events_baseline.py",
+        "sha256": "f3c128ae862ab8c19a9e3a75b93d653857e8560bb0fb4d41d7be9892d12de86f",
+        "expected_active_sha256": "f3c128ae862ab8c19a9e3a75b93d653857e8560bb0fb4d41d7be9892d12de86f",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "tracked_clean",
+        "last_git_commit": "9069aa39913e9be9b87f136ed07acb1992f252f7 feat(audit): establish immutable audit events baseline",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/migrations/versions/f067a01a7230_create_authorization_integrity_anchors.py",
+        "sha256": "2556db6186f6002285386727acb9803c73547787248c071a4cf9f0fdc91c1ec1",
+        "expected_active_sha256": "2556db6186f6002285386727acb9803c73547787248c071a4cf9f0fdc91c1ec1",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "untracked",
+        "last_git_commit": null,
+        "matches_last_git_commit": null,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      },
+      {
+        "path": "backend/requirements.txt",
+        "sha256": "aba67440c5f8caf5d3acb0f7aeee7afcaab5afdad4cab0760f90cde7d818bc6c",
+        "expected_active_sha256": "70820b980a6e044ab90cb8d59cef38a6ac8d905faeeac0a24a9ed656196c4c04",
+        "difference": "HASH_MISMATCH",
+        "git_state": "tracked_clean",
+        "last_git_commit": "e02ba8a13df2ec6de2aadceecd4c24eed42a4cbd feat(security): implement M1.2A local authentication and RBAC",
+        "matches_last_git_commit": true,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review": {
+          "technical_function": "Depend\u00eancias diretas Flask/SQLAlchemy/Alembic/psycopg/itsdangerous.",
+          "security_impact": "Intervalos de vers\u00f5es, sem hashes transitivos; importar/passar testes locais n\u00e3o atesta futura imagem executor. Lock dedicado externo ao manifesto tem \u00e2mbito pr\u00f3prio.",
+          "dependencies": [
+            "PyPI/wheels futuros",
+            "Python/runtime",
+            "requirements-container.lock (fora do manifesto)"
+          ],
+          "risk": "ALTO",
+          "recommendation": "PROPOSE_INCLUSION_OR_HASH_REPLACEMENT_SUBJECT_TO_APPROVAL",
+          "rationale": "Fonte necess\u00e1ria ao conjunto exato verify_bundle atual; excluir mant\u00e9m o bundle inv\u00e1lido. Proveni\u00eancia Git verificada e conte\u00fado atual igual \u00e0 \u00faltima vers\u00e3o Git; aprova\u00e7\u00e3o do novo hash continua pendente.",
+          "evidence": [
+            "backend/requirements.txt:1",
+            "Leitura est\u00e1tica",
+            "testes executados com depend\u00eancias locais j\u00e1 existentes, sem resolu\u00e7\u00e3o/instala\u00e7\u00e3o",
+            "commit M1.2A; scripts/postgres/auth03_executor.Dockerfile"
+          ],
+          "provenance_status": "GIT_CONTENT_PROVEN",
+          "technical_validation": {
+            "status": "STATIC_REVIEW_ONLY_WITH_LOCAL_DEPENDENCY_TEST_CONTEXT",
+            "claim": "Revis\u00e3o orientada e testes sint\u00e9ticos relacionados, n\u00e3o certifica\u00e7\u00e3o de seguran\u00e7a nem cobertura exaustiva por linha.",
+            "offline_suite": {
+              "passed": 1251,
+              "failed": 2,
+              "known_failures": "active AUTH-03 manifest source set mismatch"
+            },
+            "limitations": "Sem SQL, PostgreSQL, TLS nativo, ACL/ownership reais, auditoria independente ou testes operacionais nesta etapa."
+          },
+          "content_approved": false,
+          "approval_status": "PENDING_SECOND_HUMAN_APPROVAL",
+          "expected_hash_git_commits": [
+            "07bd81799c1fd97e78772f65394d806b897bd9bf"
+          ]
+        }
+      },
+      {
+        "path": "scripts/postgres/auth03_alembic_executor.py",
+        "sha256": "66c18319414c29f49ae163ef86b098924592102b566cd894fd4824933704d00b",
+        "expected_active_sha256": "66c18319414c29f49ae163ef86b098924592102b566cd894fd4824933704d00b",
+        "difference": "UNCHANGED_MATCHES_ACTIVE_MANIFEST",
+        "git_state": "untracked",
+        "last_git_commit": null,
+        "matches_last_git_commit": null,
+        "approval_status": "NOT_APPROVED_BY_THIS_CANDIDATE",
+        "review_scope": "Invent\u00e1rio/hash/proveni\u00eancia; hash igual ao manifesto anterior n\u00e3o comprova aprova\u00e7\u00e3o original nem revis\u00e3o exaustiva nesta etapa."
+      }
+    ],
+    "supplemental_coverage": [
+      {
+        "path": "backend/Dockerfile.dedicated",
+        "sha256": "bb22c0159380d589ac57610141a0931fa05eb2ed80b5618ad8e7f617c4e8ade7",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 20,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Empacotamento/configura\u00e7\u00e3o expl\u00edcita fora do manifesto; hashes s\u00e3o invent\u00e1rio documental, sem autoriza\u00e7\u00e3o operacional.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "backend/Dockerfile.dedicated.dockerignore",
+        "sha256": "194f3cfbaf961bd12e5e13cfd18d88f6e7aa7b330a5b0bb78d4df05a3da8b608",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 8,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Empacotamento/configura\u00e7\u00e3o expl\u00edcita fora do manifesto; hashes s\u00e3o invent\u00e1rio documental, sem autoriza\u00e7\u00e3o operacional.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "backend/alembic-security.ini",
+        "sha256": "f43ed86b68499b4fb25d75421b30b75251433162b684a7e6a525274718fc0394",
+        "expected_sha256": null,
+        "git_state": "tracked_clean",
+        "last_commit": "8a9bd369ebe4563286509bb1b154f255165db2df feat(security): prepare M1.2B isolated Alembic migrations",
+        "matches_last_commit": true,
+        "lines": 7,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Cadeia security independente, externa/transacional, downgrade recusado; requer atesta\u00e7\u00e3o complementar e autoriza\u00e7\u00e3o pr\u00f3prias. N\u00e3o a inserir silenciosamente no manifesto AUTH-03.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "backend/dedicated_wsgi.py",
+        "sha256": "3d96eb601de4cabce7d666d5a4084107f66663b1cea6e4e160825696ff14b22b",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 89,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Entrypoints create_app e create_tls_app expl\u00edcitos; apenas a variante TLS satisfaz o contrato D01 de transporte.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "backend/gunicorn_container.conf.py",
+        "sha256": "3ba395a446ae1b3d2a24cbb6b07c5aa8f739062cb04c5e8e35e692fdbfe9c7df",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 24,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Binding/trust de headers e logs s\u00e3o parte da fronteira de proxy, sem inclus\u00e3o atual no manifesto.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "backend/gunicorn_dedicated.conf.py",
+        "sha256": "d19934dce2430f08f1f4d9db719c57dfc910146346aebbf37097743bc43d7c52",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 28,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Binding/trust de headers e logs s\u00e3o parte da fronteira de proxy, sem inclus\u00e3o atual no manifesto.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "backend/requirements-container.constraints.txt",
+        "sha256": "d4fe3b495e0e2bf3db6e586768138f2e5dbe3c147ed4bc1dab5d4d959426fe9b",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 18,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Pins/hashes do runtime dedicado n\u00e3o atestam automaticamente a imagem AUTH-03 hist\u00f3rica nem provam disponibilidade offline.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "backend/requirements-container.lock",
+        "sha256": "2bbe864deb5c9f8a15487fb96ca46aa811ae9f4781c24e76d269b046f68c95c9",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 17,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Pins/hashes do runtime dedicado n\u00e3o atestam automaticamente a imagem AUTH-03 hist\u00f3rica nem provam disponibilidade offline.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "backend/requirements-dedicated.txt",
+        "sha256": "3be08dd620770b80cf933e38a0f966ae5e1deb434fb5443387ba608de2468047",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 3,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Pins/hashes do runtime dedicado n\u00e3o atestam automaticamente a imagem AUTH-03 hist\u00f3rica nem provam disponibilidade offline.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "backend/security_migrations/__init__.py",
+        "sha256": "b450bd910d335f6ec45152bf01af5e8def18616670a430585aad3b7d5e81f677",
+        "expected_sha256": null,
+        "git_state": "tracked_clean",
+        "last_commit": "8a9bd369ebe4563286509bb1b154f255165db2df feat(security): prepare M1.2B isolated Alembic migrations",
+        "matches_last_commit": true,
+        "lines": 1,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Cadeia security independente, externa/transacional, downgrade recusado; requer atesta\u00e7\u00e3o complementar e autoriza\u00e7\u00e3o pr\u00f3prias. N\u00e3o a inserir silenciosamente no manifesto AUTH-03.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "backend/security_migrations/contract.py",
+        "sha256": "0a29cbc074907a4b9023709a7a8770ea5a48e1d000bcd0197255d4dcf49fb41b",
+        "expected_sha256": null,
+        "git_state": "tracked_clean",
+        "last_commit": "8a9bd369ebe4563286509bb1b154f255165db2df feat(security): prepare M1.2B isolated Alembic migrations",
+        "matches_last_commit": true,
+        "lines": 63,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Cadeia security independente, externa/transacional, downgrade recusado; requer atesta\u00e7\u00e3o complementar e autoriza\u00e7\u00e3o pr\u00f3prias. N\u00e3o a inserir silenciosamente no manifesto AUTH-03.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "backend/security_migrations/env.py",
+        "sha256": "0bafe798a46070a53ae27ba627e099004d0a3caec143538fe3e114f16a9e90c5",
+        "expected_sha256": null,
+        "git_state": "tracked_clean",
+        "last_commit": "8a9bd369ebe4563286509bb1b154f255165db2df feat(security): prepare M1.2B isolated Alembic migrations",
+        "matches_last_commit": true,
+        "lines": 20,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Cadeia security independente, externa/transacional, downgrade recusado; requer atesta\u00e7\u00e3o complementar e autoriza\u00e7\u00e3o pr\u00f3prias. N\u00e3o a inserir silenciosamente no manifesto AUTH-03.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "backend/security_migrations/versions/b12b01a7230_create_security.py",
+        "sha256": "3f29c6e630955f2548a7a0a481aa182deda1014cd4fdfbaa2fe39e55db356481",
+        "expected_sha256": null,
+        "git_state": "tracked_clean",
+        "last_commit": "8a9bd369ebe4563286509bb1b154f255165db2df feat(security): prepare M1.2B isolated Alembic migrations",
+        "matches_last_commit": true,
+        "lines": 83,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Cadeia security independente, externa/transacional, downgrade recusado; requer atesta\u00e7\u00e3o complementar e autoriza\u00e7\u00e3o pr\u00f3prias. N\u00e3o a inserir silenciosamente no manifesto AUTH-03.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "backend/wsgi.py",
+        "sha256": "d0e730c9f0089d5c52970d5cd0beec0557567936e631f7236b13f4245b7eea2a",
+        "expected_sha256": null,
+        "git_state": "tracked_clean",
+        "last_commit": "4d85240af69c2e43b078623e892358d0e0dad6cc feat(backend): initialize modular Flask application with configuration and health checks",
+        "matches_last_commit": true,
+        "lines": 3,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Percurso legado preservado, sem sele\u00e7\u00e3o impl\u00edcita da factory dedicada.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "compose.auth03-executor.yaml",
+        "sha256": "be9b42028bf11a6ea423b168a30016877d8667dad2b780d7e932190bd7d1e599",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 34,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Empacotamento/configura\u00e7\u00e3o expl\u00edcita fora do manifesto; hashes s\u00e3o invent\u00e1rio documental, sem autoriza\u00e7\u00e3o operacional.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "compose.dedicated-tls.yaml",
+        "sha256": "dfd243af8547243fbe3eada07ebd27f395db3b4a57a4b932d3248fabfd44e7ff",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 11,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Empacotamento/configura\u00e7\u00e3o expl\u00edcita fora do manifesto; hashes s\u00e3o invent\u00e1rio documental, sem autoriza\u00e7\u00e3o operacional.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "compose.dedicated.yaml",
+        "sha256": "ac5f45ee41d491a7860b597e368362d667e28541bc32c33319781941312ee6e2",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 74,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Empacotamento/configura\u00e7\u00e3o expl\u00edcita fora do manifesto; hashes s\u00e3o invent\u00e1rio documental, sem autoriza\u00e7\u00e3o operacional.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "infra/dedicated/Caddyfile",
+        "sha256": "27a05a9a945af13e15965cece8fbab1a17cc4f42f5f21be1717e51880b302ea0",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 53,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Origem/peer/TLS na entrada HTTPS e contexto da imagem proxy exigem atesta\u00e7\u00e3o e valida\u00e7\u00e3o de isolamento LAN-only.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "infra/dedicated/Dockerfile.caddy",
+        "sha256": "d5de76fe5d434bc94a98b3a5c51b74d66778e2a1b2a36ce45c68bda841d24c6e",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 7,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Origem/peer/TLS na entrada HTTPS e contexto da imagem proxy exigem atesta\u00e7\u00e3o e valida\u00e7\u00e3o de isolamento LAN-only.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "infra/dedicated/Dockerfile.caddy.dockerignore",
+        "sha256": "27f8eb8e845cec69706c9322b65654b2b1d0c8a226bfa711f99b8b7df24c217d",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 1,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Origem/peer/TLS na entrada HTTPS e contexto da imagem proxy exigem atesta\u00e7\u00e3o e valida\u00e7\u00e3o de isolamento LAN-only.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "infra/dedicated/dependency-provenance.json",
+        "sha256": "48fcd0f1094cd2683a7bb4d9305a122ca3e6de0be7474f58dcfa50a3c386b62b",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 101,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Empacotamento/configura\u00e7\u00e3o expl\u00edcita fora do manifesto; hashes s\u00e3o invent\u00e1rio documental, sem autoriza\u00e7\u00e3o operacional.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "scripts/postgres/auth03_executor.Dockerfile",
+        "sha256": "a19453a456d35ced7ce8c92ff3f70302c7adff5c22bb018b340e3fda5d0bfbb2",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 14,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Executor hist\u00f3rico com base/depend\u00eancias n\u00e3o fixadas por digest/hashes transitivos; n\u00e3o copia security_migrations. Contexto/imagem exigem revis\u00e3o separada antes de build ou execu\u00e7\u00e3o.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "scripts/postgres/auth03_executor.Dockerfile.dockerignore",
+        "sha256": "4ba70dae2caee52c74888e1bdee347fdcf0fdd6ab3e92d95cd49e1e5aa2480d2",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 14,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Executor hist\u00f3rico com base/depend\u00eancias n\u00e3o fixadas por digest/hashes transitivos; n\u00e3o copia security_migrations. Contexto/imagem exigem revis\u00e3o separada antes de build ou execu\u00e7\u00e3o.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "scripts/postgres/g4/contracts.py",
+        "sha256": "04531a6b9f2a33d2c6334dc025ef18b750014305716a9283e81db44dad257ffc",
+        "expected_sha256": null,
+        "git_state": "untracked",
+        "last_commit": null,
+        "matches_last_commit": null,
+        "lines": 502,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Fronteira F02/G4 mant\u00e9m execu\u00e7\u00e3o recusada; dados/claims n\u00e3o concedem autoridade.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "scripts/postgres/m12b_security_adapters.py",
+        "sha256": "66e2fa3ea5fccdcb6b4f3555babd2cd78dd3d8f6ddb2253d9687ef9ac584cba6",
+        "expected_sha256": null,
+        "git_state": "tracked_clean",
+        "last_commit": "4fbb4f0b2f71fddb06c327d89c325fb3e022d895 feat(security): add audited offline M1.2B migration coordinator",
+        "matches_last_commit": true,
+        "lines": 638,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Executor/coordenador/adapter security fora do bundle AUTH-03; autoriza\u00e7\u00e3o e proveni\u00eancia independentes preservadas.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "scripts/postgres/m12b_security_coordinator.py",
+        "sha256": "33415d4b4c51dbb03a6f67332cc77c63aebc87b7a8f90ba20da1abd79d7a012c",
+        "expected_sha256": null,
+        "git_state": "tracked_clean",
+        "last_commit": "4fbb4f0b2f71fddb06c327d89c325fb3e022d895 feat(security): add audited offline M1.2B migration coordinator",
+        "matches_last_commit": true,
+        "lines": 266,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Executor/coordenador/adapter security fora do bundle AUTH-03; autoriza\u00e7\u00e3o e proveni\u00eancia independentes preservadas.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      },
+      {
+        "path": "scripts/postgres/m12b_security_migration.py",
+        "sha256": "c2608a2c8d0391dc3e5960fe797d4c8f77be5165475cb0058de4f66dd51ed9fe",
+        "expected_sha256": null,
+        "git_state": "tracked_clean",
+        "last_commit": "b2605975a4fb87f25aa84afcda3f10dac77cfd4c feat(security): isolate M1.2B migration inspection and privileges",
+        "matches_last_commit": true,
+        "lines": 672,
+        "scope": "OUTSIDE_ACTIVE_AUTH03_MANIFEST",
+        "approved": false,
+        "assessment": "Executor/coordenador/adapter security fora do bundle AUTH-03; autoriza\u00e7\u00e3o e proveni\u00eancia independentes preservadas.",
+        "validation_status": "STATIC_COVERAGE_INVENTORY_NOT_OPERATIONALLY_VALIDATED"
+      }
+    ],
+    "unresolved_evidence": [
+      "Nove inclus\u00f5es locais n\u00e3o t\u00eam autoria/aprova\u00e7\u00e3o original atestadas independentemente; contexto DEV anterior e revis\u00e3o t\u00e9cnica atual n\u00e3o substituem aprova\u00e7\u00e3o humana dos bytes.",
+      "Onze das 52 fontes s\u00e3o n\u00e3o versionadas (incluindo executor e f067 j\u00e1 presentes no manifesto anterior); backend/migrations/env.py tem altera\u00e7\u00e3o local preexistente e coincide com o hash do manifesto. Aus\u00eancia de commit n\u00e3o \u00e9 prova de abuso nem autoriza\u00e7\u00e3o.",
+      "Aprova\u00e7\u00e3o original do manifesto de 31 entradas n\u00e3o foi localizada; correspond\u00eancia de hash prova somente integridade relativa \u00e0 refer\u00eancia.",
+      "27 artefactos complementares continuam fora do \u00e2mbito. Nenhum invent\u00e1rio suplementar constitui manifesto security/runtime/imagem aprovado.",
+      "C\u00f3digo atual dos executores mant\u00e9m identidades hist\u00f3ricas e gates fechados; contratos documentais por ambiente n\u00e3o implementam novos perfis.",
+      "Sem valida\u00e7\u00e3o PostgreSQL/ACL/TLS nativa ou recupera\u00e7\u00e3o independente nesta etapa; dois testes positivos AUTH-03 continuam a falhar com o manifesto ativo."
+    ],
+    "next_human_decision": "Review this exact candidate and each of 25 divergence reviews; explicitly accept or reject nine local additions. Approval may authorize later active-manifest update only in a separate task, never DDL/gate activation.",
+    "application_after_approval": [
+      "Revalidate candidate file SHA256, payload digest, proposed-manifest digest, active-manifest baseline SHA256 and all 52 source hashes/paths without symlinks.",
+      "Obtain explicit approval bound to exact artifact digest, complete proposed mapping and disposition of all pending local-source evidence; changes invalidate the candidate.",
+      "In a separately authorized task, preserve old sources/manifest pair and apply only the approved projection serialization; never copy this envelope to the active path.",
+      "Run unchanged offline verifier/regressions, reject missing/extra/tampered/symlink sources, keep gates closed; image/executor build needs separate review/authorization."
+    ],
+    "rollback": "Restore only an approved matching source/manifest artifact pair, preserving local work; never old manifest against new code. If pair or outcome uncertain, keep execution refused.",
+    "required_future_tests": [
+      "Exact expected set, regular non-symlink files and SHA256 match.",
+      "Candidate projection passes equivalent integrity checks without activation; active envelope remains rejected.",
+      "Mutation/missing/extra/symlink/old-version sources refused.",
+      "Existing two positive bundle/lock tests pass after authorized update; negative security tests unchanged.",
+      "Separate approval and real disposable infrastructure for SQL/migrations/ownership/grants/TLS/readiness/recovery."
+    ]
+  }
+}

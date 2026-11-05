@@ -1,3 +1,7 @@
+> DEV-06 (2026-10-25): [contrato TLS implementado](dev06-postgresql-transport.md)
+> e [reconciliação](../../operations/dev06-postgresql-integration.md).
+> Este apontador não altera DAT-05A nem aprova nomes físicos por ambiente.
+
 # LiveNet v2 — Especificação do Modelo de Dados (F0.28)
 
 **Estado:** Rascunho de consolidação documental — não autoriza criação de tabelas nem migrações.
@@ -506,3 +510,34 @@ a criação de tabelas ou execução de migrações.
 
 A próxima etapa será a especificação física do domínio
 `inventory`, sujeita a revisão antes da implementação.
+
+## Adenda DAT-05A — DEV-08-D01/D02, formalização DEV-08B
+
+**APROVADA NO ÂMBITO DOCUMENTAL/ARQUITETURAL**, conforme pedido humano DEV-08B,
+anexo `9e646608-e14d-4575-8d04-84eaa4ca6301/Pasted text.txt`, Missão e §§2–3,
+em 2026-10-25. O texto histórico DAT-05A acima permanece integral.
+Esta adenda tem precedência apenas sobre o nome literal da base e a
+materialização inicial de schemas; não altera as outras decisões DAT.
+
+- Uma base por ambiente: DEV `livenet_v2_dev`, STAGING `livenet_v2_staging`,
+  PROD-VM/futuro PROD-K8S `livenet_v2_prod`.
+- Clusters, redes, volumes, roles, credenciais e confiança TLS independentes
+  entre ambientes e relativamente ao LiveNet v1. Nome ou system identifier
+  isolado não comprovam isolamento; identidade física/lógica e proveniência
+  do destino exigem evidência independente, incluindo clones e restauros.
+- PostgreSQL com TLS `verify-full`, CA e identidade do endpoint explícitas.
+  Runtime, migrator, inspector, owners NOLOGIN e administração separados;
+  ownership/grants concretos ainda exigem revisão antes de provisionamento.
+- Mantêm-se seis domínios lógicos. O primeiro MVP materializa apenas
+  `inventory`, `audit` e `security`; discovery, monitoring e operations
+  não são pré-criados, mesmo vazios, devido ao catálogo exato G2.
+- MVP: aplicação `f066a01a7230`, security independente `b12b01a7230`,
+  ledgers distintos. AUTH-03 isolado: aplicação `f067a01a7230`,
+  sem security por defeito; `authorization` não entra no destino MVP.
+
+Contrato completo de identidade, roles, grafos, dependências, validação,
+readiness e reversão: [DEV-08B — contratos de persistência](dev08b-persistence-contracts.md).
+A decisão aprova desenho e formalização; **não autoriza criação de bases,
+migrações, alterações de configuração operacional, manifesto AUTH-03 ou gates**.
+As regras de separação de domínios, evolução Alembic e restantes lacunas
+permanecem. Não se inventa a fonte original de aprovação do DAT-05A histórico.
