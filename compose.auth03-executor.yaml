@@ -1,0 +1,35 @@
+{
+  "name": "livenet-auth03-validation-required",
+  "x-dev09fix01-state": "NOT APPROVED; use dev09fix01_packaging validation; no execution authorization",
+  "services": {
+    "executor": {
+      "profiles": [
+        "dev09fix01-quarantine"
+      ],
+      "image": null,
+      "user": null,
+      "pull_policy": "never",
+      "restart": "no",
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "privileged": false,
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "pids_limit": 64,
+      "mem_limit": "256m",
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777"
+      ],
+      "entrypoint": [
+        "/bin/sh",
+        "-c",
+        "exit 78"
+      ],
+      "command": [],
+      "network_mode": "none"
+    }
+  }
+}

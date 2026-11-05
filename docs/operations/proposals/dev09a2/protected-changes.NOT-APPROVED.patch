@@ -1,0 +1,244 @@
+--- a/compose.auth03-executor.yaml
++++ b/compose.auth03-executor.yaml
+@@ -1,34 +1,42 @@
+-# Proposta tecnica preparada; nao criar/arrancar servicos nesta etapa.
+-name: livenetv2-auth03-test
+-
+-services:
+-  executor:
+-    profiles: [auth03-tools]
+-    build:
+-      context: .
+-      dockerfile: scripts/postgres/auth03_executor.Dockerfile
+-    image: livenetv2-auth03-executor:209d28
+-    restart: "no"
+-    user: "${AUTH03_EXECUTOR_UID:?UID explicito obrigatorio}:${AUTH03_EXECUTOR_GID:?GID explicito obrigatorio}"
+-    read_only: true
+-    cap_drop: [ALL]
+-    security_opt: ["no-new-privileges:true"]
+-    pids_limit: 64
+-    mem_limit: 256m
+-    tmpfs:
+-      - /tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777
+-    secrets:
+-      - source: db_password
+-        target: auth03_db_password
+-    networks:
+-      - auth03_backend
+-    # Sem password, socket Docker, codigo host montado ou portas publicadas.
+-    command: [python, -c, "import signal; signal.pause()"]
+-
+-secrets:
+-  db_password:
+-    file: ./secrets/auth03_db_password.txt
+-
+-networks:
+-  auth03_backend:
+-    internal: true
++{
++  "name": "${DEV09B_PROJECT:?Explicit reserved run required}",
++  "x-dev09a2-state": "NOT APPROVED; descriptor only; no operational service",
++  "services": {
++    "executor": {
++      "profiles": [
++        "dev09b-blocked"
++      ],
++      "image": "${DEV09B_EXECUTOR_IMAGE:?Reviewed built image digest required}",
++      "pull_policy": "never",
++      "build": {
++        "context": ".",
++        "dockerfile": "scripts/postgres/auth03_executor.Dockerfile"
++      },
++      "restart": "no",
++      "user": "${DEV09B_EXECUTOR_UID:?Explicit nonroot UID}:${DEV09B_EXECUTOR_GID:?Explicit nonroot GID}",
++      "read_only": true,
++      "cap_drop": [
++        "ALL"
++      ],
++      "security_opt": [
++        "no-new-privileges:true"
++      ],
++      "pids_limit": 64,
++      "mem_limit": "256m",
++      "tmpfs": [
++        "/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777"
++      ],
++      "entrypoint": [
++        "/bin/sh",
++        "-c",
++        "exit 78"
++      ],
++      "network_mode": "none",
++      "command": [
++        "python",
++        "-c",
++        "raise SystemExit('Protected integration and authority absent')"
++      ]
++    }
++  }
++}
+--- a/scripts/postgres/auth03_executor.Dockerfile
++++ b/scripts/postgres/auth03_executor.Dockerfile
+@@ -1,14 +1,19 @@
+-FROM python:3.12-slim
+-
++# DEV09A2 proposal NOT APPROVED: no build or deployment authorization.
++FROM python@sha256:dc9e92fcdc085ad86dda976f4cfc58856dba33a438a16db37ff00151b285c8ca
+ WORKDIR /opt/auth03
+-COPY backend/requirements.txt backend/requirements.txt
+-RUN pip install --no-cache-dir -r backend/requirements.txt
++COPY scripts/postgres/dev09a2-executor.lock /tmp/executor.lock
++RUN pip install --index-url https://pypi.org/simple --only-binary=:all: --require-hashes --no-cache-dir --no-compile -r /tmp/executor.lock
++RUN pip check
+ COPY backend/app backend/app
+ COPY backend/migrations backend/migrations
+-COPY backend/alembic.ini backend/alembic.ini
+-COPY scripts/postgres/auth03_alembic_executor.py scripts/postgres/auth03_alembic_executor.py
+-COPY scripts/postgres/auth03_executor_integrity.json scripts/postgres/auth03_executor_integrity.json
+-
+-ENV PYTHONPATH=/opt/auth03/backend PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
++COPY backend/security_migrations backend/security_migrations
++COPY backend/alembic.ini backend/alembic-security.ini backend/requirements.txt backend/
++COPY scripts/postgres/auth03_alembic_executor.py scripts/postgres/auth03_executor_integrity.json scripts/postgres/
++COPY scripts/postgres/dev09a1_controlled.py scripts/postgres/dev09a2_integration.py scripts/postgres/
++COPY scripts/postgres/m12b_security_migration.py scripts/postgres/m12b_security_coordinator.py scripts/postgres/m12b_security_adapters.py scripts/postgres/
++COPY scripts/postgres/g4 scripts/postgres/g4
++ENV PYTHONPATH=/opt/auth03/backend:/opt/auth03/scripts/postgres PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ USER 10001:10001
+-CMD ["python", "-c", "import signal; signal.pause()"]
++# Source diagnostics only. Historical guards remain closed; no Alembic CLI.
++ENTRYPOINT ["/bin/sh", "-c", "exit 78"]
++CMD ["python", "-c", "raise SystemExit('DEV09B authorization required')"]
+--- a/scripts/postgres/auth03_executor.Dockerfile.dockerignore
++++ b/scripts/postgres/auth03_executor.Dockerfile.dockerignore
+@@ -1,14 +1,82 @@
+ **
+ !backend/
++!backend/alembic-security.ini
++!backend/alembic.ini
+ !backend/app/
+-!backend/app/**/
+-!backend/app/**/*.py
++!backend/app/__init__.py
++!backend/app/audit/
++!backend/app/audit/__init__.py
++!backend/app/audit/models.py
++!backend/app/audit/service.py
++!backend/app/config.py
++!backend/app/core/
++!backend/app/core/__init__.py
++!backend/app/core/database.py
++!backend/app/core/model_registry.py
++!backend/app/core/models.py
++!backend/app/dedicated.py
++!backend/app/health/
++!backend/app/health/__init__.py
++!backend/app/health/routes.py
++!backend/app/inventory/
++!backend/app/inventory/__init__.py
++!backend/app/inventory/access.py
++!backend/app/inventory/models.py
++!backend/app/inventory/routes.py
++!backend/app/inventory/schemas.py
++!backend/app/inventory/service.py
++!backend/app/postgres_tls.py
++!backend/app/readiness.py
++!backend/app/readiness_postgres/
++!backend/app/readiness_postgres/__init__.py
++!backend/app/readiness_postgres/adapter.py
++!backend/app/readiness_postgres/evaluate.py
++!backend/app/readiness_postgres/policy.py
++!backend/app/readiness_postgres/queries.py
++!backend/app/security/
++!backend/app/security/__init__.py
++!backend/app/security/access.py
++!backend/app/security/csrf.py
++!backend/app/security/errors.py
++!backend/app/security/models.py
++!backend/app/security/policy.py
++!backend/app/security/routes.py
++!backend/app/security/service.py
++!backend/app/trusted_proxy.py
+ !backend/migrations/
+-!backend/migrations/**/
+-!backend/migrations/**/*.py
++!backend/migrations/env.py
++!backend/migrations/versions/
++!backend/migrations/versions/38d641dcd780_create_inventory_resource_relations.py
++!backend/migrations/versions/44e7eb855b5a_create_inventory_group_rules.py
++!backend/migrations/versions/4f625db33d6d_create_inventory_resource_identifiers.py
++!backend/migrations/versions/7c4e2a91b605_create_inventory_tags.py
++!backend/migrations/versions/9e1b7c42a630_create_inventory_resource_tags.py
++!backend/migrations/versions/af62df027d9d_create_inventory_resources_baseline.py
++!backend/migrations/versions/ba06dd956da9_create_inventory_group_memberships.py
++!backend/migrations/versions/c4a91e7b205d_create_inventory_policies.py
++!backend/migrations/versions/da34876e4210_create_inventory_groups.py
++!backend/migrations/versions/e65b01a7c230_create_inventory_policy_versions.py
++!backend/migrations/versions/f065c01a7230_create_inventory_policy_assignments.py
++!backend/migrations/versions/f065d01a7230_create_inventory_effective_configs.py
++!backend/migrations/versions/f066a01a7230_create_audit_events_baseline.py
++!backend/migrations/versions/f067a01a7230_create_authorization_integrity_anchors.py
+ !backend/requirements.txt
+-!backend/alembic.ini
++!backend/security_migrations/
++!backend/security_migrations/__init__.py
++!backend/security_migrations/contract.py
++!backend/security_migrations/env.py
++!backend/security_migrations/versions/
++!backend/security_migrations/versions/b12b01a7230_create_security.py
+ !scripts/
+ !scripts/postgres/
+ !scripts/postgres/auth03_alembic_executor.py
+ !scripts/postgres/auth03_executor_integrity.json
++!scripts/postgres/dev09a1_controlled.py
++!scripts/postgres/dev09a2-executor.lock
++!scripts/postgres/dev09a2_integration.py
++!scripts/postgres/g4/
++!scripts/postgres/g4/__init__.py
++!scripts/postgres/g4/contracts.py
++!scripts/postgres/m12b_security_adapters.py
++!scripts/postgres/m12b_security_coordinator.py
++!scripts/postgres/m12b_security_migration.py
+--- a/scripts/postgres/auth03_alembic_executor.py
++++ b/scripts/postgres/auth03_alembic_executor.py
+@@ -415,5 +415,12 @@
+         return 2
+ 
+ 
++
++def prepare_dedicated_request(plan):
++    """NOT APPROVED preparation seam; never executes migrations or grants authority."""
++    from dev09a2_integration import prepare
++    return prepare(plan)
++
++
+ if __name__ == "__main__":
+     raise SystemExit(main())
+--- a/scripts/postgres/m12b_security_migration.py
++++ b/scripts/postgres/m12b_security_migration.py
+@@ -668,5 +668,12 @@
+             "application_revision": BASELINE, "security_revision": INITIAL_REVISION}
+ 
+ 
++
++def prepare_dedicated_request(plan):
++    """NOT APPROVED preparation seam; never executes migrations or grants authority."""
++    from dev09a2_integration import prepare
++    return prepare(plan)
++
++
+ if __name__ == "__main__":
+     raise SystemExit("M1.2B-P2C-1 offline; nao existe CLI operacional")
+--- a/scripts/postgres/m12b_security_coordinator.py
++++ b/scripts/postgres/m12b_security_coordinator.py
+@@ -264,3 +264,10 @@
+             # Never automatically release/reacquire the barrier during recovery.
+             original = error.original_error if isinstance(error, CleanupError) else error
+             raise CoordinationFailed(self._state, original_error=original, cleanup_failures=issues) from None
++
++
++def prepare_dedicated_request(plan):
++    """NOT APPROVED preparation seam; never executes migrations or grants authority."""
++    from dev09a2_integration import prepare
++    return prepare(plan)
++

@@ -1,0 +1,37 @@
+{
+  "status": "NOT_APPROVED",
+  "applied": false,
+  "warning": "Proposal only; build/transport/authority not validated. Applying preparation seams still cannot execute and requires a new AUTH03 candidate for changed protected executor bytes.",
+  "entries": {
+    "compose.auth03-executor.yaml": {
+      "before_sha256": "be9b42028bf11a6ea423b168a30016877d8667dad2b780d7e932190bd7d1e599",
+      "proposed_sha256": "b7d56cb93226f02523537b3a9c1b15a3a95e2068aa413602732193b56473c931",
+      "copy": "compose.auth03-executor.yaml.proposed"
+    },
+    "scripts/postgres/auth03_executor.Dockerfile": {
+      "before_sha256": "a19453a456d35ced7ce8c92ff3f70302c7adff5c22bb018b340e3fda5d0bfbb2",
+      "proposed_sha256": "666da86b54e81f0b7196eef55fac8d54ddfaab31c9f98e6d99727bb78c30b7b0",
+      "copy": "scripts__postgres__auth03_executor.Dockerfile.proposed"
+    },
+    "scripts/postgres/auth03_executor.Dockerfile.dockerignore": {
+      "before_sha256": "4ba70dae2caee52c74888e1bdee347fdcf0fdd6ab3e92d95cd49e1e5aa2480d2",
+      "proposed_sha256": "c3251fbdb8c94419b5fb02d9a58eccda2e7e881cb947105206bc22d3157b4bdb",
+      "copy": "scripts__postgres__auth03_executor.Dockerfile.dockerignore.proposed"
+    },
+    "scripts/postgres/auth03_alembic_executor.py": {
+      "before_sha256": "66c18319414c29f49ae163ef86b098924592102b566cd894fd4824933704d00b",
+      "proposed_sha256": "5871cc8e1026c43fabc1a286ebe713ec80452821eb3622da2d33980577e640de",
+      "copy": "scripts__postgres__auth03_alembic_executor.py.proposed"
+    },
+    "scripts/postgres/m12b_security_migration.py": {
+      "before_sha256": "c2608a2c8d0391dc3e5960fe797d4c8f77be5165475cb0058de4f66dd51ed9fe",
+      "proposed_sha256": "e762b7285611a440c929dcafa2a855dd83ac7fbe59bb0e6487fcf2f8dc50b03d",
+      "copy": "scripts__postgres__m12b_security_migration.py.proposed"
+    },
+    "scripts/postgres/m12b_security_coordinator.py": {
+      "before_sha256": "33415d4b4c51dbb03a6f67332cc77c63aebc87b7a8f90ba20da1abd79d7a012c",
+      "proposed_sha256": "f2604c4e8673a4c71506c546786302c6f1750caa5449d13b31285acfd67013e2",
+      "copy": "scripts__postgres__m12b_security_coordinator.py.proposed"
+    }
+  }
+}

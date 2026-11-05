@@ -1,0 +1,42 @@
+{
+  "name": "${DEV09B_PROJECT:?Explicit reserved run required}",
+  "x-dev09a2-state": "NOT APPROVED; descriptor only; no operational service",
+  "services": {
+    "executor": {
+      "profiles": [
+        "dev09b-blocked"
+      ],
+      "image": "${DEV09B_EXECUTOR_IMAGE:?Reviewed built image digest required}",
+      "pull_policy": "never",
+      "build": {
+        "context": ".",
+        "dockerfile": "scripts/postgres/auth03_executor.Dockerfile"
+      },
+      "restart": "no",
+      "user": "${DEV09B_EXECUTOR_UID:?Explicit nonroot UID}:${DEV09B_EXECUTOR_GID:?Explicit nonroot GID}",
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "pids_limit": 64,
+      "mem_limit": "256m",
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,nodev,size=16m,mode=1777"
+      ],
+      "entrypoint": [
+        "/bin/sh",
+        "-c",
+        "exit 78"
+      ],
+      "network_mode": "none",
+      "command": [
+        "python",
+        "-c",
+        "raise SystemExit('Protected integration and authority absent')"
+      ]
+    }
+  }
+}

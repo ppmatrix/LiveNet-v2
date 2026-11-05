@@ -1,0 +1,19 @@
+# DEV09A2 proposal NOT APPROVED: no build or deployment authorization.
+FROM python@sha256:dc9e92fcdc085ad86dda976f4cfc58856dba33a438a16db37ff00151b285c8ca
+WORKDIR /opt/auth03
+COPY scripts/postgres/dev09a2-executor.lock /tmp/executor.lock
+RUN pip install --index-url https://pypi.org/simple --only-binary=:all: --require-hashes --no-cache-dir --no-compile -r /tmp/executor.lock
+RUN pip check
+COPY backend/app backend/app
+COPY backend/migrations backend/migrations
+COPY backend/security_migrations backend/security_migrations
+COPY backend/alembic.ini backend/alembic-security.ini backend/requirements.txt backend/
+COPY scripts/postgres/auth03_alembic_executor.py scripts/postgres/auth03_executor_integrity.json scripts/postgres/
+COPY scripts/postgres/dev09a1_controlled.py scripts/postgres/dev09a2_integration.py scripts/postgres/
+COPY scripts/postgres/m12b_security_migration.py scripts/postgres/m12b_security_coordinator.py scripts/postgres/m12b_security_adapters.py scripts/postgres/
+COPY scripts/postgres/g4 scripts/postgres/g4
+ENV PYTHONPATH=/opt/auth03/backend:/opt/auth03/scripts/postgres PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+USER 10001:10001
+# Source diagnostics only. Historical guards remain closed; no Alembic CLI.
+ENTRYPOINT ["/bin/sh", "-c", "exit 78"]
+CMD ["python", "-c", "raise SystemExit('DEV09B authorization required')"]

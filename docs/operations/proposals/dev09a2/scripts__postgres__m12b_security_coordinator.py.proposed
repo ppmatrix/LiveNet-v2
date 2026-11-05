@@ -1,0 +1,273 @@
+"""IMP1 in-memory state machine. execute() cannot reach simulation or adapters."""
+
+from dataclasses import dataclass
+from enum import Enum
+
+import m12b_security_migration as existing_executor
+from m12b_security_adapters import (
+    AdministrativeCloser, BOOTSTRAP, CleanupError, CleanupIssue, ClosureProof,
+    CommitProof, CommitUncertain, ContractViolation,
+    DurabilityProof, ExclusivityController, FinalProof, INSPECTOR,
+    InspectionProof, InspectorAdapter, MIGRATOR, OWNER, OwnershipProof, PRIMARY_LOCK,
+    PostCommitVerifier, PrecheckProof, PrecommitProof, RecoveryProof, RecoveryVerifier,
+    ReleaseProof, TRANSACTION_LOCK, MigratorAdapter,
+    MemoryScenario, OperationClaim, OperationRegistry, OperationStatus, RegistryRefused, require, yes,
+)
+
+
+class State(str, Enum):
+    PRECHECK = "PRECHECK"
+    EXCLUSIVITY_VERIFIED = "EXCLUSIVITY_VERIFIED"
+    INSPECTED = "INSPECTED"
+    HANDOFF_ACCEPTED = "HANDOFF_ACCEPTED"
+    MIGRATION_COMMITTED = "MIGRATION_COMMITTED"
+    POSTCOMMIT_VERIFIED = "POSTCOMMIT_VERIFIED"
+    OWNERSHIP_TRANSFERRED = "OWNERSHIP_TRANSFERRED"
+    TEMP_PRIVILEGES_REVOKED = "TEMP_PRIVILEGES_REVOKED"
+    FINAL_VERIFIED = "FINAL_VERIFIED"
+    CLOSED = "CLOSED"
+    BLOCKED = "BLOCKED"
+    ROLLED_BACK = "ROLLED_BACK"
+    RECONCILE_REQUIRED = "RECONCILE_REQUIRED"
+
+
+ORDER = tuple(State)[:10]
+
+
+class CoordinationFailed(RuntimeError):
+    def __init__(self, state, *, original_error=None, cleanup_failures=()):
+        self.state = state
+        # Retained for trusted inspection, never interpolated in output/repr.
+        self.original_error = original_error
+        self.cleanup_failures = tuple(cleanup_failures)
+        super().__init__("Simulacao interrompida: " + state.value)
+
+
+@dataclass(frozen=True)
+class SimulationResult:
+    state: State
+    history: tuple[State, ...]
+    simulated: bool = True
+    app_ready: bool = False
+
+
+class MigrationCoordinator:
+    def __init__(self, *, inspector, migrator, verifier, closer, exclusivity, recovery):
+        self.inspector, self.migrator, self.verifier = inspector, migrator, verifier
+        self.closer, self.exclusivity, self.recovery = closer, exclusivity, recovery
+        components = (inspector, migrator, verifier, closer, exclusivity, recovery)
+        types = (InspectorAdapter, MigratorAdapter, PostCommitVerifier, AdministrativeCloser,
+                 ExclusivityController, RecoveryVerifier)
+        # No arbitrary callbacks or production adapters enter the simulation.
+        require(all(type(c) is t for c, t in zip(components, types)))
+        self.world = inspector.world
+        require(type(self.world) is MemoryScenario and all(c.world is self.world for c in components))
+        require(type(self.world.registry) is OperationRegistry)
+        self._registry = self.world.registry
+        self._binding = self.world.binding
+        self._state = State.PRECHECK
+        self._history = [self._state]
+        self._started = False
+        self._final = self._release = None
+        self._claim = None
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def history(self):
+        return tuple(self._history)
+
+    def execute(self, plan):
+        # Preserve the existing first guard; no adapter is touched before refusal.
+        existing_executor.require_execution_authorization(plan)
+        raise ContractViolation("IMP1 disponibiliza apenas simulacao em memoria")
+
+    def _advance(self, state):
+        require(self.state in ORDER and ORDER.index(state) == ORDER.index(self.state) + 1,
+                "Transicao incompleta ou fora de ordem")
+        if state is State.CLOSED:
+            self.world.check(self._final, FinalProof)
+            self.world.check(self._release, ReleaseProof)
+            require(self.world.committed and self.world.owner == OWNER
+                    and self.world.create_revoked and self.world.memberships_revoked)
+            require(not self.world.exclusive and not self.world.lock_held
+                    and all(s.physical in self.world.closed for s in self.world.sessions))
+            self._registry_binding()
+            self._registry.finish(self._claim, OperationStatus.CLOSED)
+        if state is not State.CLOSED:
+            self.world.step("state:" + state.value)
+        self._state = state
+        self._history.append(state)
+
+    def _guard(self, locked=True):
+        self._registry_binding()
+        self.exclusivity.check()
+        require(self.world.exclusive is True, "Janela perdida")
+        self.world.check(self._recovery, RecoveryProof)
+        if locked:
+            self.inspector.continuity()
+        if self.world.transaction:
+            require(self.world.step("transaction_lock_continuity", self.world.transaction_lock_held) is True,
+                    "Lock transacional perdido")
+
+    def _registry_binding(self):
+        if self.world.registry is not self._registry or self.world.binding is not self._binding:
+            raise RegistryRefused(True)
+
+    def simulate(self) -> SimulationResult:
+        require(not self._started, "Coordenador single-use: sem retry")
+        self._started = True
+        # Claim in shared storage before consulting any adapter. Missing or
+        # unreadable storage is uncertainty, never authorization for a retry.
+        try:
+            self._registry_binding()
+            self._claim = self._registry.claim(self._binding)
+            require(type(self._claim) is OperationClaim and self._claim.binding is self._binding)
+        except Exception as error:
+            reconciliation = not isinstance(error, RegistryRefused) or error.reconciliation_required
+            self._state = State.RECONCILE_REQUIRED if reconciliation else State.BLOCKED
+            self._history.append(self._state)
+            raise CoordinationFailed(self._state, original_error=error) from None
+        commit_may_have_happened = False
+        try:
+            observed = self.world.precheck()
+            self.world.check(observed, PrecheckProof)
+            require(observed.application_revision == self.world.target.baseline
+                    and observed.security_revision is None and observed.authorization_present is False
+                    and observed.unexpected_objects is False)
+            self._recovery = self.recovery.verify()
+            self.exclusivity.verify()
+            self._advance(State.EXCLUSIVITY_VERIFIED)
+            inspection = self.inspector.inspect()
+            self.world.check(inspection, InspectionProof)
+            self.world.check_session(inspection.session, INSPECTOR)
+            require(inspection.session is self.inspector.session and inspection.lock_key == PRIMARY_LOCK
+                    and yes(inspection.lock_held) and len(inspection.fingerprint) == 64
+                    and all(c in "0123456789abcdef" for c in inspection.fingerprint))
+            self._guard()
+            self._advance(State.INSPECTED)
+            evidence = self.inspector.issue(inspection)
+            session = self.migrator.begin()
+            if self.world.transaction is not True:
+                raise CommitUncertain("Transacao inicial inesperadamente encerrada")
+            self.world.check_session(session, MIGRATOR)
+            require(session is self.migrator.session and session.physical is not inspection.session.physical)
+            self._guard()
+            self.inspector.consume(evidence)
+            self._advance(State.HANDOFF_ACCEPTED)
+            self._guard()
+            precommit = self.migrator.work()
+            if self.world.transaction is not True:
+                raise CommitUncertain("Transacao encerrada antes do commit previsto")
+            self.world.check(precommit, PrecommitProof)
+            require(precommit.session is session and yes(precommit.physical_valid)
+                    and precommit.application_revision == self.world.target.baseline
+                    and precommit.security_revision == self.world.target.revision)
+            self.inspector.verify_unchanged(inspection.fingerprint)
+            self._guard()
+            self.world.work_validated = True
+            receipt = self.migrator.commit()
+            commit_may_have_happened = True
+            self.world.check(receipt, CommitProof)
+            self.world.check_session(receipt.session, MIGRATOR)
+            require(receipt.session is session and receipt.transaction_lock == TRANSACTION_LOCK and yes(receipt.committed))
+            self._guard()
+            self._advance(State.MIGRATION_COMMITTED)
+            self.migrator.close()
+            durability = self.verifier.verify(receipt)
+            self.world.check(durability, DurabilityProof)
+            self.world.check_session(durability.session, MIGRATOR)
+            require(durability.session is self.verifier.session and durability.committed_session is session)
+            require(durability.session.physical is not session.physical
+                    and durability.session.physical is not inspection.session.physical)
+            require(yes(durability.durable) and yes(durability.physical_valid)
+                    and durability.owner == MIGRATOR and durability.fingerprint == inspection.fingerprint)
+            self._guard()
+            self.verifier.close()
+            self._advance(State.POSTCOMMIT_VERIFIED)
+            ownership = self.closer.transfer(durability)
+            self.world.check(ownership, OwnershipProof)
+            self.world.check_session(ownership.session, BOOTSTRAP)
+            require(ownership.session is self.closer.session and ownership.owner == OWNER and yes(ownership.staged))
+            self._guard()
+            self._advance(State.OWNERSHIP_TRANSFERRED)
+            closure = self.closer.revoke()
+            self.world.check(closure, ClosureProof)
+            require(closure.session is ownership.session and closure.owner == OWNER)
+            require(all(yes(v) for v in (closure.committed, closure.create_revoked, closure.memberships_revoked)))
+            self._guard()
+            self._advance(State.TEMP_PRIVILEGES_REVOKED)
+            final = self.closer.verify_final()
+            self.world.check(final, FinalProof)
+            self.world.check_session(final.session, BOOTSTRAP)
+            require(final.session is self.closer.final_session and final.session.physical is not ownership.session.physical)
+            require(final.owner == OWNER and all(yes(v) for v in
+                    (final.ownership_valid, final.acl_valid, final.baseline_preserved))
+                    and final.app_dml_enabled is False and final.fingerprint == inspection.fingerprint)
+            self._final = final
+            self._guard()
+            self._advance(State.FINAL_VERIFIED)
+            self.world.step("state:CLOSED")  # Failure injection before releasing any barrier.
+            self.closer.close()
+            self._guard()
+            self.inspector.close()
+            self._guard(locked=False)
+            released = self.exclusivity.release(final)
+            self.world.check(released, ReleaseProof)
+            require(yes(released.released) and self.world.exclusive is False)
+            self._release = released
+            self._advance(State.CLOSED)
+            return SimulationResult(self.state, self.history)
+        except Exception as error:
+            uncertain = (isinstance(error, CommitUncertain)
+                         or (isinstance(error, RegistryRefused) and error.reconciliation_required)
+                         or commit_may_have_happened
+                         or self.world.commit_attempted or self.world.committed)
+            failed_rollback = False
+            issues = list(error.issues) if isinstance(error, CleanupError) else []
+
+            def note_cleanup(operation, failure):
+                additions = (failure.issues if isinstance(failure, CleanupError)
+                             else (CleanupIssue(operation, type(failure).__name__),))
+                for issue in additions:
+                    if issue not in issues:
+                        issues.append(issue)
+
+            if not uncertain and self.world.transaction:
+                try:
+                    self.migrator.rollback()
+                except Exception as failure:
+                    uncertain = failed_rollback = True
+                    note_cleanup("migration.rollback", failure)
+            try:
+                self.closer.rollback()
+            except Exception as failure:
+                uncertain = True
+                note_cleanup("administrative.rollback", failure)
+            for name, resource in (("postcommit.close", self.verifier), ("migrator.close", self.migrator),
+                                   ("administrative.close", self.closer), ("inspector.close", self.inspector)):
+                try:
+                    resource.close()
+                except Exception as failure:
+                    uncertain = True
+                    note_cleanup(name, failure)
+            self._state = (State.RECONCILE_REQUIRED if uncertain else
+                           State.ROLLED_BACK if self.migrator.session is not None and not failed_rollback else State.BLOCKED)
+            try:
+                self._registry.finish(self._claim, OperationStatus(self._state.value))
+            except Exception as failure:
+                self._state = State.RECONCILE_REQUIRED
+                note_cleanup("operation_registry.finish", failure)
+            self._history.append(self._state)
+            # Never automatically release/reacquire the barrier during recovery.
+            original = error.original_error if isinstance(error, CleanupError) else error
+            raise CoordinationFailed(self._state, original_error=original, cleanup_failures=issues) from None
+
+
+def prepare_dedicated_request(plan):
+    """NOT APPROVED preparation seam; never executes migrations or grants authority."""
+    from dev09a2_integration import prepare
+    return prepare(plan)
+
