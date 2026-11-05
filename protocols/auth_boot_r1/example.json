@@ -1,0 +1,30 @@
+{
+  "payload": {
+    "protocol_version": "1",
+    "signature_algorithm": "Ed25519",
+    "issuer_id": "example-authority",
+    "key_id": "example-key-no-private-material",
+    "trust_policy_version": "1",
+    "approval_id": "example-approval",
+    "request_id": "example-request",
+    "attempt_id": "example-attempt",
+    "approver_id": "example-human",
+    "requester_id": "example-requester",
+    "executor_id": "example-executor",
+    "audience": "example-verifier",
+    "environment": "offline-example",
+    "vm_generation_id": "example-generation",
+    "target_binding_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "global_digest_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "operation": "example-operation",
+    "gate": "example-closed-gate",
+    "purpose": "offline-structural-example",
+    "execution_plan_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "issued_at": "1700000000",
+    "not_before": "1700000000",
+    "expires_at": "1700000900",
+    "authority_epoch": "1",
+    "revocation_epoch": "1"
+  },
+  "signature_hex": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+}
