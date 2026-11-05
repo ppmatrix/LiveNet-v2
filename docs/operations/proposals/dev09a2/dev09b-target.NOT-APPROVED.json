@@ -1,0 +1,79 @@
+{
+  "kind": "FUTURE_DEV09B_DISPOSABLE_SPEC",
+  "status": "NOT_APPROVED",
+  "executable_migrations": false,
+  "run": "livenet-dev09b-4c96595539",
+  "environment": "DEV",
+  "profile": "MVP",
+  "application": "f066a01a7230",
+  "security": "b12b01a7230",
+  "image_reference": "postgres@sha256:f4610795587492cd4fb887c2dc3de301b813278bb6f616992061141b5f15ac36",
+  "image_id": "sha256:6a2e324ebe59af6031c4c1cd96c1d5072c2ebc36563d2196365e43b8297c062d",
+  "postgres_major": 16,
+  "database": "livenet_v2_dev_4c96595539",
+  "hostname": "livenet-dev09b-4c96595539-db",
+  "port": 5432,
+  "network": {
+    "name": "livenet-dev09b-4c96595539-data",
+    "internal": true,
+    "ipv6": false,
+    "members": [
+      "db",
+      "executor"
+    ],
+    "published_ports": [],
+    "operational_connections": false
+  },
+  "storage": {
+    "type": "tmpfs",
+    "path": "/var/lib/postgresql/data",
+    "persistent_volumes": false
+  },
+  "tls": {
+    "mode": "verify-full",
+    "ca": "generate fresh synthetic CA after approval",
+    "san": "livenet-dev09b-4c96595539-db",
+    "private_directory_mode": "0700",
+    "private_file_mode": "0600",
+    "credentials": "generate per-run and per-role; never use operational inputs"
+  },
+  "roles": {
+    "owners": "lnv2_dev_{db,inventory,audit,security}_owner NOLOGIN",
+    "migrator": "lnv2_dev_migrator LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS",
+    "runtime": "lnv2_dev_runtime non-owner, D05 only after separate grant approval",
+    "inspector": "lnv2_dev_inspector catalogs/approved ledgers only",
+    "recovery": "lnv2_dev_admin independent administration channel, never application runtime",
+    "grants_status": "BLOCKED: concrete phase-specific matrix and btree_gist window need review"
+  },
+  "identity_pending": {
+    "system_identifier": null,
+    "ca_sha256": null,
+    "container_id": null,
+    "network_id": null
+  },
+  "precreation_checks": [
+    "verify local RepoDigest maps to image ID",
+    "refuse any matching existing run/container/network name",
+    "no existing volume/bind/operational credential accepted"
+  ],
+  "postcreation_checks": [
+    "independent pg_controldata plus SQL SID/version/database/role and peer address",
+    "verify-full CA and SAN; exact image/container/network/storage evidence",
+    "exclusive members, no ports, no default route, fresh initdb",
+    "empty application/security ledgers and no application schemas",
+    "independent identity and authorization review before DDL"
+  ],
+  "cleanup": [
+    "record new full resource IDs with run label; revalidate ownership before removal",
+    "remove own containers, verify empty owned network then remove it; no prune",
+    "refuse unexpected named/anonymous volumes; remove only own synthetic credentials",
+    "compare preexisting resource IDs and require zero own leftovers"
+  ],
+  "migration_command": null,
+  "approval_required": [
+    "source/patch approval",
+    "authenticated authority contract",
+    "concrete target and grants/recovery approval",
+    "new explicit DEV09B execution authorization"
+  ]
+}

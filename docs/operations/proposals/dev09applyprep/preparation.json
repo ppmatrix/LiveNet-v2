@@ -1,0 +1,87 @@
+{
+  "status": "PREPARED_NOT_APPLIED_REQUIRES_NEW_HUMAN_AUTHORIZATION",
+  "branch": "main",
+  "head": "647179c928888adfeef0f69f582fd13c5fc17350",
+  "index_sha256": "50d32095da16e2c0e985226625971e890c33d406cbb9b97743a7198905b9541e",
+  "units": [
+    {
+      "id": "APP-01",
+      "target": "compose.auth03-executor.yaml",
+      "patch": "APP-01.approved-source.patch",
+      "patch_sha256": "1e89a54bdfa67113c3ae297b23f29bad0b62f5bc7d1f7ce939d7cc524e697127",
+      "before_sha256": "be9b42028bf11a6ea423b168a30016877d8667dad2b780d7e932190bd7d1e599",
+      "after_sha256": "4e2a634568b568bc9402a44f74d05221ee3d2f022fe221b0d9535f007bb49fa7",
+      "original_mode": "0o664",
+      "original_uid": 1000,
+      "original_gid": 1000,
+      "git_apply_check": "PASS",
+      "exact_in_memory_reconstruction": "PASS"
+    },
+    {
+      "id": "APP-02",
+      "target": "scripts/postgres/auth03_executor.Dockerfile",
+      "patch": "APP-02.approved-source.patch",
+      "patch_sha256": "8b98ac7eaa012223bad8f6fde0b1d23c206ae00ce793d6263cb44758a507a76f",
+      "before_sha256": "a19453a456d35ced7ce8c92ff3f70302c7adff5c22bb018b340e3fda5d0bfbb2",
+      "after_sha256": "666da86b54e81f0b7196eef55fac8d54ddfaab31c9f98e6d99727bb78c30b7b0",
+      "original_mode": "0o664",
+      "original_uid": 1000,
+      "original_gid": 1000,
+      "git_apply_check": "PASS",
+      "exact_in_memory_reconstruction": "PASS"
+    },
+    {
+      "id": "APP-03",
+      "target": "scripts/postgres/auth03_executor.Dockerfile.dockerignore",
+      "patch": "APP-03.approved-source.patch",
+      "patch_sha256": "5546196cb9f102a59517554f7fdbf89002b03cc89cf1c404d13667ea08a23ba7",
+      "before_sha256": "4ba70dae2caee52c74888e1bdee347fdcf0fdd6ab3e92d95cd49e1e5aa2480d2",
+      "after_sha256": "6920490db9bcbfd0ee1c5710a10758187f45fa5b141d3c4d4842fa9a587d6794",
+      "original_mode": "0o664",
+      "original_uid": 1000,
+      "original_gid": 1000,
+      "git_apply_check": "PASS",
+      "exact_in_memory_reconstruction": "PASS"
+    }
+  ],
+  "combined_git_apply_check": "PASS",
+  "combined_changed_paths": [
+    "compose.auth03-executor.yaml",
+    "scripts/postgres/auth03_executor.Dockerfile",
+    "scripts/postgres/auth03_executor.Dockerfile.dockerignore"
+  ],
+  "auth03": {
+    "count": 52,
+    "manifest_sha256": "4819c697b7d12f7ab5cbb1fdfa9cf4c3fd0e98e93b53a60337296cc84036fc29"
+  },
+  "app04": {
+    "backend/alembic-security.ini": "f43ed86b68499b4fb25d75421b30b75251433162b684a7e6a525274718fc0394",
+    "backend/security_migrations/__init__.py": "b450bd910d335f6ec45152bf01af5e8def18616670a430585aad3b7d5e81f677",
+    "backend/security_migrations/contract.py": "0a29cbc074907a4b9023709a7a8770ea5a48e1d000bcd0197255d4dcf49fb41b",
+    "backend/security_migrations/env.py": "0bafe798a46070a53ae27ba627e099004d0a3caec143538fe3e114f16a9e90c5",
+    "backend/security_migrations/versions/b12b01a7230_create_security.py": "3f29c6e630955f2548a7a0a481aa182deda1014cd4fdfbaa2fe39e55db356481",
+    "scripts/postgres/g4/contracts.py": "04531a6b9f2a33d2c6334dc025ef18b750014305716a9283e81db44dad257ffc",
+    "scripts/postgres/m12b_security_adapters.py": "66e2fa3ea5fccdcb6b4f3555babd2cd78dd3d8f6ddb2253d9687ef9ac584cba6"
+  },
+  "helpers_require_complementary_attestation": {
+    "scripts/dedicated/dev09fix01_packaging.py": "0d525bbadc8533a94a9650220b8361bb06c983533383740c91c5a67212a0bc17",
+    "backend/tests/test_dev09fix01_packaging.py": "b623d6f138db6950f5c10f3e0d2bdfaf73a49b9a57846c32be90b22acf739a0f",
+    "scripts/dedicated/dev09a2_packaging.py": "d61a253b8a92209145055526b92611da87acb9d0042da327ba040c5fdb9681bc",
+    "backend/tests/test_dev09a2_integration.py": "b262dd71c25b3680fe93fd89c01c408660f33a8b38b08b949b69696f88aaee56"
+  },
+  "aggregate_forbidden": {
+    "path": "docs/operations/proposals/dev09a2/protected-changes.NOT-APPROVED.patch",
+    "sha256": "ad2c67c2d9859e780e1c224610d19cc7345b170cbb8d24233a56e6334a0bbef5"
+  },
+  "atomicity": "No real multi-file atomicity. Future operation must stage, verify, back up durably, replace per file, verify, and conditionally restore originals on partial failure.",
+  "postapply_validation": {
+    "integrity": "Verify exact three output hashes, AUTH03 52/52, APP04, closed gates, index and all other baseline paths including ignored files.",
+    "offline_tests": "Only reviewed offline tests in private temporary copy; exclude the two pre-application assertions below after application. No tests executed in this preparation.",
+    "preapply_only": [
+      "backend/tests/test_dev09fix01_packaging.py::test_patch_files_have_one_protected_target_each",
+      "backend/tests/test_dev09a2_integration.py::test_patch_is_unapplied_and_exact"
+    ],
+    "new_required_check": "Compare three applied files to approved output hashes instead of historical preimages; no protected hashes or tests automatically changed."
+  },
+  "application_executed": false
+}
