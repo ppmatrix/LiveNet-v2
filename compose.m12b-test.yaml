@@ -1,0 +1,38 @@
+# M1.2B-P2A: isolated PostgreSQL only; no application or migration services.
+name: livenetv2-m12b-test
+
+services:
+  db:
+    image: postgres:16-alpine@sha256:f4610795587492cd4fb887c2dc3de301b813278bb6f616992061141b5f15ac36
+    restart: "no"
+    environment:
+      POSTGRES_DB: livenet_m12b_test
+      # Bootstrap administration only. Future migrator/application roles are separate.
+      POSTGRES_USER: livenet_m12b_bootstrap
+      POSTGRES_PASSWORD_FILE: /run/secrets/m12b_bootstrap_password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=scram-sha-256
+    secrets:
+      - m12b_bootstrap_password
+    volumes:
+      - m12b_postgres_data:/var/lib/postgresql/data
+    networks:
+      - m12b_backend
+    healthcheck:
+      test: [CMD, pg_isready, -U, livenet_m12b_bootstrap, -d, livenet_m12b_test]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+secrets:
+  m12b_bootstrap_password:
+    file: ${HOME:?HOME must identify the credential owner}/.local/share/livenet-v2/m12b-test/bootstrap_password
+
+volumes:
+  m12b_postgres_data:
+    name: livenetv2-m12b-test_m12b_postgres_data
+
+networks:
+  m12b_backend:
+    name: livenetv2-m12b-test_m12b_backend
+    internal: true
