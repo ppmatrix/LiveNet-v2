@@ -1,3 +1,184 @@
+> DEV-07 (2026-10-25): React real por HTTPS validado em browser isolado;
+> 40 testes frontend e 1 327 backend passaram. Gates: 289 passaram, duas falhas
+> AUTH-03 preexistentes mantidas. Persistência aplicacional/readiness positiva
+> continuam bloqueadas; [evidências e decisões](../../operations/dev07-react-integration.md).
+
+> DEV-06 (2026-10-25): transporte TLS PostgreSQL e testes SQL sintéticos validados;
+> persistência aplicacional e readiness positiva continuam bloqueadas. Ver
+> [relatório DEV-06](../../operations/dev06-postgresql-integration.md).
+> AUTH-03 não foi regenerado; falhas preexistentes dos testes estão documentadas.
+
+> Atualização DEV-05B (2026-10-25): empacotamento e integração HTTP isolada
+> validados; ativação continua bloqueada. Evidência e limites em
+> [dev05b-isolated-integration](../../operations/dev05b-isolated-integration.md). O texto anterior segue preservado.
+
+# LiveNet v2 — Estado atualizado DEV-05A
+
+Data: 2026-10-25, progbox, main, HEAD
+`647179c928888adfeef0f69f582fd13c5fc17350`. Revisão estática e documentação
+limitada; sem testes, ferramentas nativas, build ou validação operacional.
+O conteúdo DEV-03B e o arquivo F0 anterior continuam integralmente abaixo.
+
+## Decisões aprovadas versus operação pendente
+
+- DEV-03C-D01: Opção A aprovada no pedido humano DEV-04, reiterada na DEV-05A:
+  Caddy/backend/PG separados, API/dados privados e backend sem ports no host.
+  Aprovação de referência/preparação, não de ativação.
+- DEV-05A-D01: responsável confirmou em 25/10/2026 **acesso exclusivamente interno
+  ao laboratório**; fonte primária no pedido DEV-05A §1, anexo
+  `adee713c-cd23-4bfd-a10e-c48de86c556e/Pasted text.txt`. UI/API só para redes
+  internas explicitamente autorizadas em DEV/STAGING/PROD-VM/PROD-K8S. Sem IP
+  público, port forwarding de entrada Internet, Cloudflare Tunnel/equivalentes;
+  ingress K8S interno, sem LoadBalancer público. Publicação HTTPS só em interface/
+  endereço interno aprovado e firewall restrito; backend/PG/Redis/auxiliares sem
+  exposição externa. Egress é avaliado separadamente e não autoriza ingress.
+  Exceção só por decisão explícita do responsável. HTTPS/auth/RBAC/audit/CSRF/
+  cookies/sessões mantêm-se. RFC1918, hostname ou VPN não comprovam isolamento.
+
+O [registo central](../../architecture/decision-register.md) conserva os IDs
+originais; esta decisão não renumera D-01–D-52. Nenhuma proposta restante da
+baseline passa a aprovada por consequência destas duas decisões.
+
+## Estado DEV-04 após revisão
+
+| Categoria | Estado / evidência |
+| --- | --- |
+| Implementado no código/artefactos | Oito ficheiros DEV-04 presentes: Dockerfile/ignore dedicados, Gunicorn container, constraints, Compose, Caddyfile, testes e documento operacional. |
+| Validado offline anteriormente | DEV-04 reportou 570 testes passados; DEV-02 reportou 1135. Não repetidos na DEV-05A. |
+| Revisão estática atual | Sete artefactos técnicos preservados; R01/R02 altos e R03/R04/R05 médios registados, sem correções. Não é novo resultado de testes. |
+| Observação histórica isolada | PROV1/PROV2 e ensaios F0 mantidos como históricos, não revalidados. |
+| Validado operacionalmente agora | Nenhum componente recebeu essa classificação; serviços/rede/firewall atuais não foram consultados. |
+| Bloqueado | Compose exit 78 intacto; build do contexto real bloqueada por R02 e ativação pelos requisitos LAN-only/PG/readiness/recuperação. |
+| Proposta futura | DEV-05B pode ser proposta para parsing nativo delimitado; build é capacidade separada após correção autorizada e prova do contexto. Nada iniciado. |
+
+Relatório/evidências: [atualização DEV-05A no documento DEV-04](../../operations/dev04-dedicated-integration.md).
+R01: parâmetro de bind não valida LAN e não há enforcement firewall comprovado.
+R02: !app/**/ reabre a árvore app, podendo incluir não-Python; há 13 .pyc
+preexistentes, sem prova de imagem construída ou segredo exposto. R03: oráculos
+e strings não validam semântica Docker/Caddy/Gunicorn. R04: parâmetros obrigatórios
+não comprovam coerência/montagens/identidades. R05: pins/base/dependências são
+candidatos sem resolução/proveniência/hashes completos. Nenhum artefacto é corrigido.
+
+Permanecem OPEN: f066/f067, manifesto AUTH-03 divergente, F02/G2/G4/gates,
+readiness real/503, privilégios runtime, conta administrativa inicial, recuperação
+independente, transporte PG/TLS, peer, UID/montagens, rede/firewall/exposição,
+28 lacunas G4/L02 com enumeração SOURCE_NOT_LOCATED e restantes originais em falta.
+Não se aprova acesso Internet ou enfraquecimento de segurança para testes.
+
+## Consolidação anterior preservada — DEV-03B e arquivo F0
+
+As linhas históricas seguintes mantêm o seu âmbito temporal. Declarações de
+pending/approved/pass/externo não anulam a política LAN-only nem os achados atuais.
+
+# LiveNet v2 — Estado atual consolidado DEV-03B
+
+Data da leitura estática: 2026-10-25, progbox, branch `main`, HEAD
+`647179c928888adfeef0f69f582fd13c5fc17350`. Consolidação documental para revisão
+humana; sem testes, instalações, builds, migrações, Docker ou consultas PostgreSQL.
+Não constitui aceitação F0, aprovação de decisões novas ou autorização operacional.
+
+Esta secção distingue estado atual do código e evidência anterior. O texto
+preexistente de 2026-10-18 e os registos F0.66A/B são conservados integralmente
+no arquivo abaixo. Expressões antigas como pending, clean, synchronized,
+committed/published e números de testes aplicam-se às etapas que os produziram,
+não ao estado runtime ou Git atual.
+
+Referências centrais: [decisões/fontes/lacunas](../../architecture/decision-register.md),
+[ambientes](../../architecture/environments.md), [runtime](../../architecture/platform-runtime.md),
+[roadmap](../../roadmap/platform-roadmap.md), [DEV-02](../../operations/dev02-dedicated-backend.md).
+DEV-03A é um relatório no chat desta tarefa, sem ficheiro no repositório; não
+é transcrição original das decisões. A presente atualização não o inventa em disco.
+
+## Classificação da evidência
+
+| Classificação | Significado e limite |
+| --- | --- |
+| Implementado no código | Fonte identificada; não implica instalação, passagem de testes ou uso real. |
+| Validado por testes offline | Resultado anterior documentado com doubles/sem serviços; não repetido nesta tarefa. |
+| Observado historicamente em ambiente isolado | Amostra real anterior, limitada a destino, data, permissões e operações registadas. |
+| Validado operacionalmente no ambiente atual | Exigiria evidência atual específica; **nenhum componente recebeu esta classificação na DEV-03B**. |
+| Parcial | Apenas parte do contrato ou produto está implementada. |
+| Ausente | Implementação não identificada no inventário local consultado. |
+| Bloqueado | Gate, pré-requisito ou decisão pendente impede prosseguir; não significa defeito a contornar. |
+
+## Código presente e limites atuais
+
+| Componente | Estado de implementação | Evidência | Operação / bloqueios |
+| --- | --- | --- | --- |
+| Flask e configuração | Implementado na fundação; plataforma parcial | [factory](../../../backend/app/__init__.py), [config](../../../backend/app/config.py) | Perfis não comprovam prontidão; segurança desativada por omissão na factory base. |
+| Health | Implementado | [health/routes.py](../../../backend/app/health/routes.py) | Liveness sem verificar BD; operação atual não verificada. |
+| Factory/arranque dedicado | Implementado como preparação | [dedicated.py](../../../backend/app/dedicated.py), [dedicated_wsgi.py](../../../backend/dedicated_wsgi.py), [Gunicorn config](../../../backend/gunicorn_dedicated.conf.py) | Sem auto-engine/DDL/contas; imagem antiga não inclui percurso DEV-02. |
+| Inventário | Parcial | [rotas](../../../backend/app/inventory/routes.py), [serviço](../../../backend/app/inventory/service.py), [schemas](../../../backend/app/inventory/schemas.py) | GET lista/detalhe e POST criação; sem edição/eliminação. D05 só consulta; atributos de criação vazios. |
+| Modelo físico inventory | Implementado no código, funcionalidade parcial | [models](../../../backend/app/inventory/models.py), [modelo físico](inventory-physical-model.md) | 12 tabelas; grupos/políticas/configuração efetiva não equivalem a motores funcionais. |
+| Auditoria | Base/serviço implementados; instrumentação parcial | [audit](../../../backend/app/audit/service.py), [f066](../../../backend/migrations/versions/f066a01a7230_create_audit_events_baseline.py) | Auth e criação inventory usam audit; retenção/limpeza e operação atual não validadas. |
+| Autenticação/sessões | Implementado no código | [security](../../../backend/app/security/service.py), [modelos](../../../backend/app/security/models.py) | Scrypt, sessão persistente, expiração, throttle e revogação; dependente de schema/ACL/conta/HTTPS. |
+| RBAC | Parcial | [access](../../../backend/app/security/access.py) | Reader/editor globais; sem âmbito grupo/recurso. |
+| UI React/TypeScript/Vite | Implementado para consulta | [frontend README](../../../frontend/README.md), [App](../../../frontend/src/App.tsx) | Sessão, login/logout, lista/filtros/paginação/detalhe; sem escrita ou áreas futuras funcionais. |
+| Alembic aplicacional/security | Implementado em cadeias independentes | [env aplicacional](../../../backend/migrations/env.py), [contrato security](../../../backend/security_migrations/contract.py) | Dois ledgers, ligação externa security, downgrade security bloqueado; execução não autorizada. |
+| Readiness | Parcial, bloqueada operacionalmente | [ready](../../../backend/app/readiness.py), [G2 adapter](../../../backend/app/readiness_postgres/adapter.py) | Sem checker real; DEV-02 devolve 503. G2 executor exclusivamente offline; revisão real pendente. |
+| Proxy/HTTPS | Parcial | [TrustedProxy](../../../backend/app/trusted_proxy.py), [Caddyfile](../../../infra/web-dev/Caddyfile) | API Caddy continua 503; rede/PKI/integração não verificadas atualmente. |
+| Coordenação M1.2B/G4 | Parcial, bloqueada | [coordenador](../../../scripts/postgres/m12b_security_coordinator.py), [F02](../../../scripts/postgres/g4/contracts.py) | Doubles/registos em memória e tipos não são transporte/supervisor reais ou autoridade operacional. |
+| Discovery/reconciliação | Ausente funcionalmente | DAT-02/07 no [modelo conceptual](data-model.md) | Modelos de identidade não constituem descoberta. |
+| Monitorização/métricas/alertas | Ausente funcionalmente | F1/F2 do [baseline](f0-baseline.md) | Sem checks, histórico operacional, séries ou notificações implementados. |
+| Celery/workers/scheduler/Redis | Ausente | Tecnologias previstas no baseline/README | Sem serviços/tarefas/coordenação identificados. |
+| Outbox/SSE | Ausente | DAT-08A e baseline | Sem tabela/publicador/stream; audit não substitui Outbox. |
+| CI/CD/GHCR/Kubernetes | Ausente no repositório como percurso implementado | Sem workflows/manifests encontrados | Serviços externos não consultados; promoção/imagens/cluster não verificados. |
+| Backup/recuperação/observabilidade | Parcial apenas em preparação/fundações | Documentos PREP/PROV2; audit/health | Sem restauro completo ou monitorização de plataforma demonstrados atualmente. |
+
+## Validações anteriores: fontes e precedência
+
+- F0.60–F0.66: ensaios físicos e transacionais descritos no arquivo e no modelo
+  físico, restritos às bases autorizadas. Testes com savepoint/rollback externo
+  comprovam atomicidade no âmbito testado, não commit durável independente.
+- [R3](m12b-p2c2a-r3-operational-preflight.md), [PROV1](m12b-p2c2a-prov1-report.md),
+  [PROV2](m12b-p2c2a-prov2-validation.md): sequência histórica de 2026-10-23.
+  R3 antecede as roles; PROV1 criou quatro roles limitadas e PROV2 validou três
+  LOGIN/leitores/ACL no cluster descartável. Em PROV2 security/authorization/ledger
+  security estavam ausentes e app sem direitos aplicacionais. Não revalidado agora.
+- [VAL1](m12b-p2c2b-val1-offline-audit.md) reprovou IMP1;
+  [FIX1](m12b-p2c2b-imp1-fix1-report.md) e [VAL1-R2](m12b-p2c2b-val1-r2-audit.md)
+  documentam 355 pass e aprovação apenas offline, sem autorização de migração.
+- [G2-PREP1](m12b-p2b-d05-g2-prep1-readiness-adapter.md),
+  [FIX1](m12b-p2b-d05-g2-fix1.md) e [FIX2](m12b-p2b-d05-g2-fix2.md): implementação
+  e regressões sintéticas; sem transporte PostgreSQL real nem gates operacionais.
+- DEV-02 documenta **1135 testes offline em 13 ficheiros, todos passados**, sem
+  instalar Gunicorn/arrancar servidor. Parsing por Gunicorn, multiworker, rede,
+  TLS, Caddy, PostgreSQL e durabilidade ficaram pendentes. Não repetidos na DEV-03B.
+- A DEV-03A foi read-only e a DEV-03B é documental. Não há nova validação runtime,
+  não se atualizaram resultados de testes nem estado externo por inferência.
+
+## Bloqueios e lacunas mantidos
+
+1. Originais D-01–D-52, 16 capítulos e condições integrais G4/I2 não consolidados;
+   usar SOURCE_NOT_LOCATED quando ausentes, não aprovação inferida de código.
+2. **As 28 lacunas G4/L02 permanecem OPEN.** A lista individual original não foi
+   localizada; cardinalidade comunicada pelo pedido DEV-03B, sem verificação
+   independente. L02-R01–R07 não são substituto nem mapeamento inventado dessas 28.
+3. Lacunas residuais DAT-01–DAT-10, JSONB, reconciliação, ciclos/transições,
+   políticas, RBAC grupo/recurso, retenção/limpeza, Outbox/SSE e assíncrono.
+4. f066/f067: revisão aplicacional local f067 presente; readiness/G4 exigem f066
+   e b12 security. Não resolver por head/wildcard nem alterar contratos.
+5. AUTH-03: manifesto divergente conforme comparação estática DEV-03A (31/51,
+   20 omissões e quatro hashes divergentes); operation_gate bloqueia mutações,
+   M1.2B execution_enabled=False e F02 recusa execução. Nada regenerado/ativado.
+6. Manifesto físico aprovado, avaliação PG16 real, SQL ORM/ACL/defaults, streaming,
+   cancelamento/cleanup, limites medidos/supervisor, snapshots/TOCTOU e latches
+   em memória continuam por tratar nas fronteiras aprovadas.
+7. Recuperação administrativa independente, exclusão de escritores externos,
+   migração controlada, ownership/ACL e primeira conta dependem de autorização.
+8. DAT-05A/nome livenet versus factory dedicada e tabelas de retenção divergentes
+   exigem clarificação. Esta atualização não altera nenhuma delas.
+9. Entrega integrada, HTTPS, TLS PostgreSQL, redes/segredos por ambiente, backups,
+   CI/CD, promoção, rollback e preparação multi-nó continuam pendentes.
+
+O [roadmap proposto](../../roadmap/platform-roadmap.md) não inicia DEV-03C nem
+operações. Aceitação completa F0/produção exige evidência e revisão humanas.
+
+## Arquivo integral — registo histórico anterior à DEV-03B
+
+O conteúdo abaixo foi preservado sem alterações; os seus estados/contagens são
+históricos e não anulam os limites e fontes da consolidação acima.
+
 # LiveNet v2 — F0 Implementation Status
 
 Date: 2026-10-18
