@@ -1,0 +1,93 @@
+{
+  "task": "R1-PG-LAB-02",
+  "temporary_root": "/tmp/r1-pg-lab01-3try9gcl",
+  "status": "COMPLETED_WITH_RESIDUAL_EXPIRY_COUNTEREXAMPLE",
+  "cleanup": "CONFIRMED_REMOVED",
+  "cases": [
+    {
+      "case": "isolation",
+      "postgres": "16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)",
+      "tcp": false,
+      "private_socket": true,
+      "all_data_new": true
+    },
+    {
+      "case": "baseline_savepoint_reproduced",
+      "successful_entries": 2
+    },
+    {
+      "case": "baseline_expiry_reproduced",
+      "mutation_after_expiry": true
+    },
+    {
+      "case": "unsafe_legacy_and_fault_entrypoints_denied",
+      "passed": true
+    },
+    {
+      "case": "savepoint_and_unlock_bypasses_refused",
+      "passed": true,
+      "discard_after_rollback_cannot_reuse_burn": true,
+      "malicious_temp_pg_locks_cannot_hide_entry": true,
+      "caller_has_no_advisory_api_execute_privilege": true
+    },
+    {
+      "case": "direct_dml_marker_and_role_bypasses_refused",
+      "passed": true
+    },
+    {
+      "case": "normal_update_and_post_commit_replay_refused",
+      "passed": true
+    },
+    {
+      "case": "busy-cell_refused_without_wait",
+      "passed": true
+    },
+    {
+      "case": "busy-policy_refused_without_wait",
+      "passed": true
+    },
+    {
+      "case": "expired_before_final_check_refused",
+      "passed": true
+    },
+    {
+      "case": "revoked_before_final_check_refused",
+      "passed": true
+    },
+    {
+      "case": "three_session_concurrency_and_cross_backend_replay",
+      "passed": true,
+      "committed_updates": 1,
+      "both_burns_preserved": true
+    },
+    {
+      "case": "admin_only_postcheck_pause_counterexample",
+      "mutation_after_expiry": true,
+      "normal_caller_can_enable_injection": false,
+      "strict_gap002_satisfied": false
+    },
+    {
+      "case": "restart_retains_burn_and_rejects_old_context",
+      "passed": true,
+      "historical_restore_or_clone_safety_proven": false
+    }
+  ],
+  "mechanisms": {
+    "savepoints": "Persistent burn bound to backend/transaction plus non-rollback session advisory guard; explicit held-lock check because advisory locks are reentrant.",
+    "known_lock_waits": "EXCLUSIVE table lock and row/policy locks with NOWAIT acquired before final local time check; busy attempts remain burned.",
+    "bypass_controls": "Caller has EXECUTE only; legacy gate and admin fault variant denied; advisory APIs revoked for caller in the private lab; qualified pg_catalog.pg_locks and pg_temp last.",
+    "scope": "Experimental one-row UPDATE only; no production integration or change to R1 contracts."
+  },
+  "limitations": [
+    "Session advisory state is ephemeral, not a durable ledger; old context rejection after restart relies on the separate burn and backend/transaction binding.",
+    "Fresh private lab revokes PUBLIC advisory API privileges; deploying those ACL changes in an existing server is not authorized or recommended by these results.",
+    "The internal NOLOGIN gate role required table-level UPDATE for LOCK TABLE; caller still has no direct DML or role membership.",
+    "Known relation/tuple waits are removed, not all possible scheduling, buffer, WAL, I/O or internal waits after the clock check.",
+    "The residual expiry counterexample was produced by a separate admin-only fault-injection variant, not observed in the unmodified corrected function.",
+    "No remote revocation authority, authenticated UTC uncertainty, power-loss storage failure, historical recovery or concurrent live clone was validated.",
+    "Historical rollback, clone identities and loss of external continuity remain blockers.",
+    "Current SQL/catalog/single-transaction protected contracts do not admit this lab schema/control path automatically.",
+    "GAP-001/002 remain open; AUTH-03/F02/G2/G4 remain unchanged and closed."
+  ],
+  "development_note": "An initial run failed on LOCK TABLE privilege requirements; its private resources were cleaned. The subsequent privilege correction and temp-schema hardening were exercised in fresh clusters."
+}

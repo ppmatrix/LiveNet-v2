@@ -1,0 +1,108 @@
+{
+  "task": "R1-PG-LAB-01",
+  "temporary_root": "/tmp/r1-pg-lab01-q9aw0o7w",
+  "status": "COMPLETED_WITH_EXPECTED_COUNTEREXAMPLES",
+  "cleanup": "CONFIRMED_REMOVED",
+  "cases": [
+    {
+      "case": "isolation",
+      "version": "PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit",
+      "tcp": false,
+      "socket_mode": "0700",
+      "directory_mode": "0o700",
+      "existing_resources_reused": false
+    },
+    {
+      "case": "sql_privilege_bypass_refused",
+      "passed": true
+    },
+    {
+      "case": "concurrent_unique_marker",
+      "passed": true,
+      "committed_markers": 1
+    },
+    {
+      "case": "duplicate_attempt_under_new_approval_refused",
+      "passed": true
+    },
+    {
+      "case": "three_session_fixed_update",
+      "passed": true,
+      "changed_rows": 1
+    },
+    {
+      "case": "replay_refused",
+      "passed": true
+    },
+    {
+      "case": "wrong-version_refused",
+      "passed": true
+    },
+    {
+      "case": "protected_rollback_preserves_separate_burn",
+      "passed": true
+    },
+    {
+      "case": "savepoint_reinitiation_counterexample",
+      "guarantee_satisfied": false,
+      "successful_function_calls": 2,
+      "final_committed_row_version": 1
+    },
+    {
+      "case": "expired-before-check",
+      "passed": true
+    },
+    {
+      "case": "revoked-before-check",
+      "passed": true
+    },
+    {
+      "case": "expiry-during-policy-lock",
+      "expected_counterexample": false,
+      "effect_after_expiry": false,
+      "result": "P0001"
+    },
+    {
+      "case": "expiry-after-check-before-tuple",
+      "expected_counterexample": true,
+      "effect_after_expiry": true,
+      "result": "1"
+    },
+    {
+      "case": "local_revocation_application_order",
+      "passed": true,
+      "request_precedes_effect": true,
+      "applied_only_after_protected_commit": true,
+      "remote_authority_ordering_proven": false
+    },
+    {
+      "case": "commit_confirmation_not_consumed",
+      "passed": true,
+      "observer_row_version": 1,
+      "caller_result": "UNKNOWN/BLOCKED",
+      "automatic_retry": false
+    },
+    {
+      "case": "unclean_server_restart_marker_persistence",
+      "passed": true,
+      "power_loss_or_storage_failure_proven": false
+    },
+    {
+      "case": "historical_clone_counterexample",
+      "missing_later_burn": true,
+      "same_system_identifier": true,
+      "same_approval_can_be_reburned": true,
+      "external_authority_or_quarantine_implemented": false
+    }
+  ],
+  "limitations": [
+    "Role ACL tests do not establish an OS trust boundary against the same UID/root.",
+    "Local UTC observations do not attest a trusted UTC source or clock uncertainty.",
+    "No independent distributed authority, remote revocation transport, network partition or live split-brain was tested.",
+    "Immediate server restart is not a power-loss or storage-durability test.",
+    "The historical physical copy was made while stopped; no live backup protocol was validated.",
+    "Burn uniqueness is not rollback-independent initiation exclusivity; savepoint counterexample remains.",
+    "Protected-write expiry ordering failed in the post-check lock-wait scenario.",
+    "AUTH-03/F02/G2/G4 remain unchanged and closed; GAP-001/002 remain open."
+  ]
+}
