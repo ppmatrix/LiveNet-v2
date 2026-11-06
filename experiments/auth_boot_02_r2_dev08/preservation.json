@@ -1,0 +1,29 @@
+{
+  "preexisting_count": 9140,
+  "missing": [],
+  "added_outside": [],
+  "changed": [],
+  "head_equal": true,
+  "status_equal": true,
+  "diff_equal": true,
+  "inventory_sha256": "81d00cf2ca39dbefcefa2978179d6dadc32e67a0bd5183d2a6a14b4e7149fdd3",
+  "preserved": true,
+  "documentary_checks": {
+    "utf8_valid": true,
+    "replacement_characters_absent": true,
+    "broken_relative_links": [],
+    "sources_verified": 18,
+    "delivery_sha256_excluding_this_report": {
+      "BOUNDARY.md": "b3aa1d1daad0731d4d4cf31011ac97358155ae3451f363f83b36036ba041b9f0",
+      "CUSTODY.md": "d39cf72ee23a0670571b0b392dac7910f64aaf3e6fbb1a9a56b17a8f8e5736ff",
+      "DECISIONS.md": "8359d9bc32eccd65be987bdefd251ad28cc116edf0a473c18c5cef98b5e04f70",
+      "LAB_FEASIBILITY.md": "6b72b421f52f7bbd896616f49a7ce0b80d4eb9112cfad84ed88edbd4ee71f2f3",
+      "PROTOCOL.md": "34a53b40ccd375a1022ae2618e6fae396bebf89dedfadffa4259491cb4c57092",
+      "PROVENANCE.md": "2c87b8e5ec29e1051da72f698d86782d4509a89aa7236ef30d07eb98dcb07650",
+      "REPORT.md": "16adfa966f4685b2cf677fa74c07931e143ea98093a0bff9328cfe92b052e830",
+      "VALIDATION.md": "d4eab2dbbfb58584baf13f3ce92d0e26a0263987df3efe14658529e38aab665f",
+      "preservation.baseline.json": "a6d51435faeed960c518e32aab702bb4f5b0e5362c30a034997542a45038212b",
+      "sources.json": "3d8bb9b46fa322c921ee58d5616c8d1b0d956c04c9b8a677c663bfe8a5cbeb94"
+    }
+  }
+}

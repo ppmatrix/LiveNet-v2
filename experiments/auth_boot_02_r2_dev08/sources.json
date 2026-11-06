@@ -1,0 +1,77 @@
+{
+  "status": "DOCUMENTARY_SOURCES_NOT_APPROVAL",
+  "sources": [
+    {
+      "path": "docs/architecture/auth-boot-02-r1.md",
+      "sha256": "59c312d7dded14db9781d5e2a8e91acbce433b79a6d69427d3884f846e182eff"
+    },
+    {
+      "path": "docs/architecture/auth-boot-02-r2-traceability.md",
+      "sha256": "6c239c812e0fc125fff10a1d5712a380f653adc021586ecca2d3910ec6d3d1f2"
+    },
+    {
+      "path": "docs/architecture/auth-boot-02-r2.md",
+      "sha256": "241f65858fdfcf8676a4fef4d251f1fdef95dfb2987d971b26cd2c993bfcbfc1"
+    },
+    {
+      "path": "docs/architecture/environments.md",
+      "sha256": "4943c75125d0b761750060baf340948949d44b9f86e986b89374a0742fd88295"
+    },
+    {
+      "path": "docs/architecture/platform-runtime.md",
+      "sha256": "064e07f26265a2278c5639fe4d05550017d2f96b8c643f1de154c6345d32a3d0"
+    },
+    {
+      "path": "docs/specifications/f0/f0-baseline.md",
+      "sha256": "a2a9fe2edad556264234c119339df279d761e397d059f0040d01a622f386a3f3"
+    },
+    {
+      "path": "experiments/auth_boot_02_r2_dev02/evidence.json",
+      "sha256": "97ff5371dbbee0c4f61ee618e7afe78753b1f262228c9fac31371c681e8182c0"
+    },
+    {
+      "path": "experiments/auth_boot_02_r2_dev03/evidence.json",
+      "sha256": "2e9d3f79168c22c9ab0ce5f3d55b267b905f6e89100c0e5407ae6a880776d5b8"
+    },
+    {
+      "path": "experiments/auth_boot_02_r2_dev04/evidence.json",
+      "sha256": "588dae06c03aedd04a24152adc88ece248c3eb88f9218322a150cb08fc701f81"
+    },
+    {
+      "path": "experiments/auth_boot_02_r2_dev05/README.md",
+      "sha256": "13a39f932bfa99645eea0abfdcfd4fe5ed03c014a4a9099b62d0a682b319bfe2"
+    },
+    {
+      "path": "experiments/auth_boot_02_r2_dev05/REPORT.md",
+      "sha256": "0143b1dcbe5155e8e3eb6f70946e87f7a692c9ee53174715b3ba63123212b490"
+    },
+    {
+      "path": "experiments/auth_boot_02_r2_dev05/evidence.json",
+      "sha256": "b586f80075259ac09fe61e85442913dee07e7acc5bbc7b3e12c2b420049f7647"
+    },
+    {
+      "path": "experiments/auth_boot_02_r2_dev06/ARCHITECTURE.md",
+      "sha256": "74a969798ca05797efebe0c976f67090da6edd3f277d7baf3089a38b876ce69a"
+    },
+    {
+      "path": "experiments/auth_boot_02_r2_dev06/VALIDATION.md",
+      "sha256": "1385c773a17acc76d6b57cf9686df9257a18fa7cef045b9e99a5e5097f7348f5"
+    },
+    {
+      "path": "experiments/auth_boot_02_r2_dev07/FINDINGS.md",
+      "sha256": "4598d1b5cfa2df2f0459dba8bb8b4785977f987e36dceac83f83b2f0754b6870"
+    },
+    {
+      "path": "experiments/auth_boot_02_r2_dev07/PROVENANCE.md",
+      "sha256": "e041f1700235ca2983aabee1f5075844c17999329268dcdb7b5b02daf9d74828"
+    },
+    {
+      "path": "experiments/auth_boot_02_r2_dev07/REPORT.md",
+      "sha256": "8bcf9cb3be8bd4b3977247074b0ef8621e41da1db4aa69ffe3306319240f9618"
+    },
+    {
+      "path": "experiments/auth_boot_02_r2_dev07/VALIDATION.md",
+      "sha256": "81b1a86070dddc8fc34a17dbf84bb7180eb9254355d6c29c398bac3629d2a6c8"
+    }
+  ]
+}
