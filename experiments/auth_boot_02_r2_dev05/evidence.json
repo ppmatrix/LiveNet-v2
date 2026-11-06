@@ -1,0 +1,315 @@
+{
+  "started_utc_epoch": 1793104747.283992,
+  "timestamp_authenticated": false,
+  "duration_seconds": 56.99757099151611,
+  "python": "3.12.3",
+  "psycopg": "3.3.6",
+  "postgres": "postgres (PostgreSQL) 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)",
+  "baseline_dev04": {
+    "exit_code": 0,
+    "stdout": "{\"measurements\": {\"counterexample_guard_loss_sql_begins_after_fence\": {\"epoch\": 2, \"endpoint\": \"lab_68c710b8997d428aa8bb61e9a4681290|/tmp/ln-r2d04-9iu0amtg/target/socket/.s.PGSQL.5432|2049|77224|1956976|1000|1000\", \"claims\": 1, \"effects\": 1, \"resume\": false, \"executable\": false}, \"counterexample_guard_loss_old_commit_after_fence\": {\"epoch\": 2, \"endpoint\": \"lab_acb476ed5aab406cb8646ed8f29316fa|/tmp/ln-r2d04-9iu0amtg/target/socket/.s.PGSQL.5432|2049|77224|1956976|1000|1000\", \"claims\": 1, \"effects\": 1, \"resume\": false, \"executable\": false}}, \"cleanup\": true}\n",
+    "stderr": "test_anchor_connection_loss_before_sql_counterexample (test_experiment.Experiments.test_anchor_connection_loss_before_sql_counterexample) ... ok\ntest_anchor_connection_loss_in_flight_counterexample (test_experiment.Experiments.test_anchor_connection_loss_in_flight_counterexample) ... ok\n\n----------------------------------------------------------------------\nRan 2 tests in 4.731s\n\nOK\n",
+    "tests": 2
+  },
+  "tests": 34,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "success": true,
+  "output": "test_anchor_loss_after_sql_fence_waits_for_commit (test_resource.Experiments.test_anchor_loss_after_sql_fence_waits_for_commit) ... ok\ntest_anchor_loss_before_sql_resource_rejects_old (test_resource.Experiments.test_anchor_loss_before_sql_resource_rejects_old) ... ok\ntest_direct_dml_and_role_forgery_denied (test_resource.Experiments.test_direct_dml_and_role_forgery_denied) ... ok\ntest_direct_function_bypasses_external_consumption_but_not_fence (test_resource.Experiments.test_direct_function_bypasses_external_consumption_but_not_fence) ... ok\ntest_forged_cessation_flag_cannot_enable_reentry (test_resource.Experiments.test_forged_cessation_flag_cannot_enable_reentry) ... ok\ntest_historical_snapshot_revives_old_epoch_and_claim (test_resource.Experiments.test_historical_snapshot_revives_old_epoch_and_claim) ... ok\ntest_live_old_session_after_resource_fence (test_resource.Experiments.test_live_old_session_after_resource_fence) ... ok\ntest_local_fence_cannot_stop_old_writer_on_partitioned_clone (test_resource.Experiments.test_local_fence_cannot_stop_old_writer_on_partitioned_clone) ... ok\ntest_local_receipt_cannot_confirm_distributed_reentry (test_resource.Experiments.test_local_receipt_cannot_confirm_distributed_reentry) ... ok\ntest_local_receipt_does_not_prove_python_process_stopped (test_resource.Experiments.test_local_receipt_does_not_prove_python_process_stopped) ... ok\ntest_lost_effect_commit_confirmation_observation_only (test_resource.Experiments.test_lost_effect_commit_confirmation_observation_only) ... ok\ntest_lost_takeover_confirmation_never_retries (test_resource.Experiments.test_lost_takeover_confirmation_never_retries) ... ok\ntest_normal_gate_closed (test_resource.Experiments.test_normal_gate_closed) ... ok\ntest_old_principal_cannot_claim_new_epoch (test_resource.Experiments.test_old_principal_cannot_claim_new_epoch) ... ok\ntest_partition_after_freeze_requires_explicit_recovery (test_resource.Experiments.test_partition_after_freeze_requires_explicit_recovery) ... ok\ntest_partition_before_takeover_blocks (test_resource.Experiments.test_partition_before_takeover_blocks) ... ok\ntest_prepared_statement_old_epoch_rejected (test_resource.Experiments.test_prepared_statement_old_epoch_rejected) ... ok\ntest_prior_committed_effect_not_retracted_by_cessation (test_resource.Experiments.test_prior_committed_effect_not_retracted_by_cessation) ... ok\ntest_real_old_resource_outage_no_confirmation (test_resource.Experiments.test_real_old_resource_outage_no_confirmation) ... ok\ntest_reconnection_attempts_during_strict_takeover (test_resource.Experiments.test_reconnection_attempts_during_strict_takeover) ... ok\ntest_repeatable_read_old_snapshot_rejected (test_resource.Experiments.test_repeatable_read_old_snapshot_rejected) ... ok\ntest_resource_restart_preserves_fence_and_freeze (test_resource.Experiments.test_resource_restart_preserves_fence_and_freeze) ... ok\ntest_rollback_external_claim_survives (test_resource.Experiments.test_rollback_external_claim_survives) ... ok\ntest_same_approval_concurrency_single_resource (test_resource.Experiments.test_same_approval_concurrency_single_resource) ... ok\ntest_savepoint_rollback_does_not_release_external_claim (test_resource.Experiments.test_savepoint_rollback_does_not_release_external_claim) ... ok\ntest_serializable_old_snapshot_rejected (test_resource.Experiments.test_serializable_old_snapshot_rejected) ... ok\ntest_strict_cessation_after_sql_forces_rollback (test_resource.Experiments.test_strict_cessation_after_sql_forces_rollback) ... ok\ntest_strict_cessation_before_sql (test_resource.Experiments.test_strict_cessation_before_sql) ... ok\ntest_strict_multiple_old_sessions_terminated (test_resource.Experiments.test_strict_multiple_old_sessions_terminated) ... ok\ntest_superuser_bypasses_resource_boundary (test_resource.Experiments.test_superuser_bypasses_resource_boundary) ... ok\ntest_unfinished_transaction_blocks_confirmation (test_resource.Experiments.test_unfinished_transaction_blocks_confirmation) ... ok\ntest_unprivileged_executor_cannot_call_effect (test_resource.Experiments.test_unprivileged_executor_cannot_call_effect) ... ok\ntest_unreachable_old_resource_cannot_use_cached_receipt (test_resource.Experiments.test_unreachable_old_resource_cannot_use_cached_receipt) ... ok\ntest_wrong_resource_receipt_and_clone_endpoint_rejected (test_resource.Experiments.test_wrong_resource_receipt_and_clone_endpoint_rejected) ... ok\n\n----------------------------------------------------------------------\nRan 34 tests in 52.005s\n\nOK\n",
+  "measurements": {
+    "anchor_loss_before_commit_drained": {
+      "epoch": 2,
+      "value": 1,
+      "effects": [
+        [
+          "approval",
+          1
+        ]
+      ],
+      "claims": 1,
+      "resume": false,
+      "executable": false
+    },
+    "anchor_loss_before_sql_fixed_locally": {
+      "epoch": 2,
+      "value": 0,
+      "effects": [],
+      "claims": 1,
+      "resume": false,
+      "executable": false
+    },
+    "restricted_sql_attacks": [
+      {
+        "sql": "UPDATE resource.payload SET value=999",
+        "sqlstate": "42501"
+      },
+      {
+        "sql": "UPDATE resource.fence SET epoch=1",
+        "sqlstate": "42501"
+      },
+      {
+        "sql": "DELETE FROM resource.effects",
+        "sqlstate": "42501"
+      },
+      {
+        "sql": "UPDATE resource.incarnations SET epoch=2",
+        "sqlstate": "42501"
+      },
+      {
+        "sql": "SET ROLE new_writer",
+        "sqlstate": "42501"
+      },
+      {
+        "sql": "SET SESSION AUTHORIZATION new_writer",
+        "sqlstate": "42501"
+      },
+      {
+        "sql": "ALTER ROLE old_writer LOGIN",
+        "sqlstate": "42501"
+      },
+      {
+        "sql": "ALTER FUNCTION resource.apply(bigint,text) SECURITY INVOKER",
+        "sqlstate": "42501"
+      }
+    ],
+    "external_consumption_still_trusted_broker": {
+      "epoch": 1,
+      "value": 1,
+      "effects": [
+        [
+          "unclaimed",
+          1
+        ]
+      ],
+      "claims": 0,
+      "resume": false,
+      "executable": false
+    },
+    "historical_snapshot_counterexample": {
+      "original": {
+        "epoch": 2,
+        "value": 1,
+        "effects": [
+          [
+            "same-approval",
+            2
+          ]
+        ],
+        "claims": 0,
+        "resume": false,
+        "executable": false
+      },
+      "historical": {
+        "epoch": 1,
+        "value": 1,
+        "effects": [
+          [
+            "same-approval",
+            1
+          ]
+        ],
+        "claims": 0,
+        "resume": false,
+        "executable": false
+      }
+    },
+    "clone_survives_local_cessation_counterexample": {
+      "original": {
+        "epoch": 2,
+        "value": 0,
+        "effects": [],
+        "claims": 0,
+        "resume": false,
+        "executable": false
+      },
+      "clone": {
+        "epoch": 1,
+        "value": 1,
+        "effects": [
+          [
+            "clone-old",
+            1
+          ]
+        ],
+        "claims": 0,
+        "resume": false,
+        "executable": false
+      },
+      "distributed_fencing": false
+    },
+    "lost_effect_ack": {
+      "response": {
+        "status": "UNKNOWN",
+        "resume": false
+      },
+      "observed": {
+        "epoch": 1,
+        "value": 1,
+        "effects": [
+          [
+            "approval",
+            1
+          ]
+        ],
+        "claims": 1,
+        "resume": false,
+        "executable": false
+      }
+    },
+    "explicit_recovery_after_freeze": {
+      "status": "LOCAL_RESOURCE_FENCED",
+      "epoch": 2,
+      "resource": {
+        "database": "lab_ef1718b0e9a243cd8de345c1268f0458",
+        "path": "/tmp/ln-r2d05-ysxhb7l4/target/socket/.s.PGSQL.5432",
+        "device": 2049,
+        "inode": 91014,
+        "pid": 1957450,
+        "uid": 1000,
+        "gid": 1000
+      },
+      "terminated": [
+        [
+          1957901,
+          "2026-10-27 12:39:36.487766+00"
+        ]
+      ],
+      "old_login": false,
+      "old_backends": 0,
+      "scope": "old SQL role on one running PostgreSQL cluster",
+      "process_cessation_proven": false,
+      "distributed_cessation_proven": false,
+      "distributed_takeover_confirmed": false,
+      "executable": false
+    },
+    "reconnection_race": {
+      "attempts": 5,
+      "receipt": {
+        "status": "LOCAL_RESOURCE_FENCED",
+        "epoch": 2,
+        "resource": {
+          "database": "lab_dab20aad40e24d52b3ce3f99ae775db5",
+          "path": "/tmp/ln-r2d05-ysxhb7l4/target/socket/.s.PGSQL.5432",
+          "device": 2049,
+          "inode": 91014,
+          "pid": 1958127,
+          "uid": 1000,
+          "gid": 1000
+        },
+        "terminated": [
+          [
+            1958142,
+            "2026-10-27 12:39:45.870755+00"
+          ]
+        ],
+        "old_login": false,
+        "old_backends": 0,
+        "scope": "old SQL role on one running PostgreSQL cluster",
+        "process_cessation_proven": false,
+        "distributed_cessation_proven": false,
+        "distributed_takeover_confirmed": false,
+        "executable": false
+      }
+    },
+    "restart_requires_explicit_new_pin": {
+      "epoch": 2,
+      "value": 0,
+      "effects": [],
+      "claims": 0,
+      "resume": false,
+      "executable": false
+    },
+    "strict_abort_before_confirmation": {
+      "receipt": {
+        "status": "LOCAL_RESOURCE_FENCED",
+        "epoch": 2,
+        "resource": {
+          "database": "lab_313d919c11fc40d5af153f3a220df946",
+          "path": "/tmp/ln-r2d05-ysxhb7l4/target/socket/.s.PGSQL.5432",
+          "device": 2049,
+          "inode": 91014,
+          "pid": 1958189,
+          "uid": 1000,
+          "gid": 1000
+        },
+        "terminated": [
+          [
+            1958282,
+            "2026-10-27 12:39:47.959895+00"
+          ]
+        ],
+        "old_login": false,
+        "old_backends": 0,
+        "scope": "old SQL role on one running PostgreSQL cluster",
+        "process_cessation_proven": false,
+        "distributed_cessation_proven": false,
+        "distributed_takeover_confirmed": false,
+        "executable": false
+      },
+      "state": {
+        "epoch": 2,
+        "value": 0,
+        "effects": [],
+        "claims": 1,
+        "resume": false,
+        "executable": false
+      }
+    },
+    "local_cessation_receipt": {
+      "status": "LOCAL_RESOURCE_FENCED",
+      "epoch": 2,
+      "resource": {
+        "database": "lab_55489fd9d145426396ead6088962b902",
+        "path": "/tmp/ln-r2d05-ysxhb7l4/target/socket/.s.PGSQL.5432",
+        "device": 2049,
+        "inode": 91014,
+        "pid": 1958189,
+        "uid": 1000,
+        "gid": 1000
+      },
+      "terminated": [
+        [
+          1958294,
+          "2026-10-27 12:39:48.192735+00"
+        ]
+      ],
+      "old_login": false,
+      "old_backends": 0,
+      "scope": "old SQL role on one running PostgreSQL cluster",
+      "process_cessation_proven": false,
+      "distributed_cessation_proven": false,
+      "distributed_takeover_confirmed": false,
+      "executable": false
+    },
+    "admin_bypass_counterexample": {
+      "epoch": 2,
+      "value": 1,
+      "effects": [],
+      "claims": 0,
+      "resume": false,
+      "executable": false
+    }
+  },
+  "source_sha256": {
+    "run_tests.py": "44a3e53372e480201791ba4d333f54d3b1546d8a0ab1ecedf92bb4ca2558fac5",
+    "preservation.py": "b335bf1f6f5108dcf02d0f7a553dbe05633ce7b5489b56abfdd0928adba0b6d8",
+    "test_resource.py": "df8d032a80531786bf13c046c69d08c6669dd9329041a04420a9d3ed55bceaa7",
+    "resource_lab.py": "c401b066621ed5f3ec52011b7c909d024b67cd6bf23803f48977baa3f201955c"
+  },
+  "reused_source_sha256": {
+    "auth_boot_02_r2_dev04/run_tests.py": "215f3a1d7f04be7d5f7548e62ba05b4aafe24587acb9aa2159b5435c83a8c957",
+    "auth_boot_02_r2_dev04/test_experiment.py": "c431419018b66b43e929c1058084084e5f562153bb236e85a46f88d3b7370602",
+    "auth_boot_02_r2_dev04/preservation.py": "6f7d86205de688680ab9357213420c04c258439d4b1483c58eec5dd81dc74fce",
+    "auth_boot_02_r2_dev04/laboratory.py": "0d12a3eaba5b0462a5dac106ef368d7bee32fd4ec79ceb00d5acd8c6d0f8efe5"
+  },
+  "head": "647179c928888adfeef0f69f582fd13c5fc17350",
+  "cleanup": true,
+  "ephemeral_root": "/tmp/ln-r2d05-ysxhb7l4",
+  "executable": false,
+  "d09_independence_demonstrated": false,
+  "authenticated_utc": false,
+  "unconditional_fencing": false,
+  "distributed_cessation_proven": false,
+  "effect_tests_use_explicit_fixture": true
+}

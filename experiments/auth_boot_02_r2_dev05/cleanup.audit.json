@@ -1,0 +1,9 @@
+{
+  "host": "progbox",
+  "method": "find /tmp -maxdepth 1 -type d matching ln-r2d04-* or ln-r2d05-*; read-only inspection after final run",
+  "exit_code": 0,
+  "remaining_directories": [],
+  "deleted_by_audit": [],
+  "timestamp_authenticated": false,
+  "note": "Complements per-run cleanup flags; no unrelated directory was removed."
+}

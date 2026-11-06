@@ -1,0 +1,11 @@
+{
+  "files_checked": 9120,
+  "changed": [],
+  "unexpected_added": [],
+  "head_unchanged": true,
+  "status_unchanged": true,
+  "diff_unchanged": true,
+  "scope": "all regular files and symlinks including ignored; content/mode/size; excludes .git and atime",
+  "baseline_sha256": "1ff7a4ceb04b708d12f72cb7a400bea47af50da4bde1f04f740d1c77072877c2",
+  "head": "647179c928888adfeef0f69f582fd13c5fc17350"
+}
