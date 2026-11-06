@@ -1,0 +1,262 @@
+{
+  "started_utc_epoch": 1793103580.3600435,
+  "timestamp_authenticated": false,
+  "duration_seconds": 77.06476998329163,
+  "python": "3.12.3",
+  "psycopg": "3.3.6",
+  "postgres": "postgres (PostgreSQL) 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)",
+  "tests": 52,
+  "failures": 1,
+  "errors": 0,
+  "skipped": 0,
+  "success": false,
+  "output": "test_admin_and_broker_bypass_are_explicit_limits (test_experiment.Experiments.test_admin_and_broker_bypass_are_explicit_limits) ... ok\ntest_anchor_connection_loss_in_flight_counterexample (test_experiment.Experiments.test_anchor_connection_loss_in_flight_counterexample) ... ok\ntest_anchor_partition_after_claim (test_experiment.Experiments.test_anchor_partition_after_claim) ... ok\ntest_claim_ack_lost_no_reconciliation_retry (test_experiment.Experiments.test_claim_ack_lost_no_reconciliation_retry) ... ok\ntest_commit_ack_lost_no_reconciliation_retry (test_experiment.Experiments.test_commit_ack_lost_no_reconciliation_retry) ... ok\ntest_concurrent_replay_external_claim (test_experiment.Experiments.test_concurrent_replay_external_claim) ... ok\ntest_default_gate_no_effect_even_with_receipt (test_experiment.Experiments.test_default_gate_no_effect_even_with_receipt) ... ok\ntest_executor_cannot_write_anchor_or_witness (test_experiment.Experiments.test_executor_cannot_write_anchor_or_witness) ... ok\ntest_fence_between_claim_and_effect (test_experiment.Experiments.test_fence_between_claim_and_effect) ... ok\ntest_full_physical_clone_old_alive (test_experiment.Experiments.test_full_physical_clone_old_alive) ... ok\ntest_lost_fence_confirmation_read_does_not_resume (test_experiment.Experiments.test_lost_fence_confirmation_read_does_not_resume) ... ok\ntest_missing_receipt_blocks_before_claim (test_experiment.Experiments.test_missing_receipt_blocks_before_claim) ... ok\ntest_old_live_session_fenced (test_experiment.Experiments.test_old_live_session_fenced) ... ok\ntest_partition_during_takeover_blocks_progress (test_experiment.Experiments.test_partition_during_takeover_blocks_progress) ... ok\ntest_receipt_binding_mutations (test_experiment.Experiments.test_receipt_binding_mutations) ... ok\ntest_receipt_time_interval_mismatch (test_experiment.Experiments.test_receipt_time_interval_mismatch) ... ok\ntest_role_and_ownership_inventory (test_experiment.Experiments.test_role_and_ownership_inventory) ... ok\ntest_rollback_preserves_external_claim (test_experiment.Experiments.test_rollback_preserves_external_claim) ... ok\ntest_sql_alter_function (test_experiment.Experiments.test_sql_alter_function) ... ok\ntest_sql_copy_from (test_experiment.Experiments.test_sql_copy_from) ... ok\ntest_sql_copy_to (test_experiment.Experiments.test_sql_copy_to) ... ok\ntest_sql_create_extension (test_experiment.Experiments.test_sql_create_extension) ... FAIL\ntest_sql_create_function (test_experiment.Experiments.test_sql_create_function) ... ok\ntest_sql_create_lab (test_experiment.Experiments.test_sql_create_lab) ... ok\ntest_sql_create_public (test_experiment.Experiments.test_sql_create_public) ... ok\ntest_sql_create_rule (test_experiment.Experiments.test_sql_create_rule) ... ok\ntest_sql_create_schema (test_experiment.Experiments.test_sql_create_schema) ... ok\ntest_sql_create_temp (test_experiment.Experiments.test_sql_create_temp) ... ok\ntest_sql_create_trigger (test_experiment.Experiments.test_sql_create_trigger) ... ok\ntest_sql_delete (test_experiment.Experiments.test_sql_delete) ... ok\ntest_sql_direct_function (test_experiment.Experiments.test_sql_direct_function) ... ok\ntest_sql_drop_function (test_experiment.Experiments.test_sql_drop_function) ... ok\ntest_sql_grant_self (test_experiment.Experiments.test_sql_grant_self) ... ok\ntest_sql_grant_table (test_experiment.Experiments.test_sql_grant_table) ... ok\ntest_sql_insert (test_experiment.Experiments.test_sql_insert) ... ok\ntest_sql_large_object_export (test_experiment.Experiments.test_sql_large_object_export) ... ok\ntest_sql_owner_function (test_experiment.Experiments.test_sql_owner_function) ... ok\ntest_sql_owner_table (test_experiment.Experiments.test_sql_owner_table) ... ok\ntest_sql_replace_function (test_experiment.Experiments.test_sql_replace_function) ... ok\ntest_sql_role_broker (test_experiment.Experiments.test_sql_role_broker) ... ok\ntest_sql_role_owner (test_experiment.Experiments.test_sql_role_owner) ... ok\ntest_sql_role_superuser (test_experiment.Experiments.test_sql_role_superuser) ... ok\ntest_sql_server_file (test_experiment.Experiments.test_sql_server_file) ... ok\ntest_sql_server_program (test_experiment.Experiments.test_sql_server_program) ... ok\ntest_sql_session_authorization (test_experiment.Experiments.test_sql_session_authorization) ... ok\ntest_sql_truncate (test_experiment.Experiments.test_sql_truncate) ... ok\ntest_sql_update (test_experiment.Experiments.test_sql_update) ... ok\ntest_takeover_waits_for_live_guard (test_experiment.Experiments.test_takeover_waits_for_live_guard) ... ok\ntest_utc_missing_or_interval_invalid (test_experiment.Experiments.test_utc_missing_or_interval_invalid) ... ok\ntest_verified_fixture_before_effect (test_experiment.Experiments.test_verified_fixture_before_effect) ... ok\ntest_witness_partition_before_claim (test_experiment.Experiments.test_witness_partition_before_claim) ... ok\ntest_witness_rechecked_after_claim (test_experiment.Experiments.test_witness_rechecked_after_claim) ... ok\n\n======================================================================\nFAIL: test_sql_create_extension (test_experiment.Experiments.test_sql_create_extension)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/home/paulo/projects/livenet-v2/experiments/auth_boot_02_r2_dev04/test_experiment.py\", line 331, in test\n    self.assertIn(raised.exception.sqlstate, ('42501', '0A000', '58P01'))\nAssertionError: '3F000' not found in ('42501', '0A000', '58P01')\n\n----------------------------------------------------------------------\nRan 52 tests in 77.064s\n\nFAILED (failures=1)\n",
+  "measurements": {
+    "privileged_bypass": {
+      "epoch": 1,
+      "endpoint": "/tmp/ln-r2d04-tzhqyiyl/target/socket/.s.PGSQL.5432|2049|77224|1927584|1000|1000",
+      "claims": 0,
+      "effects": 2,
+      "resume": false,
+      "executable": false
+    },
+    "counterexample_guard_loss_old_commit_after_fence": {
+      "epoch": 2,
+      "endpoint": "/tmp/ln-r2d04-tzhqyiyl/target/socket/.s.PGSQL.5432|2049|77224|1927584|1000|1000",
+      "claims": 1,
+      "effects": 1,
+      "resume": false,
+      "executable": false
+    },
+    "concurrent_replay": [
+      "OBSERVED",
+      "CONSUMED",
+      "CONSUMED",
+      "CONSUMED",
+      "CONSUMED",
+      "CONSUMED",
+      "CONSUMED",
+      "CONSUMED"
+    ],
+    "physical_clone": {
+      "system_identifier_equal": true,
+      "old_and_clone_alive": true,
+      "cloned_endpoint_rejected": true,
+      "old_epoch_rejected": true,
+      "original_effects": 1,
+      "clone_effects": 0,
+      "external_claim_blocks_replay": true,
+      "copied": "entire stopped PostgreSQL data directory including roles and WAL; socket config relocated"
+    },
+    "lost_fence_ack": {
+      "epoch": 2,
+      "endpoint": "/tmp/ln-r2d04-tzhqyiyl/target/socket/.s.PGSQL.5432|2049|93991|1927909|1000|1000",
+      "claims": 0,
+      "effects": 0,
+      "resume": false,
+      "executable": false
+    },
+    "roles": [
+      [
+        "broker",
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ],
+      [
+        "effect_owner",
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      [
+        "executor",
+        false,
+        false,
+        false,
+        false,
+        false,
+        true
+      ]
+    ],
+    "function": [
+      true,
+      [
+        "search_path=pg_catalog, lab, pg_temp"
+      ],
+      "effect_owner"
+    ],
+    "sql_probes": [
+      {
+        "sql": "ALTER FUNCTION lab.apply_effect() SET search_path=public",
+        "sqlstate": "42501",
+        "reason": "must be owner of function lab.apply_effect"
+      },
+      {
+        "sql": "COPY lab.payload FROM STDIN",
+        "sqlstate": "42501",
+        "reason": "permission denied for table payload"
+      },
+      {
+        "sql": "COPY lab.payload TO STDOUT",
+        "sqlstate": "42501",
+        "reason": "permission denied for table payload"
+      },
+      {
+        "sql": "CREATE FUNCTION lab.injected() RETURNS integer LANGUAGE sql AS $$ SELECT 1 $$",
+        "sqlstate": "42501",
+        "reason": "permission denied for schema lab"
+      },
+      {
+        "sql": "CREATE TABLE lab.injected(value integer)",
+        "sqlstate": "42501",
+        "reason": "permission denied for schema lab"
+      },
+      {
+        "sql": "CREATE TABLE public.injected(value integer)",
+        "sqlstate": "42501",
+        "reason": "permission denied for schema public"
+      },
+      {
+        "sql": "CREATE RULE injected AS ON DELETE TO lab.payload DO INSTEAD NOTHING",
+        "sqlstate": "42501",
+        "reason": "must be owner of table payload"
+      },
+      {
+        "sql": "CREATE SCHEMA injected",
+        "sqlstate": "42501",
+        "reason": "permission denied for database lab_216e384a31834ec491a771688491a1bc"
+      },
+      {
+        "sql": "CREATE TEMP TABLE payload(value integer)",
+        "sqlstate": "42501",
+        "reason": "permission denied to create temporary tables in database \"lab_57cd2dff1f7e487eb98d62e447db975f\""
+      },
+      {
+        "sql": "CREATE TRIGGER injected BEFORE UPDATE ON lab.payload FOR EACH ROW EXECUTE FUNCTION suppress_redundant_updates_trigger()",
+        "sqlstate": "42501",
+        "reason": "permission denied for table payload"
+      },
+      {
+        "sql": "DELETE FROM lab.payload",
+        "sqlstate": "42501",
+        "reason": "permission denied for table payload"
+      },
+      {
+        "sql": "SELECT lab.apply_effect()",
+        "sqlstate": "42501",
+        "reason": "permission denied for function apply_effect"
+      },
+      {
+        "sql": "DROP FUNCTION lab.apply_effect()",
+        "sqlstate": "42501",
+        "reason": "must be owner of function lab.apply_effect"
+      },
+      {
+        "sql": "GRANT broker TO executor",
+        "sqlstate": "42501",
+        "reason": "permission denied to grant role \"broker\""
+      },
+      {
+        "sql": "GRANT UPDATE ON lab.payload TO executor",
+        "sqlstate": "42501",
+        "reason": "permission denied for table payload"
+      },
+      {
+        "sql": "INSERT INTO lab.payload VALUES(false,99)",
+        "sqlstate": "42501",
+        "reason": "permission denied for table payload"
+      },
+      {
+        "sql": "SELECT lo_export(0,'/tmp/r2dev04-never-created')",
+        "sqlstate": "42501",
+        "reason": "permission denied for function lo_export"
+      },
+      {
+        "sql": "ALTER FUNCTION lab.apply_effect() OWNER TO executor",
+        "sqlstate": "42501",
+        "reason": "must be owner of function apply_effect"
+      },
+      {
+        "sql": "ALTER TABLE lab.payload OWNER TO executor",
+        "sqlstate": "42501",
+        "reason": "must be owner of table payload"
+      },
+      {
+        "sql": "CREATE OR REPLACE FUNCTION lab.apply_effect() RETURNS integer LANGUAGE sql AS $$ SELECT 99 $$",
+        "sqlstate": "42501",
+        "reason": "permission denied for schema lab"
+      },
+      {
+        "sql": "SET ROLE broker",
+        "sqlstate": "42501",
+        "reason": "permission denied to set role \"broker\""
+      },
+      {
+        "sql": "SET ROLE effect_owner",
+        "sqlstate": "42501",
+        "reason": "permission denied to set role \"effect_owner\""
+      },
+      {
+        "sql": "SET ROLE paulo",
+        "sqlstate": "42501",
+        "reason": "permission denied to set role \"paulo\""
+      },
+      {
+        "sql": "SELECT pg_read_file('/etc/hostname')",
+        "sqlstate": "42501",
+        "reason": "permission denied for function pg_read_file"
+      },
+      {
+        "sql": "COPY (SELECT 1) TO PROGRAM 'true'",
+        "sqlstate": "42501",
+        "reason": "permission denied to COPY to or from an external program"
+      },
+      {
+        "sql": "SET SESSION AUTHORIZATION broker",
+        "sqlstate": "42501",
+        "reason": "permission denied to set session authorization \"broker\""
+      },
+      {
+        "sql": "TRUNCATE lab.payload",
+        "sqlstate": "42501",
+        "reason": "permission denied for table payload"
+      },
+      {
+        "sql": "UPDATE lab.payload SET value=99",
+        "sqlstate": "42501",
+        "reason": "permission denied for table payload"
+      }
+    ],
+    "takeover_waited_for_lock": true,
+    "fixture_success": {
+      "epoch": 1,
+      "endpoint": "/tmp/ln-r2d04-tzhqyiyl/target/socket/.s.PGSQL.5432|2049|93991|1927909|1000|1000",
+      "claims": 1,
+      "effects": 1,
+      "resume": false,
+      "executable": false
+    }
+  },
+  "source_sha256": {
+    "run_tests.py": "215f3a1d7f04be7d5f7548e62ba05b4aafe24587acb9aa2159b5435c83a8c957",
+    "test_experiment.py": "0836ac18b9410d31cd7ac67f2774bbca276589c1e0c8d3ddd1f1ddc18646fbdf",
+    "preservation.py": "6f7d86205de688680ab9357213420c04c258439d4b1483c58eec5dd81dc74fce",
+    "laboratory.py": "369946d4302d281d759e135fc4232d57cfaa6f0d2ed33ae9eb528f96dace9f49"
+  },
+  "head": "647179c928888adfeef0f69f582fd13c5fc17350",
+  "cleanup": true,
+  "ephemeral_root": "/tmp/ln-r2d04-tzhqyiyl",
+  "executable": false,
+  "d09_independence_demonstrated": false,
+  "authenticated_utc": false,
+  "endpoint_authentication": "local kernel SO_PEERCRED + pinned socket path/device/inode/pid/uid/gid; same OS administrator",
+  "unconditional_fencing": false,
+  "effect_tests_use_explicit_fixture": true
+}
