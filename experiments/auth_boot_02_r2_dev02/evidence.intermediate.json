@@ -1,0 +1,124 @@
+{
+  "started_utc_epoch": 1793101356.8371756,
+  "duration_seconds": 44.06756138801575,
+  "python": "3.12.3",
+  "tests": 36,
+  "failures": 1,
+  "errors": 0,
+  "skipped": 0,
+  "success": false,
+  "output": "test_ambiguous_confirmation_blocks_delivery (test_laboratory.Experiments.test_ambiguous_confirmation_blocks_delivery) ... ok\ntest_attempt_binding_is_durable_and_untransferable (test_laboratory.Experiments.test_attempt_binding_is_durable_and_untransferable) ... ok\ntest_caller_rollback_savepoint_does_not_release (test_laboratory.Experiments.test_caller_rollback_savepoint_does_not_release) ... ok\ntest_clones_different_approvals_one_branch_advances (test_laboratory.Experiments.test_clones_different_approvals_one_branch_advances) ... ok\ntest_commit_may_follow_expiration (test_laboratory.Experiments.test_commit_may_follow_expiration) ... ok\ntest_concurrent_identical_clones_shared_reference (test_laboratory.Experiments.test_concurrent_identical_clones_shared_reference) ... ok\ntest_controls_cannot_regress (test_laboratory.Experiments.test_controls_cannot_regress) ... FAIL\ntest_crash_after_local_commit_consumed_blocked (test_laboratory.Experiments.test_crash_after_local_commit_consumed_blocked) ... ok\ntest_crash_after_reference_commit_no_reissue (test_laboratory.Experiments.test_crash_after_reference_commit_no_reissue) ... ok\ntest_crash_after_reference_reservation_quarantines (test_laboratory.Experiments.test_crash_after_reference_reservation_quarantines) ... ok\ntest_crash_before_reservation_no_admission (test_laboratory.Experiments.test_crash_before_reservation_no_admission) ... ok\ntest_expiry_during_reference_lock_wait (test_laboratory.Experiments.test_expiry_during_reference_lock_wait) ... ok\ntest_full_reference_clone_split_brain_counterexample (test_laboratory.Experiments.test_full_reference_clone_split_brain_counterexample) ... ok\ntest_historical_snapshot_shared_current_reference (test_laboratory.Experiments.test_historical_snapshot_shared_current_reference) ... ok\ntest_invalid_version_epochs_policy_duration (test_laboratory.Experiments.test_invalid_version_epochs_policy_duration) ... ok\ntest_journal_corruption_detected (test_laboratory.Experiments.test_journal_corruption_detected) ... ok\ntest_lost_admission_response_consumed (test_laboratory.Experiments.test_lost_admission_response_consumed) ... ok\ntest_lost_revocation_response_remains_effective (test_laboratory.Experiments.test_lost_revocation_response_remains_effective) ... ok\ntest_materialized_consumption_tampering_detected (test_laboratory.Experiments.test_materialized_consumption_tampering_detected) ... ok\ntest_no_executable_capability_or_automatic_resume (test_laboratory.Experiments.test_no_executable_capability_or_automatic_resume) ... ok\ntest_pending_survives_postgres_crash_restart (test_laboratory.Experiments.test_pending_survives_postgres_crash_restart) ... ok\ntest_process_contention (test_laboratory.Experiments.test_process_contention) ... ok\ntest_reference_rollback_detected (test_laboratory.Experiments.test_reference_rollback_detected) ... ok\ntest_reference_unavailable_no_fallback (test_laboratory.Experiments.test_reference_unavailable_no_fallback) ... ok\ntest_restart_both_clusters_preserves_all_state (test_laboratory.Experiments.test_restart_both_clusters_preserves_all_state) ... ok\ntest_revocation_after_does_not_release (test_laboratory.Experiments.test_revocation_after_does_not_release) ... ok\ntest_revocation_before_all_scopes (test_laboratory.Experiments.test_revocation_before_all_scopes) ... ok\ntest_revocation_crash_order_unknown_blocks_new_admissions (test_laboratory.Experiments.test_revocation_crash_order_unknown_blocks_new_admissions) ... ok\ntest_revocation_pending_is_not_effective (test_laboratory.Experiments.test_revocation_pending_is_not_effective) ... ok\ntest_revocation_races_persistent_order (test_laboratory.Experiments.test_revocation_races_persistent_order) ... ok\ntest_socket_and_durability_configuration (test_laboratory.Experiments.test_socket_and_durability_configuration) ... ok\ntest_stale_branch_cannot_repair_by_epoch (test_laboratory.Experiments.test_stale_branch_cannot_repair_by_epoch) ... ok\ntest_target_direct_sql_bypass_counterexample (test_laboratory.Experiments.test_target_direct_sql_bypass_counterexample) ... ok\ntest_thread_contention (test_laboratory.Experiments.test_thread_contention) ... ok\ntest_unknown_time_persistent_quarantine (test_laboratory.Experiments.test_unknown_time_persistent_quarantine) ... ok\ntest_utc_boundaries_and_invalid_interval (test_laboratory.Experiments.test_utc_boundaries_and_invalid_interval) ... ok\n\n======================================================================\nFAIL: test_controls_cannot_regress (test_laboratory.Experiments.test_controls_cannot_regress)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/home/paulo/projects/livenet-v2/experiments/auth_boot_02_r2_dev02/test_laboratory.py\", line 292, in test_controls_cannot_regress\n    self.assertEqual(self.lab.change('controls', controls=(2, 3))['state'], 'CONFIRMED')\nAssertionError: 'UNKNOWN' != 'CONFIRMED'\n- UNKNOWN\n+ CONFIRMED\n\n\n----------------------------------------------------------------------\nRan 36 tests in 44.067s\n\nFAILED (failures=1)\n",
+  "measurements": {
+    "expiry": "Injected interval at A only; no authenticated clock or physical deadline",
+    "identical_clones": {
+      "admissions": 1,
+      "blocked": 1,
+      "same_binding": true,
+      "same_namespace": true
+    },
+    "split_brain_counterexample": {
+      "admissions": 2,
+      "reason": "both branches have a copied reference; expected limitation"
+    },
+    "historical_snapshot": {
+      "stale_head": 0,
+      "reference_head": 1,
+      "new_admissions": 0,
+      "quarantined": true
+    },
+    "processes": {
+      "contenders": 8,
+      "admissions": 1
+    },
+    "revocation_races": [
+      [
+        "BLOCKED",
+        1
+      ],
+      [
+        "BLOCKED",
+        1
+      ],
+      [
+        "BLOCKED",
+        1
+      ],
+      [
+        "BLOCKED",
+        1
+      ],
+      [
+        "BLOCKED",
+        1
+      ],
+      [
+        "BLOCKED",
+        1
+      ],
+      [
+        "BLOCKED",
+        1
+      ],
+      [
+        "BLOCKED",
+        1
+      ],
+      [
+        "BLOCKED",
+        1
+      ],
+      [
+        "BLOCKED",
+        1
+      ],
+      [
+        "BLOCKED",
+        1
+      ],
+      [
+        "BLOCKED",
+        1
+      ]
+    ],
+    "postgres_version": "PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit",
+    "postgres_settings": [
+      {
+        "listen_addresses": "",
+        "unix_socket_permissions": "0700",
+        "fsync": "on",
+        "synchronous_commit": "on",
+        "full_page_writes": "on"
+      },
+      {
+        "listen_addresses": "",
+        "unix_socket_permissions": "0700",
+        "fsync": "on",
+        "synchronous_commit": "on",
+        "full_page_writes": "on"
+      }
+    ],
+    "target_counterexample": {
+      "admissions": 1,
+      "direct_sql_updates": 2,
+      "target_exclusivity_demonstrated": false
+    },
+    "threads": {
+      "contenders": 24,
+      "admissions": 1
+    }
+  },
+  "source_sha256": {
+    "run_tests.py": "2d0109d057ca88eff7b6041432d9ba04272fb28c6518c966348326b13d84e933",
+    "preservation.py": "a31bbbc9b52477ca427c85d95df272d8e78be97b90e6dde98606de460eae48dc",
+    "test_laboratory.py": "6661de52f00602327e72acbdf7e19b27835224c31faf2a365b5ff77edac7f5a8",
+    "harness.py": "7598f77ecfdc9abba0ce6ffae9548b9b289d3778bde0dcaf2acdffcdac030bc4",
+    "laboratory.py": "d1d59ae99fcf566da67f3e6d7851690d3cea32d65ac46b98d4d67761b94898de"
+  },
+  "head": "647179c928888adfeef0f69f582fd13c5fc17350",
+  "cleanup": true,
+  "ephemeral_root": "/tmp/ln-r2d02-wf16v721",
+  "executable": false,
+  "d09_confirmed": false,
+  "authenticated_utc": false,
+  "target_exclusive": false
+}
