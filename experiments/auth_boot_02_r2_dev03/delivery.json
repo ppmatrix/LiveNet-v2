@@ -1,0 +1,18 @@
+{
+  "source_hashes_verified": true,
+  "both_run_roots_absent": true,
+  "temporary_baseline_removed": true,
+  "preservation_verified": true,
+  "sha256": {
+    "README.md": "169392abcfe5e1fc06313ad26792e650b054926cafa8fd289c0c29d7fdd67f6e",
+    "REPORT.md": "4a97611db342d718bbfab0339d253ee3ce6b04276ee757b06faa2a541fb02aeb",
+    "evidence.initial.json": "26cce09738ac60258a3bea8476668da7cd4d4f345065f0f334c0c1de35f7dcd2",
+    "evidence.json": "2e9d3f79168c22c9ab0ce5f3d55b267b905f6e89100c0e5407ae6a880776d5b8",
+    "experiment.py": "4d1dda2570ec75f6c8d471b31549a558bc7cc04c474dabede727b90c13336377",
+    "preservation.baseline.json": "bd8cf668b93ad33658af0b526dda753845fc699cc05fddeea8f34ab8a0c06e52",
+    "preservation.json": "b155eb2f611362f21c34ae097eafee1a3d5498af7b1cfa6034abfbe396ae129b",
+    "preservation.py": "2d7a7da731cb19f90afce48d6c6ff5dca18e3868d3ce808d552d8cb6cf67f9c8",
+    "run_tests.py": "e730f3ec3f481e6c0cd95a3538aac278c192022160a3d22d49b8d1bee514116e",
+    "test_experiment.py": "6fac74f58aa5c8cb874113e0912390f945404a387688c0b5cee3ce0f448f6331"
+  }
+}

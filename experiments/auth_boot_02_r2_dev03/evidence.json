@@ -1,0 +1,152 @@
+{
+  "started_utc_epoch": 1793102607.9052134,
+  "timestamp_authenticated": false,
+  "duration_seconds": 65.47228479385376,
+  "python": "3.12.3",
+  "postgres": "postgres (PostgreSQL) 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)",
+  "psycopg": "3.3.6",
+  "tests": 37,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "success": true,
+  "output": "test_concurrent_cloned_authority_same_reference (test_experiment.Experiments.test_concurrent_cloned_authority_same_reference) ... ok\ntest_concurrent_replay_same_live_session (test_experiment.Experiments.test_concurrent_replay_same_live_session) ... ok\ntest_copied_reference_and_target_split_brain_counterexample (test_experiment.Experiments.test_copied_reference_and_target_split_brain_counterexample) ... ok\ntest_copied_reference_shared_target_still_one_start (test_experiment.Experiments.test_copied_reference_shared_target_still_one_start) ... ok\ntest_default_d09_blocks (test_experiment.Experiments.test_default_d09_blocks) ... ok\ntest_executor_cannot_erase_or_forge_claim (test_experiment.Experiments.test_executor_cannot_erase_or_forge_claim) ... ok\ntest_executor_cannot_rotate_fence_or_create_function (test_experiment.Experiments.test_executor_cannot_rotate_fence_or_create_function) ... ok\ntest_executor_direct_update_denied (test_experiment.Experiments.test_executor_direct_update_denied) ... ok\ntest_fence_between_claim_and_effect (test_experiment.Experiments.test_fence_between_claim_and_effect) ... ok\ntest_fence_does_not_release_authority_consumption (test_experiment.Experiments.test_fence_does_not_release_authority_consumption) ... ok\ntest_fence_old_live_session (test_experiment.Experiments.test_fence_old_live_session) ... ok\ntest_fence_waits_for_inflight_effect (test_experiment.Experiments.test_fence_waits_for_inflight_effect) ... ok\ntest_first_start_and_replay (test_experiment.Experiments.test_first_start_and_replay) ... ok\ntest_lost_admission_confirmation_consumed_without_ticket (test_experiment.Experiments.test_lost_admission_confirmation_consumed_without_ticket) ... ok\ntest_lost_claim_confirmation_blocks_effect_and_replay (test_experiment.Experiments.test_lost_claim_confirmation_blocks_effect_and_replay) ... ok\ntest_lost_target_confirmation_observation_cannot_resume (test_experiment.Experiments.test_lost_target_confirmation_observation_cannot_resume) ... ok\ntest_pending_reference_confirmation_never_dispatches (test_experiment.Experiments.test_pending_reference_confirmation_never_dispatches) ... ok\ntest_preexisting_savepoint_does_not_duplicate (test_experiment.Experiments.test_preexisting_savepoint_does_not_duplicate) ... ok\ntest_private_resources_and_durability (test_experiment.Experiments.test_private_resources_and_durability) ... ok\ntest_privileged_target_bypass_counterexample (test_experiment.Experiments.test_privileged_target_bypass_counterexample) ... ok\ntest_real_process_crash_boundaries (test_experiment.Experiments.test_real_process_crash_boundaries) ... ok\ntest_reference_partition_after_confirmed_admission (test_experiment.Experiments.test_reference_partition_after_confirmed_admission) ... ok\ntest_reference_runtime_roles_cannot_rewrite_continuity (test_experiment.Experiments.test_reference_runtime_roles_cannot_rewrite_continuity) ... ok\ntest_reference_same_os_user_impersonation_counterexample (test_experiment.Experiments.test_reference_same_os_user_impersonation_counterexample) ... ok\ntest_reference_unavailable_before_admission_blocks (test_experiment.Experiments.test_reference_unavailable_before_admission_blocks) ... ok\ntest_revocation_after_admission_does_not_retroactively_cancel (test_experiment.Experiments.test_revocation_after_admission_does_not_retroactively_cancel) ... ok\ntest_rollback_does_not_release_claim (test_experiment.Experiments.test_rollback_does_not_release_claim) ... ok\ntest_savepoint_does_not_release_claim (test_experiment.Experiments.test_savepoint_does_not_release_claim) ... ok\ntest_service_roles_have_no_administrative_membership (test_experiment.Experiments.test_service_roles_have_no_administrative_membership) ... ok\ntest_session_reconnection_blocked (test_experiment.Experiments.test_session_reconnection_blocked) ... ok\ntest_stale_authority_snapshot_quarantined (test_experiment.Experiments.test_stale_authority_snapshot_quarantined) ... ok\ntest_target_unavailable_no_effect_or_automatic_retry (test_experiment.Experiments.test_target_unavailable_no_effect_or_automatic_retry) ... ok\ntest_ticket_binding_mutations_blocked (test_experiment.Experiments.test_ticket_binding_mutations_blocked) ... ok\ntest_transaction_replacement_blocked (test_experiment.Experiments.test_transaction_replacement_blocked) ... ok\ntest_unique_approval_and_attempt_on_target (test_experiment.Experiments.test_unique_approval_and_attempt_on_target) ... ok\ntest_untrusted_time_blocks (test_experiment.Experiments.test_untrusted_time_blocks) ... ok\ntest_wal_recovery_preserves_claim_fence_and_consumption (test_experiment.Experiments.test_wal_recovery_preserves_claim_fence_and_consumption) ... ok\n\n----------------------------------------------------------------------\nRan 37 tests in 65.472s\n\nOK\n",
+  "measurements": {
+    "clone_race_12_sessions": [
+      [
+        "BLOCKED",
+        "BLOCKED"
+      ],
+      [
+        "BLOCKED",
+        "BLOCKED"
+      ],
+      [
+        "BLOCKED",
+        "BLOCKED"
+      ],
+      [
+        "BLOCKED",
+        "BLOCKED"
+      ],
+      [
+        "BLOCKED",
+        "BLOCKED"
+      ],
+      [
+        "BLOCKED",
+        "BLOCKED"
+      ],
+      [
+        "BLOCKED",
+        "BLOCKED"
+      ],
+      [
+        "BLOCKED",
+        "BLOCKED"
+      ],
+      [
+        "BLOCKED",
+        "BLOCKED"
+      ],
+      [
+        "ADMITTED",
+        "OBSERVED"
+      ],
+      [
+        "BLOCKED",
+        "BLOCKED"
+      ],
+      [
+        "BLOCKED",
+        "BLOCKED"
+      ]
+    ],
+    "concurrent_replay": [
+      "CONSUMED",
+      "CONSUMED",
+      "CONSUMED",
+      "CONSUMED",
+      "CONSUMED",
+      "CONSUMED",
+      "CONSUMED",
+      "OBSERVED"
+    ],
+    "full_clone_counterexample": [
+      {
+        "starts": 1,
+        "effects": 1,
+        "executable": false,
+        "resume": false
+      },
+      {
+        "starts": 1,
+        "effects": 1,
+        "executable": false,
+        "resume": false
+      }
+    ],
+    "copied_reference_shared_target": "two admissions, one target start",
+    "private_resources": {
+      "clusters": 3,
+      "socket_mode": "0700",
+      "tcp": false,
+      "fsync": true,
+      "synchronous_commit": true
+    },
+    "privileged_bypass": {
+      "starts": 1,
+      "effects": 2,
+      "executable": false,
+      "resume": false
+    },
+    "real_process_crashes": {
+      "before_claim": {
+        "exit_code": 81,
+        "starts": 0,
+        "effects": 0,
+        "executable": false,
+        "resume": false
+      },
+      "after_claim": {
+        "exit_code": 82,
+        "starts": 1,
+        "effects": 0,
+        "executable": false,
+        "resume": false
+      },
+      "after_effect": {
+        "exit_code": 83,
+        "starts": 1,
+        "effects": 0,
+        "executable": false,
+        "resume": false
+      },
+      "after_commit": {
+        "exit_code": 84,
+        "starts": 1,
+        "effects": 1,
+        "executable": false,
+        "resume": false
+      }
+    },
+    "administrative_segregation": "SQL roles only; same OS administrator can bypass"
+  },
+  "source_sha256": {
+    "auth_boot_02_r2_dev03/experiment.py": "4d1dda2570ec75f6c8d471b31549a558bc7cc04c474dabede727b90c13336377",
+    "auth_boot_02_r2_dev03/run_tests.py": "e730f3ec3f481e6c0cd95a3538aac278c192022160a3d22d49b8d1bee514116e",
+    "auth_boot_02_r2_dev03/test_experiment.py": "6fac74f58aa5c8cb874113e0912390f945404a387688c0b5cee3ce0f448f6331",
+    "auth_boot_02_r2_dev03/preservation.py": "2d7a7da731cb19f90afce48d6c6ff5dca18e3868d3ce808d552d8cb6cf67f9c8",
+    "auth_boot_02_r2_dev02/harness.py": "7598f77ecfdc9abba0ce6ffae9548b9b289d3778bde0dcaf2acdffcdac030bc4",
+    "auth_boot_02_r2_dev02/laboratory.py": "4c3d69bc13c82a21d205529be87e9220bac4b380ad03b7691f7b087bd9040a33"
+  },
+  "head": "647179c928888adfeef0f69f582fd13c5fc17350",
+  "cleanup": true,
+  "ephemeral_root": "/tmp/ln-r2d03-w6k1n30f",
+  "executable": false,
+  "d09_confirmed": false,
+  "authenticated_utc": false,
+  "operational_target_exclusivity": false,
+  "trusted_broker_required": true,
+  "unique_reference_and_target_required": true
+}
