@@ -1,0 +1,36 @@
+{
+  "scope": "Comparação documental local; não D09 ou auditoria independente",
+  "date": "2026-10-30",
+  "timezone": "Europe/Lisbon",
+  "repository": "/home/paulo/projects/livenet-v2",
+  "branch": "main",
+  "head": "647179c928888adfeef0f69f582fd13c5fc17350",
+  "baseline_files_checked": 457,
+  "preexisting_changed_paths": [
+    "docs/project/CONTINUITY.md"
+  ],
+  "all_other_baseline_files_unchanged": true,
+  "previous_index_sha256": "85c9b0c910f2296890aa3d01f1e3621e5461b7df5847702c0d8de611f0346606",
+  "index_prefix_preserved": true,
+  "approved_bl_sha256": "e889171ffc1db17afe7e46b40a927f268ffafb70dfe8ceb9ef26aef3207f86a6",
+  "tracked_diff_sha256_before_and_after": "21b7778033dde56d142558cdeac78808f35437cdbc8e03fead49ad288c445df2",
+  "prior_git_status_entries_preserved": true,
+  "new_paths_only_in_delivery_folder": true,
+  "utf8_and_local_links_checked": [
+    "docs/architecture/proposals/bl-c4-consolidated-20261030/PROPOSAL.md",
+    "docs/architecture/proposals/bl-c4-consolidated-20261030/REVIEW.md",
+    "docs/project/CONTINUITY.md"
+  ],
+  "delivery_sha256": {
+    "docs/architecture/proposals/bl-c4-consolidated-20261030/CONTINUITY.before.md": "85c9b0c910f2296890aa3d01f1e3621e5461b7df5847702c0d8de611f0346606",
+    "docs/architecture/proposals/bl-c4-consolidated-20261030/PROPOSAL.md": "937bb32ab57fb0859d414e3ada9a11dbf963fdb19158d85a0e2c55cf019ff3ab",
+    "docs/architecture/proposals/bl-c4-consolidated-20261030/REVIEW.md": "dd54c4b4833fffca67022cf32e72d5edaadd365b6bca51e439fac46b5a355d02"
+  },
+  "manifest_self_hash_excluded": true,
+  "limitations": [
+    "Ficheiros ignorados e metadados não cobertos",
+    "Sem snapshot atómico contra concorrência",
+    "Sem validação operacional ou comparação Windows",
+    "Baseline temporária em /tmp; resultados relevantes registados aqui"
+  ]
+}
