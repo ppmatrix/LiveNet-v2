@@ -1,0 +1,24 @@
+# H02 — W01–W13 conforme DEV-08
+
+Fonte canónica dos IDs: S03, `experiments/auth_boot_02_r2_dev08/BOUNDARY.md`, secção «Catálogo de escrita a fechar antes de ensaio favorável». Os títulos abaixo conservam o catálogo; não se criam W14 ou capacidades adicionais. H02 PENDENTE.
+
+FD/IN/NC e confiança conforme [INVENTORY.md](INVENTORY.md). As fontes são documentais/históricas, não inspeção atual.
+
+| ID e caminho de DEV-08 | Dado e fonte / confiança | Lacuna e confirmação humana |
+| --- | --- | --- |
+| W01 API/broker, ligação SQL normal e sessão antiga já aberta | FD histórico: DEV-05 verifica fence local até término; S03/S11, alta. | NC: endpoints, sessões, principal, contexto e recursos atuais; ligar cada percurso ao meio B e trabalho em voo. |
+| W02 chamada direta da função autorizada, replay e outra sessão | FD histórico: chamada direta com claims=0/value=1; S12 `external_consumption_still_trusted_broker`, alta. | NC: funções/entradas, replay e sessões paralelas atuais; identificar quem pode iniciar fora do broker e criar segunda iniciação. |
+| W03 owner, superuser, herança/SET ROLE, SECURITY DEFINER, DDL de função/trigger, extensões | FD histórico: bypass administrativo value=1/effects=[]/claims=0; S12 `admin_bypass_counterexample`, alta. | NC: owners, membros/heranças e poderes efetivos atuais; declarar custódia/poder de escrita, sem alegar resistência a superuser por ACL local. |
+| W04 socket Unix, loopback, peer, credenciais de manutenção e emergência | FD histórico: pin de socket/SO_PEERCRED; S03/S11, alta. | NC: sockets, acesso local, manutenção, segredos e emergência atuais; relacionar contas OS/SQL/PKI sem recolher segredos. |
+| W05 transação aberta, statement preparado, prepared transaction/2PC, commit pendente | FD histórico: janelas DEV-04 e exclusão de 2PC na fixture DEV-05; S03/S08/S11, alta. | NC: pendências e 2PC atuais; statement preparado não demonstra 2PC. Definir evidência terminal futura e política de exclusão a aprovar em H05. |
+| W06 replicação física/lógica, promoção, réplicas, PITR, WAL arquivado e restore | NC: inventário operacional ausente nas fontes lidas; S03. Alta confiança apenas na enumeração do catálogo. | Listar destinos, promoção, arquivo e restore; determinar se cada destino pode gerar meio gravável autónomo de B. |
+| W07 jobs, workers, scheduler, triggers, notificações/outbox e efeitos externos | FD de classes previstas/estado parcial ou ausente no runtime; S03/S17, alta documental; capacidade atual NC. | Identificar efeitos laterais do UPDATE e destinos reais; nenhuma exclusão por omissão. Ausência/desativação requer evidência, não mera previsão. |
+| W08 escrita por root no filesystem/dispositivo, acesso raw, consola/debug/memória/DMA | FD como poder potencial do catálogo, S03; exercício atual NC. | Identificar contas/poderes sobre dados e memória de B e meios independentes; não presumir DMA/raw/consola acessíveis nem ausentes. |
+| W09 snapshot/clone de VM, disco, memória, credenciais, vTPM, migração/exportação | FD: clone físico de dados histórico; snapshot VM/memória não demonstrado; S03/S08/S11, alta. | NC: snapshots, destinos, leitores e criação posterior; identificar capacidade de copiar dados e identidade. Não substituir clone B por clone apenas do cliente. |
+| W10 backups restauráveis, dumps, réplicas offline, imagens e cópias em media amovível | FD histórico: restore revive estado local; S12 `historical_snapshot_counterexample`, alta. Catálogo atual NC. | Enumerar cópias online/offline, plaintext/chaves, leitores/exportadores/restauradores, retenção e destinos; cifragem não elimina poderes de restore/exportação. |
+| W11 storage local/partilhado, multipath, cache, WAL/data/tablespaces separados, fabric, reanexação e novo iniciador | FD do catálogo; dispositivos/reservas/configuração atuais NC; S03/S05. | Identificar cada caminho e quem reanexa/reinscreve/restaura configuração. Não atribuir reservas persistentes, SAN ou cobertura integral. |
+| W12 rede alternativa, DNS/route, túnel, endpoint e ligação sobrevivente | FD histórico: pin rejeita clone mas não impede escrita autónoma; S11/S12; FD política LAN-only, S16/S17; alta. | NC: LAN/gestão/rotas/túneis e sessões atuais; ausência de publicação ou recusa de endpoint não prova corte de capacidade física. |
+| W13 recuperação de A/B/F/W/CA/ACL, rotação e re-enrolamento | FD de risco/requisito de continuidade, S03/S04/S13/S14; mecanismo atual NC. | Identificar backups de controlo, raízes, enrolamento, rotação, emergência e âncora fora de D; restauro não pode apagar consumo ou revalidar capacidade antiga. |
+
+Para todos os W: recurso, geração, meios, principal, domínio administrativo, cópias/destinos, fonte atual, observador e barreira permanecem por preencher nominalmente. Não há W encerrado, excluído ou demonstrado integralmente. Referências a controlos futuros são obrigações de estudo; seleção/instalação/ensaio continuam fora desta entrega.
+

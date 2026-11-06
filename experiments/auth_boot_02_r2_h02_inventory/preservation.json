@@ -1,0 +1,167 @@
+{
+  "scope": "documentary H02 only",
+  "date_editorial": "2026-10-27 Europe/Lisbon; not authenticated UTC",
+  "before": {
+    "root": "/home/paulo/projects/livenet-v2",
+    "excluded": [
+      ".git"
+    ],
+    "target": "experiments/auth_boot_02_r2_h02_inventory",
+    "entry_count": 9151,
+    "inventory_sha256": "594064dafdbf68029adf1d508cdf150179d2d053d3b4dca834dc461862b48409",
+    "head": "647179c928888adfeef0f69f582fd13c5fc17350",
+    "git_status_sha256": "7d2b1c412ad8dd1f0fe9e0093932add793b5d923ba4b38012b2fcb2043fdb399",
+    "diff_binary_sha256": "21b7778033dde56d142558cdeac78808f35437cdbc8e03fead49ad288c445df2",
+    "sources": {
+      "experiments/auth_boot_02_r2_dev08/DECISIONS.md": "8359d9bc32eccd65be987bdefd251ad28cc116edf0a473c18c5cef98b5e04f70",
+      "experiments/auth_boot_02_r2_dev08/REPORT.md": "16adfa966f4685b2cf677fa74c07931e143ea98093a0bff9328cfe92b052e830",
+      "experiments/auth_boot_02_r2_dev08/BOUNDARY.md": "b3aa1d1daad0731d4d4cf31011ac97358155ae3451f363f83b36036ba041b9f0",
+      "experiments/auth_boot_02_r2_dev08/CUSTODY.md": "d39cf72ee23a0670571b0b392dac7910f64aaf3e6fbb1a9a56b17a8f8e5736ff",
+      "experiments/auth_boot_02_r2_dev08/LAB_FEASIBILITY.md": "6b72b421f52f7bbd896616f49a7ce0b80d4eb9112cfad84ed88edbd4ee71f2f3",
+      "experiments/auth_boot_02_r2_dev08/PROVENANCE.md": "2c87b8e5ec29e1051da72f698d86782d4509a89aa7236ef30d07eb98dcb07650",
+      "experiments/auth_boot_02_r2_dev07/REPORT.md": "8bcf9cb3be8bd4b3977247074b0ef8621e41da1db4aa69ffe3306319240f9618",
+      "experiments/auth_boot_02_r2_dev07/FINDINGS.md": "4598d1b5cfa2df2f0459dba8bb8b4785977f987e36dceac83f83b2f0754b6870",
+      "experiments/auth_boot_02_r2_dev06/REPORT.md": "33e9d06dbe4f386724407e7b40bdcbdda469804751132743a7bb34e2856016e2",
+      "experiments/auth_boot_02_r2_dev06/ARCHITECTURE.md": "74a969798ca05797efebe0c976f67090da6edd3f277d7baf3089a38b876ce69a",
+      "experiments/auth_boot_02_r2_dev05/REPORT.md": "0143b1dcbe5155e8e3eb6f70946e87f7a692c9ee53174715b3ba63123212b490",
+      "experiments/auth_boot_02_r2_dev05/evidence.json": "b586f80075259ac09fe61e85442913dee07e7acc5bbc7b3e12c2b420049f7647",
+      "docs/architecture/auth-boot-02-r1.md": "59c312d7dded14db9781d5e2a8e91acbce433b79a6d69427d3884f846e182eff",
+      "docs/architecture/auth-boot-02-r2.md": "241f65858fdfcf8676a4fef4d251f1fdef95dfb2987d971b26cd2c993bfcbfc1",
+      "docs/architecture/auth-boot-02-r2-traceability.md": "6c239c812e0fc125fff10a1d5712a380f653adc021586ecca2d3910ec6d3d1f2",
+      "docs/architecture/environments.md": "4943c75125d0b761750060baf340948949d44b9f86e986b89374a0742fd88295",
+      "docs/architecture/platform-runtime.md": "064e07f26265a2278c5639fe4d05550017d2f96b8c643f1de154c6345d32a3d0",
+      "docs/architecture/decision-register.md": "6ea6ec7c036463b4962b9fc68c9c0a711eb46e2aac8965f577cb2f26a4d3a699",
+      "docs/specifications/f0/f0-baseline.md": "a2a9fe2edad556264234c119339df279d761e397d059f0040d01a622f386a3f3",
+      "docs/specifications/f0/inventory-physical-model.md": "903426db2a065afcbed43fa7085330b22583da0b98a83ed899414c2b8ab0eb04"
+    }
+  },
+  "after": {
+    "root": "/home/paulo/projects/livenet-v2",
+    "excluded": [
+      ".git"
+    ],
+    "target": "experiments/auth_boot_02_r2_h02_inventory",
+    "entry_count": 9151,
+    "inventory_sha256": "594064dafdbf68029adf1d508cdf150179d2d053d3b4dca834dc461862b48409",
+    "head": "647179c928888adfeef0f69f582fd13c5fc17350",
+    "git_status_sha256": "7d2b1c412ad8dd1f0fe9e0093932add793b5d923ba4b38012b2fcb2043fdb399",
+    "diff_binary_sha256": "21b7778033dde56d142558cdeac78808f35437cdbc8e03fead49ad288c445df2",
+    "sources": {
+      "experiments/auth_boot_02_r2_dev08/DECISIONS.md": "8359d9bc32eccd65be987bdefd251ad28cc116edf0a473c18c5cef98b5e04f70",
+      "experiments/auth_boot_02_r2_dev08/REPORT.md": "16adfa966f4685b2cf677fa74c07931e143ea98093a0bff9328cfe92b052e830",
+      "experiments/auth_boot_02_r2_dev08/BOUNDARY.md": "b3aa1d1daad0731d4d4cf31011ac97358155ae3451f363f83b36036ba041b9f0",
+      "experiments/auth_boot_02_r2_dev08/CUSTODY.md": "d39cf72ee23a0670571b0b392dac7910f64aaf3e6fbb1a9a56b17a8f8e5736ff",
+      "experiments/auth_boot_02_r2_dev08/LAB_FEASIBILITY.md": "6b72b421f52f7bbd896616f49a7ce0b80d4eb9112cfad84ed88edbd4ee71f2f3",
+      "experiments/auth_boot_02_r2_dev08/PROVENANCE.md": "2c87b8e5ec29e1051da72f698d86782d4509a89aa7236ef30d07eb98dcb07650",
+      "experiments/auth_boot_02_r2_dev07/REPORT.md": "8bcf9cb3be8bd4b3977247074b0ef8621e41da1db4aa69ffe3306319240f9618",
+      "experiments/auth_boot_02_r2_dev07/FINDINGS.md": "4598d1b5cfa2df2f0459dba8bb8b4785977f987e36dceac83f83b2f0754b6870",
+      "experiments/auth_boot_02_r2_dev06/REPORT.md": "33e9d06dbe4f386724407e7b40bdcbdda469804751132743a7bb34e2856016e2",
+      "experiments/auth_boot_02_r2_dev06/ARCHITECTURE.md": "74a969798ca05797efebe0c976f67090da6edd3f277d7baf3089a38b876ce69a",
+      "experiments/auth_boot_02_r2_dev05/REPORT.md": "0143b1dcbe5155e8e3eb6f70946e87f7a692c9ee53174715b3ba63123212b490",
+      "experiments/auth_boot_02_r2_dev05/evidence.json": "b586f80075259ac09fe61e85442913dee07e7acc5bbc7b3e12c2b420049f7647",
+      "docs/architecture/auth-boot-02-r1.md": "59c312d7dded14db9781d5e2a8e91acbce433b79a6d69427d3884f846e182eff",
+      "docs/architecture/auth-boot-02-r2.md": "241f65858fdfcf8676a4fef4d251f1fdef95dfb2987d971b26cd2c993bfcbfc1",
+      "docs/architecture/auth-boot-02-r2-traceability.md": "6c239c812e0fc125fff10a1d5712a380f653adc021586ecca2d3910ec6d3d1f2",
+      "docs/architecture/environments.md": "4943c75125d0b761750060baf340948949d44b9f86e986b89374a0742fd88295",
+      "docs/architecture/platform-runtime.md": "064e07f26265a2278c5639fe4d05550017d2f96b8c643f1de154c6345d32a3d0",
+      "docs/architecture/decision-register.md": "6ea6ec7c036463b4962b9fc68c9c0a711eb46e2aac8965f577cb2f26a4d3a699",
+      "docs/specifications/f0/f0-baseline.md": "a2a9fe2edad556264234c119339df279d761e397d059f0040d01a622f386a3f3",
+      "docs/specifications/f0/inventory-physical-model.md": "903426db2a065afcbed43fa7085330b22583da0b98a83ed899414c2b8ab0eb04"
+    }
+  },
+  "checks": {
+    "entry_count": true,
+    "inventory_sha256": true,
+    "head": true,
+    "git_status_sha256": true,
+    "diff_binary_sha256": true,
+    "sources": true,
+    "w01_w13_match": true,
+    "utf8": true,
+    "relative_links_except_pending_manifest": true,
+    "delivery_names": true
+  },
+  "all_checks_passed": true,
+  "delivery_sha256_excluding_this_manifest": {
+    "GAPS.md": "f7a4a53c366d9026b6ad7c30aa8f87186c468273f1182477ab7c6003ee17f617",
+    "INVENTORY.md": "2f84e304bbfbeb29d231eed36126f9f0a636f7a1848fb7645322eda8a5a65297",
+    "PERIMETER.md": "572cee0d35d6b6de0173acefd217e5415917ab69faf90edb160fcbf9106995be",
+    "PROVENANCE.md": "5ab46a098800b23507a21656c5bf07564078e8735c1215d3798bc2d289680eed",
+    "REPORT.md": "d68e73bd1fcd78c4da2e482f3eb9820ace6d09fe68775d330997cce7e902d7b5",
+    "WRITE_PATHS.md": "2254a0f2a6aea93a335c560aca43afb57b034d640b11308e6e9c617a707d9c75",
+    "preservation.baseline.json": "8e0aeb2d5c89eff6a4f7151bbefbc90f1f65af0d0b4c2598a5e0851d9cbf5538"
+  },
+  "relative_links": [
+    {
+      "from": "GAPS.md",
+      "target": "PERIMETER.md",
+      "exists": true,
+      "planned_manifest": false
+    },
+    {
+      "from": "INVENTORY.md",
+      "target": "PROVENANCE.md",
+      "exists": true,
+      "planned_manifest": false
+    },
+    {
+      "from": "PERIMETER.md",
+      "target": "GAPS.md",
+      "exists": true,
+      "planned_manifest": false
+    },
+    {
+      "from": "REPORT.md",
+      "target": "INVENTORY.md",
+      "exists": true,
+      "planned_manifest": false
+    },
+    {
+      "from": "REPORT.md",
+      "target": "WRITE_PATHS.md",
+      "exists": true,
+      "planned_manifest": false
+    },
+    {
+      "from": "REPORT.md",
+      "target": "GAPS.md",
+      "exists": true,
+      "planned_manifest": false
+    },
+    {
+      "from": "REPORT.md",
+      "target": "PERIMETER.md",
+      "exists": true,
+      "planned_manifest": false
+    },
+    {
+      "from": "REPORT.md",
+      "target": "PROVENANCE.md",
+      "exists": true,
+      "planned_manifest": false
+    },
+    {
+      "from": "REPORT.md",
+      "target": "preservation.baseline.json",
+      "exists": true,
+      "planned_manifest": false
+    },
+    {
+      "from": "REPORT.md",
+      "target": "preservation.json",
+      "exists": false,
+      "planned_manifest": true
+    },
+    {
+      "from": "WRITE_PATHS.md",
+      "target": "INVENTORY.md",
+      "exists": true,
+      "planned_manifest": false
+    }
+  ],
+  "limits": [
+    "excludes .git internal state, atime/mtime, ACL/xattrs, empty directories and operational/external resources",
+    "compact aggregate comparison, no atomic snapshot or independent D09 evidence",
+    "preservation.json linked in documents is created after this capture; final check required"
+  ]
+}
