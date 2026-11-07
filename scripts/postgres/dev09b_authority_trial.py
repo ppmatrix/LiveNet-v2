@@ -18,6 +18,7 @@ import os
 from pathlib import Path
 import re
 import secrets
+import subprocess
 from threading import Barrier, Lock
 import time
 from types import SimpleNamespace
@@ -127,17 +128,108 @@ def checked(confirm):
     return record
 
 
-def admin(record,sql):
-    # Static shell program, password read inside container; no secret in argv.
-    shell='export PGPASSWORD="$(cat /run/secrets/authoritytrial_admin_password)"; exec psql -X -q -v ON_ERROR_STOP=1 -U dev09b_authority_trial_admin -d dev09b_authority_trial'
+class AdminFailure(q.Refused):
+    """Only closed diagnostics survive; never retain stdout/stderr/SQL in errors."""
+    def __init__(self, diagnostic):
+        self.diagnostic=diagnostic
+        super().__init__(diagnostic['code'])
+
+
+def instrument_admin_sql(sql):
+    # Only our fixed generated scripts: top-level statements start on new lines.
+    # DO blocks, literals and schema bodies are preserved byte-for-byte. This is
+    # deliberately NOT an arbitrary SQL parser or permission-control mechanism.
+    families=('BEGIN','SET LOCAL','DO','REVOKE','CREATE ROLE','CREATE SCHEMA',
+              'CREATE TABLE','ALTER SCHEMA','ALTER TABLE','GRANT','INSERT INTO','COMMIT')
+    lines=[];identifiers=[]
+    for line in sql.splitlines():
+        family=next((f for f in families if re.match('^'+f+r'\b',line)),None)
+        if family:
+            identifier='S%03d_'%(len(identifiers)+1)+family.replace(' ','_')
+            identifiers.append(identifier)
+            lines.append(r'\echo DEV09B_STATEMENT:'+identifier)
+        lines.append(line)
+    require(identifiers and identifiers[0].endswith('_BEGIN') and identifiers[-1].endswith('_COMMIT'),'ADMIN_SCRIPT_LAYOUT')
+    return '\n'.join(lines)+'\n',identifiers
+
+
+def admin_diagnostic(phase,returncode,stdout,stderr,identifiers):
+    # Ignore all non-whitelisted output, including SQL echoed by a client error.
+    markers=re.findall(r'^DEV09B_STATEMENT:(S[0-9]{3}_[A-Z_]+)\s*$',stdout,re.M)
+    markers=[m for m in markers if m in identifiers]
+    states=re.findall(r'^(?:psql:[^\n]*:\s*)?(?:ERROR|FATAL|PANIC):\s*([0-9A-Z]{5})\s*$',stderr,re.M)
+    code='ADMIN_STATEMENT_FAILED' if markers else 'ADMIN_CONNECTION_FAILED'
+    if 'DEV09B_PRECONNECT:SECRET_UNREADABLE' in stderr:code='ADMIN_SECRET_UNREADABLE'
+    if 'DEV09B_PRECONNECT:SECRET_READ_FAILED' in stderr:code='ADMIN_SECRET_READ_FAILED'
+    if len(stdout)>2*1024*1024 or len(stderr)>2*1024*1024:code='ADMIN_OUTPUT_LIMIT'
+    return dict(phase=phase if markers else 'administrative_connect',sqlstate=states[-1] if states else None,
+                statement_id=markers[-1] if markers else None,code=code,exit_code=returncode)
+
+
+def run_admin_command(args,sql,phase,identifiers):
+    require(not any(os.environ.get(k) for k in ('DOCKER_HOST','DOCKER_CONTEXT','DOCKER_TLS_VERIFY','DOCKER_CERT_PATH')),'DOCKER_ENV_OVERRIDE')
+    require(args[:1]==['docker'],'LOCAL_DOCKER_REQUIRED')
+    try:
+        result=subprocess.run(['docker','--context','default',*args[1:]],input=sql,text=True,
+                              stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=30,check=False)
+    except subprocess.TimeoutExpired as exc:
+        def decoded(value):return value.decode('utf8',errors='replace') if isinstance(value,bytes) else value or ''
+        diagnostic=admin_diagnostic(phase,None,decoded(exc.stdout),decoded(exc.stderr),identifiers)
+        diagnostic['code']='ADMIN_TIMEOUT_RESULT_UNCERTAIN'
+        raise AdminFailure(diagnostic) from None
+    except OSError:
+        raise AdminFailure(dict(phase='administrative_connect',sqlstate=None,statement_id=None,code='ADMIN_PROCESS_FAILED',exit_code=None)) from None
+    if result.returncode or len(result.stdout)>2*1024*1024 or len(result.stderr)>2*1024*1024:
+        raise AdminFailure(admin_diagnostic(phase,result.returncode,result.stdout,result.stderr,identifiers)) from None
+    if ('DEV09B_STATEMENT:'+identifiers[-1]) not in result.stdout.splitlines():
+        diagnostic=admin_diagnostic(phase,result.returncode,result.stdout,result.stderr,identifiers)
+        diagnostic['code']='ADMIN_COMMIT_CONFIRMATION_MISSING'
+        raise AdminFailure(diagnostic) from None
+
+
+def admin(record,sql,*,phase='administrative_preparation'):
+    require(phase in ('administrative_preparation','seed'),'ADMIN_PHASE')
+    # Root reads the existing host-owned 0600 bind mount; no chmod/chown, new
+    # credential, DB role elevation or grants. Same explicit PostgreSQL admin.
+    # Separate assignment propagates cat failure; export would mask its status.
+    shell=("unset PGSERVICE PGSERVICEFILE PGOPTIONS PGPASSFILE; "
+           "if ! test -r /run/secrets/authoritytrial_admin_password; then "
+           "printf 'DEV09B_PRECONNECT:SECRET_UNREADABLE\n' >&2; exit 78; fi; "
+           'PGPASSWORD="$(cat /run/secrets/authoritytrial_admin_password)" || '
+           "{ printf 'DEV09B_PRECONNECT:SECRET_READ_FAILED\n' >&2; exit 79; }; export PGPASSWORD; "
+           'PGOPTIONS="-c statement_timeout=5000 -c lock_timeout=2000"; export PGOPTIONS; '
+           "exec psql -X -q -w -v ON_ERROR_STOP=1 -v VERBOSITY=sqlstate "
+           "-h /var/run/postgresql -p 5432 -U dev09b_authority_trial_admin -d dev09b_authority_trial")
     c.decimal64(record['system_identifier'])
     guard="DO $$ BEGIN IF current_database() <> 'dev09b_authority_trial' OR session_user <> 'dev09b_authority_trial_admin' OR (SELECT system_identifier::text FROM pg_catalog.pg_control_system()) <> '"+record['system_identifier']+"' THEN RAISE EXCEPTION 'ADMIN_IDENTITY_REFUSED'; END IF; END $$;"
     require('BEGIN;' in sql,'ADMIN_TRANSACTION_REQUIRED')
-    sql=sql.replace('BEGIN;','BEGIN; '+guard,1)
-    return q.command(['docker','exec','-i','--user','postgres',record['container_id'],'sh','-eu','-c',shell],input=sql)
+    sql=sql.replace('BEGIN;','BEGIN;\n'+guard,1)
+    sql,identifiers=instrument_admin_sql(sql)
+    try:
+        run_admin_command(['docker','exec','-i','--user','root',record['container_id'],'sh','-eu','-c',shell],sql,phase,identifiers)
+    except AdminFailure as exc:
+        q.write_new(state()/('admin-diagnostic-'+str(uuid4())+'.json'),(json.dumps(exc.diagnostic,sort_keys=True)+'\n').encode())
+        raise
 
 
-def prepare(confirm):
+def validate_resume_inspection(name,record):
+    require(type(name) is str and re.fullmatch(r'diagnostic-inspection-[0-9]{2}\.json',name) is not None,'RESUME_INSPECTION_NAME')
+    proof=json.loads(q.read_private(state()/name))
+    require(proof.get('status')=='READ_ONLY_INSPECTION_RETURNED' and proof.get('container_final')=='exited'
+            and proof.get('system_identifier')==record['system_identifier'],'RESUME_INSPECTION_REQUIRED')
+    o=proof.get('observation',{})
+    require(o.get('system_identifier')==record['system_identifier'] and o.get('database')==DATABASE and
+            o.get('current_user')==ADMIN and o.get('session_user')==ADMIN and o.get('transaction_read_only')=='on','RESUME_INSPECTION_BINDING')
+    require(o.get('authority_schema_count')==0 and o.get('authority_relations')==[] and o.get('target_memberships')==0
+            and o.get('roles')==[dict(name=ADMIN,login=True,superuser=True)] and o.get('database_owner')==ADMIN
+            and o.get('database_public_privileges')==['CONNECT','TEMPORARY']
+            and o.get('public_schema')==dict(owner='pg_database_owner',acl='{pg_database_owner=UC/pg_database_owner,=U/pg_database_owner}'),'RESUME_PRISTINE_REQUIRED')
+    require((state()/'admin-started').is_file() and not (state()/'run-started').exists()
+            and not (state()/'quarantine').exists(),'RESUME_STAGE_REQUIRED')
+    return 'admin-resume-started-'+name.removesuffix('.json')
+
+
+def prepare(confirm,*,resume_inspection=None):
     record=checked(confirm);sql=ADMIN_SQL.read_text()
     sql=sql.replace('__AUTHORITY_SCHEMA__',SCHEMA.read_text())
     for role in ROLES:
@@ -145,7 +237,23 @@ def prepare(confirm):
         require("'" not in verifier and '\n' not in verifier,'SCRAM_ENCODING')
         sql=sql.replace('__'+role.upper()+'_SCRAM__',verifier)
     require('__' not in sql,'ADMIN_PLACEHOLDER')
-    q.write_new(state()/'admin-started',b'one administrative preparation; no automatic retry\n')
+    marker='admin-started' if resume_inspection is None else validate_resume_inspection(resume_inspection,record)
+    # Recheck pristine essentials in the SAME future transaction, before REVOKE.
+    # A stale inspection never authorizes repair or overwriting an existing role.
+    pristine="""DO $$ BEGIN
+ IF EXISTS(SELECT 1 FROM pg_catalog.pg_roles WHERE rolname IN
+ ('dev09b_authority_trial_owner','dev09b_authority_trial_service','dev09b_authority_trial_revoker','dev09b_authority_trial_observer'))
+ OR EXISTS(SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname='dev09b_authority')
+ OR NOT EXISTS(SELECT 1 FROM pg_catalog.pg_database WHERE datname=current_database() AND pg_get_userbyid(datdba)=session_user)
+ OR NOT EXISTS(SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname='public' AND pg_get_userbyid(nspowner)='pg_database_owner'
+ AND nspacl::text='{pg_database_owner=UC/pg_database_owner,=U/pg_database_owner}')
+ OR (SELECT array_agg(x.privilege_type ORDER BY x.privilege_type) FROM pg_catalog.pg_database d
+ CROSS JOIN LATERAL aclexplode(COALESCE(d.datacl,acldefault('d',d.datdba))) x
+ WHERE d.datname=current_database() AND x.grantee=0) IS DISTINCT FROM ARRAY['CONNECT','TEMPORARY']::text[]
+ THEN RAISE EXCEPTION 'ADMIN_PRISTINE_REQUIRED'; END IF;
+END $$;"""
+    sql=sql.replace('BEGIN;','BEGIN;\n'+pristine,1)
+    q.write_new(state()/marker,b'one administrative preparation; no automatic retry\n')
     admin(record,sql)
 
 
@@ -198,7 +306,7 @@ def seed_sql():
     for n in range(1,6):
         docs=["decode('"+b.hex()+"','hex')" for b in (MARKER,*([b'{}']*7))]
         values.append("('"+approval_id(n)+"','"+str(UUID(int=300+n))+"','AVAILABLE',"+','.join(docs)+")")
-    return "BEGIN; SET LOCAL statement_timeout='5s'; INSERT INTO dev09b_authority.approvals (approval_id,attempt_id,state,envelope,payload,target,executor,plan,semantic,physical,provenance) VALUES "+','.join(values)+"; COMMIT;"
+    return "BEGIN;\nSET LOCAL statement_timeout='5s';\nINSERT INTO dev09b_authority.approvals (approval_id,attempt_id,state,envelope,payload,target,executor,plan,semantic,physical,provenance) VALUES "+','.join(values)+";\nCOMMIT;"
 
 
 def observe(eng,record,identifier):
@@ -294,12 +402,13 @@ def run(confirm):
     record=checked(confirm);q.write_new(state()/'run-started',b'one original storage trial; no automatic retry\n')
     engines={};report={'classification':'SYNTHETIC_STORAGE_TRIAL','operational_authorization':False,'status':'REFUSED','cases':[]}
     try:
-        admin(record,seed_sql())
+        admin(record,seed_sql(),phase='seed')
         engines={role:engine(record,role) for role in ROLES}
         scenarios(service(engines['service'],record,'service'),service(engines['revoker'],record,'revoker'),engines['observer'],record,report['cases'])
         report['status']='STORAGE_CASES_PASSED'
     except BaseException as exc:
         report['exception_class']=type(exc).__name__
+        if isinstance(exc,AdminFailure): report['admin_diagnostic']=exc.diagnostic
         if type(exc) is q.Refused: report['code']=str(exc)  # fixed trial diagnostic only
         raise
     finally:
@@ -312,19 +421,22 @@ def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('action',choices=('validate-only','secrets','preflight','identify','prepare-admin','run'))
     parser.add_argument('--confirm-sid')
+    parser.add_argument('--resume-inspection',help='Explicit one-shot resume after private pristine READ ONLY inspection; no retry by default')
     args=parser.parse_args(argv)
     try:
         validate()
+        require(args.resume_inspection is None or args.action=='prepare-admin','RESUME_ACTION')
         if args.action=='validate-only':print('CANDIDATE_STATIC_CONFIGURATION_VALID')
         elif args.action=='secrets':make_secrets()
         elif args.action=='preflight':preflight()
         elif args.action=='identify':identify()
-        elif args.action=='prepare-admin':prepare(args.confirm_sid)
+        elif args.action=='prepare-admin':prepare(args.confirm_sid,resume_inspection=args.resume_inspection)
         elif args.action=='run':print(run(args.confirm_sid))
         return 0
     except Exception as exc:
         # Fixed class only; never driver messages, SQL, parameters or credentials.
         print('AUTHORITY_TRIAL_REFUSED:'+type(exc).__name__)
+        if isinstance(exc,AdminFailure): print(json.dumps(exc.diagnostic,sort_keys=True))
         return 1
 
 
