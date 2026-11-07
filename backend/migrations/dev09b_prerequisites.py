@@ -41,6 +41,7 @@ class ProfileAttestation:
 
 class PreparedPort(Protocol):
     """Trusted injection; a real implementation needs separate authorization."""
+    def assert_connection(self, connection) -> None: ...
     def verify_approved_profile(self, profile_json: bytes) -> ProfileAttestation: ...
     def observe(self, profile_json: bytes, requested: str) -> dict: ...
 
@@ -124,6 +125,9 @@ def _require(requested, context=None):
     if context is None:
         from alembic import op
         context=op.get_context().config.attributes.get(ATTR)
+        if type(context) is PreparedContext:
+            if not callable(getattr(context.port,"assert_connection",None)):raise MissingParameter("dev09b.connection_binding")
+            context.port.assert_connection(op.get_bind())
     if type(context) is not PreparedContext:raise MissingParameter(ATTR)
     p=decode_profile(context.profile_json)
     if context.port is None or not all(callable(getattr(context.port,k,None)) for k in ("verify_approved_profile","observe")):
@@ -153,6 +157,8 @@ def require_prepared_environment(config):
     require(connection.in_transaction() is True and connection.dialect.name=="postgresql")
     context=config.attributes.get(ATTR)
     if type(context) is not PreparedContext:raise MissingParameter(ATTR)
+    if not callable(getattr(context.port,"assert_connection",None)):raise MissingParameter("dev09b.connection_binding")
+    context.port.assert_connection(connection)
     _require("environment",context)
 
 

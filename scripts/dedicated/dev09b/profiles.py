@@ -24,7 +24,9 @@ PROFILES = MappingProxyType({
     "g2-f066-b12-d05-v1": ("backend/app/readiness_postgres/evaluate.py", "backend/app/readiness_postgres/policy.py", "backend/app/readiness_postgres/queries.py"),
 })
 PREPARED_SOURCES = MappingProxyType({
-    "backend/migrations/dev09b_prerequisites.py":"1ab767f781aba80fdd96e10acf91c503095997ab956a65b17d91411765b2cf6b",
+    "backend/migrations/dev09b_inspection_queries.py":"6c6651e5b607bcafb54490f64935a4eac27cbe9141267967b22b6e6a083ae5cd",
+    "backend/migrations/dev09b_inspection.py":"663850ec07f1ddeac8d2094b415451cc6b1bce4b508499536e6b97ea80b754bd",
+    "backend/migrations/dev09b_prerequisites.py":"e2c018ab635ecab4965728e1a3a85fb8dc52121a863749644526c36a0fa7796b",
     "backend/migrations/env.py":"c3c087f52aad22e20fc36a911a30c2d3c211054c30f1a9537bdecbe21271afda",
     "backend/security_migrations/env.py":"82d77a4a50b0433de469afb62a94aa8f85ad5f6c45faa7cedcf0470e9756a5ea",
     "backend/migrations/versions/af62df027d9d_create_inventory_resources_baseline.py":"775dbc0c8df3857f52d5907466413f2efbece62e07e6c2f1086ee7775bf0a2b2",

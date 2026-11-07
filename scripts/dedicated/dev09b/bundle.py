@@ -10,16 +10,17 @@ import re
 
 from . import codec as c
 from .migration_catalog import MissingParameter
+from . import crypto_dependencies as crypto
 
 
 DIRECTORIES=("backend/app","backend/migrations","backend/security_migrations","scripts/dedicated/dev09b","scripts/postgres/g4")
-EXTRA=("backend/alembic.ini","backend/alembic-security.ini","backend/requirements.txt",
+EXTRA=(crypto.LOCK,crypto.PROVENANCE,"backend/alembic.ini","backend/alembic-security.ini","backend/requirements.txt",
        "backend/requirements-container.lock","scripts/postgres/dev09a2-executor.lock",
        "scripts/postgres/auth03_alembic_executor.py","scripts/postgres/m12b_security_migration.py",
        "scripts/postgres/m12b_security_coordinator.py","scripts/postgres/m12b_security_adapters.py")
 MANDATORY=("backend/migrations/dev09b_prerequisites.py","backend/app/dedicated.py",
            "backend/security_migrations/versions/b12b01a7230_create_security.py")
-LOCKS=("backend/requirements-container.lock","scripts/postgres/dev09a2-executor.lock")
+LOCKS=("backend/requirements-container.lock","scripts/postgres/dev09a2-executor.lock",crypto.LOCK)
 
 
 def read(root,path):
@@ -58,6 +59,7 @@ def dependency_inventory(root):
 
 
 def build_candidate(root):
+    crypto_raw, crypto_provenance = crypto.metadata(root)  # effective transitive closure
     paths=source_paths(root)
     dependencies=dependency_inventory(root)
     return {"schema_version":1,"profile":"DEV09B-PREPARED-1","status":"CANDIDATE_NOT_APPROVED",
@@ -65,8 +67,15 @@ def build_candidate(root):
             "sources":[{"path":p,"sha256":sha256(read(root,p)).hexdigest()} for p in paths],
             "dependency_locks":[{"path":p,"sha256":sha256(read(root,p)).hexdigest()} for p in LOCKS],
             "dependencies":dependencies,
-            "missing_parameters":["dependencies.cryptography.approved_transitive_lock"],
-            "dependency_completeness":"INCOMPLETE"}
+            "missing_parameters":["dependencies.cryptography.approved_transitive_lock",
+                                  "dependencies.cryptography.executor_compatibility",
+                                  "dependencies.cryptography.artifact_availability"],
+            "dependency_completeness":"INCOMPLETE",
+            "crypto_dependency_state":{"lock_sha256":sha256(crypto_raw).hexdigest(),
+                "provenance_sha256":sha256(read(root,crypto.PROVENANCE)).hexdigest(),
+                "transitive_closure":"VERIFIED_FROM_CANDIDATE_METADATA",
+                "artifact_integrity":"UNVERIFIED", "artifact_availability":"NOT_PROVIDED",
+                "executor_compatibility":"UNKNOWN", "approval":"NOT_PROVIDED"}}
 
 
 @dataclass(frozen=True)
@@ -90,3 +99,13 @@ def require_complete_candidate(root,candidate):
     if observation.missing_parameters:raise MissingParameter(observation.missing_parameters[0])
     # No operational success/approval path is implemented by this utility.
     raise c.Unsupported("Candidate integrity is not operational approval")
+
+
+def inspect_crypto_dependencies(root, **explicit_ports):
+    """Actual artifact/metadata/tag inspection, separate from source integrity.
+
+    Without an explicit environment and trusted approval verifier, neither
+    compatibility nor approval can be inferred from candidate JSON or booleans.
+    Never installs artifacts or enables a runner.
+    """
+    return crypto.inspect(root, **explicit_ports)

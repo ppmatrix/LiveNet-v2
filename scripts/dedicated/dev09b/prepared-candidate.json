@@ -149,8 +149,16 @@
       "sha256": "1078a580402a3d2cddb15e5e8797f4e63c5444cb4cba9a8ecfde0dd47d505375"
     },
     {
+      "path": "backend/migrations/dev09b_inspection.py",
+      "sha256": "663850ec07f1ddeac8d2094b415451cc6b1bce4b508499536e6b97ea80b754bd"
+    },
+    {
+      "path": "backend/migrations/dev09b_inspection_queries.py",
+      "sha256": "6c6651e5b607bcafb54490f64935a4eac27cbe9141267967b22b6e6a083ae5cd"
+    },
+    {
       "path": "backend/migrations/dev09b_prerequisites.py",
-      "sha256": "1ab767f781aba80fdd96e10acf91c503095997ab956a65b17d91411765b2cf6b"
+      "sha256": "e2c018ab635ecab4965728e1a3a85fb8dc52121a863749644526c36a0fa7796b"
     },
     {
       "path": "backend/migrations/env.py",
@@ -242,11 +250,15 @@
     },
     {
       "path": "scripts/dedicated/dev09b/bundle.py",
-      "sha256": "2b58b41dccaba9ae5dc174c08d76d9a606d624f972d918b33ce657f230b37ae6"
+      "sha256": "4460531e2e3cba63219ac58323a5d293c80d2ae9f4a04d46f23887a8ade170b6"
     },
     {
       "path": "scripts/dedicated/dev09b/codec.py",
       "sha256": "cea70db1e25715bffcfd27b9a21f0783ee9ffe47aeab2c32e763c143439b969d"
+    },
+    {
+      "path": "scripts/dedicated/dev09b/crypto_dependencies.py",
+      "sha256": "0cf78c9ed13c95eb72016f0439b85dce0ec29508fe9166bcf4a47fbb27b65272"
     },
     {
       "path": "scripts/dedicated/dev09b/doubles.py",
@@ -274,7 +286,7 @@
     },
     {
       "path": "scripts/dedicated/dev09b/profiles.py",
-      "sha256": "d1f19221a8c1b1a679aa6e00159fbd56f6501e06a59509061137ddad586a2c09"
+      "sha256": "78a84ada7a3aedad630c477814262eccf9d493c5a7c52406903315571fc56f6a"
     },
     {
       "path": "scripts/postgres/auth03_alembic_executor.py",
@@ -283,6 +295,14 @@
     {
       "path": "scripts/postgres/dev09a2-executor.lock",
       "sha256": "03a10f5923ceaeff56cd4f53fb8bc95ba7e370b4b7ac3512e7db829b060bca5a"
+    },
+    {
+      "path": "scripts/postgres/dev09b-crypto-candidate.json",
+      "sha256": "a6a7bc518e4b3eb0b709b88f90ba3409fa5557236f2f2d1048058cad207b63f7"
+    },
+    {
+      "path": "scripts/postgres/dev09b-crypto-candidate.lock",
+      "sha256": "5880391c86979e03029c82109d8f63448085b6379b277e44d29eb2d3dd9b4086"
     },
     {
       "path": "scripts/postgres/g4/__init__.py",
@@ -313,6 +333,10 @@
     {
       "path": "scripts/postgres/dev09a2-executor.lock",
       "sha256": "03a10f5923ceaeff56cd4f53fb8bc95ba7e370b4b7ac3512e7db829b060bca5a"
+    },
+    {
+      "path": "scripts/postgres/dev09b-crypto-candidate.lock",
+      "sha256": "5880391c86979e03029c82109d8f63448085b6379b277e44d29eb2d3dd9b4086"
     }
   ],
   "dependencies": [
@@ -327,9 +351,19 @@
       "artifact_sha256": "ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc"
     },
     {
+      "name": "cffi",
+      "version": "2.0.0",
+      "artifact_sha256": "3e17ed538242334bf70832644a32a7aae3d83b57567f9fd60a26257e992b79ba"
+    },
+    {
       "name": "click",
       "version": "8.5.0",
       "artifact_sha256": "255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360"
+    },
+    {
+      "name": "cryptography",
+      "version": "48.0.0",
+      "artifact_sha256": "bd72e68b06bb1e96913f97dd4901119bc17f39d4586a5adf2d3e47bc2b9d58b5"
     },
     {
       "name": "flask",
@@ -377,6 +411,11 @@
       "artifact_sha256": "1679a1cb93fbe5a6d1fd58d82cbddcc6fcb8c61446ba7cae6eb2a7b19bc585de"
     },
     {
+      "name": "pycparser",
+      "version": "3.0",
+      "artifact_sha256": "b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992"
+    },
+    {
       "name": "sqlalchemy",
       "version": "2.1.4",
       "artifact_sha256": "3e5045fb6aadbb0f978ab9b9d8822f7b7a97d2281814e7d13d791155664eace3"
@@ -393,7 +432,18 @@
     }
   ],
   "missing_parameters": [
-    "dependencies.cryptography.approved_transitive_lock"
+    "dependencies.cryptography.approved_transitive_lock",
+    "dependencies.cryptography.executor_compatibility",
+    "dependencies.cryptography.artifact_availability"
   ],
-  "dependency_completeness": "INCOMPLETE"
+  "dependency_completeness": "INCOMPLETE",
+  "crypto_dependency_state": {
+    "lock_sha256": "5880391c86979e03029c82109d8f63448085b6379b277e44d29eb2d3dd9b4086",
+    "provenance_sha256": "a6a7bc518e4b3eb0b709b88f90ba3409fa5557236f2f2d1048058cad207b63f7",
+    "transitive_closure": "VERIFIED_FROM_CANDIDATE_METADATA",
+    "artifact_integrity": "UNVERIFIED",
+    "artifact_availability": "NOT_PROVIDED",
+    "executor_compatibility": "UNKNOWN",
+    "approval": "NOT_PROVIDED"
+  }
 }
