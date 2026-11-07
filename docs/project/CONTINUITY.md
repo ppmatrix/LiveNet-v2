@@ -1,6 +1,6 @@
 # LiveNet v2 — índice de continuidade
 
-Atualizado em 05/11/2026 · Europe/Lisbon · **ÍNDICE DOCUMENTAL ATUALIZADO SOB AUTORIZAÇÃO HUMANA; NÃO É FONTE NORMATIVA NEM BASELINE OFICIAL**.
+Atualizado em 07/11/2026 · Europe/Lisbon · **ÍNDICE DOCUMENTAL ATUALIZADO SOB AUTORIZAÇÃO HUMANA; NÃO É FONTE NORMATIVA NEM BASELINE OFICIAL**.
 
 Este índice facilita retomar o trabalho. Remete para fontes e atos; não duplica o Plano Técnico, não aprova decisões, não substitui documentos arquiteturais e não concede autorização operacional. Em conflito, consultar a fonte e o seu ato de aprovação, preservando o âmbito temporal do histórico.
 
@@ -54,7 +54,7 @@ Atividade seguinte autorizada: continuar a análise documental reversível das c
 | AUTH-03/F02/G2/G4 | Fechados e bloqueantes. |
 | H02–H12; GAP-001/002 | Pendentes/abertos e bloqueantes conforme os seus registos. |
 | RG1–RG7; R2 D09; V05-06 | Por demonstrar; demonstrações distintas. |
-| O3; DEV-09B | Não aprovado; não autorizado. |
+| O3; DEV-09B | O3 não aprovado. Desenho e codificação DEV09B aprovados em 07/11/2026 nos atos abaixo; primeiro bloco offline autorizado. Execução operacional não autorizada. |
 | F0 | Working draft; baseline não oficial. |
 
 Autoridade R2 única; sem atomicidade distribuída presumida; UNKNOWN/BLOCKED; sem retry/retoma automática. C5 permite apenas a tentativa original continuamente vinculada depois de satisfeitas as condições prévias. Reentrada exige continuidade, invalidação demonstrada, decisão humana, novo pedido e nova aprovação.
@@ -132,3 +132,19 @@ Sequência candidata para decisão humana: P1 critérios de consulta inventory e
 [Proposta P3 candidata 0.1](../architecture/proposals/livenet-p3-discovery-20261105/PROPOSAL.md): quatro casos documentais, incluindo variantes de repetição sem fundamento novo e potencial nova evidência de rejeitado. UUID, proveniência, histórico, conflitos e proteções rastreados; lacunas L1–L6 explícitas. Não escolhe limiares, fusão, reativação, schema, TTL, limpeza ou política de execução. [Verificação proporcional](../architecture/proposals/livenet-p3-discovery-20261105/REVIEW.md); candidata para revisão humana, não aprovada nem executada operacionalmente.
 
 Alterações locais anteriores preservadas; somente nova pasta P3 e atualização deste índice. Sem código, testes operacionais, SQL/migrations, serviços/infraestrutura, deployments, commits, pushes ou merges. Gates/bloqueadores e âmbito interno/DEV/VMs Proxmox mantidos.
+
+## Desenho DEV09B aprovado — 07/11/2026
+
+Etapa atual: [aprovação do desenho de autorização de migrações DEV09B](../architecture/decisions/dev09b-migration-design-approval-20261107.md), opção B, apenas application base→f066 e security base→b12 após confirmação de f066, com pedidos/aprovações/tentativas separados. A descrição de «etapa atual» e do mandato Inventory/UI acima é histórica; este registo identifica o mandato mais recente sem ampliar autorizações anteriores.
+
+Aprovadas temporalidade por pontos de controlo, consumo durável segregado, exclusividade administrativamente controlada e adaptação versionada do envelope. Autoridade indisponível não impede tentar rollback/fecho; sem confirmação independente, resultado incerto. Restauro/perda de continuidade da autoridade bloqueia novas admissões até reconciliação e não revalida aprovações antigas. Sem extensão automática R1/R2/C4 ou garantia perante administradores adversariais.
+
+Mandato desta etapa: registar a decisão e preparar no chat a codificação exata candidata para um futuro bloco de implementação. O desenho aprovado não aprova essa codificação, implementação ou execução DEV09B. AUTH-03/F02/G2/G4 e restantes gates/lacunas mantidos. Sem novos pacotes, código, testes, SQL, serviços/infraestrutura, staging, commits ou pushes; progbox DEV, STAGING/PROD em VMs Proxmox e acesso interno.
+
+## DEV09B-1 — primeiro bloco offline autorizado — 07/11/2026
+
+Etapa atual: [aprovação da codificação e do bloco offline](../architecture/decisions/dev09b-offline-block-approval-20261107.md), posterior ao mandato documental acima. Envelope DEV09B-1, schemas de bindings/plano, canonicalização/digests/Ed25519, interfaces abstratas, máquina de estados e doubles/testes locais; nenhuma ligação aos executores operacionais. O ato de desenho permanece intacto.
+
+AVAILABLE não terminal; CONSUMED/REVOKED/EXPIRED terminais. Camadas sem schemas completos não suportadas; assinatura/hash não autorizam operação. Continuidade por interface independente, nunca por epoch local isolado; perda/incerteza bloqueia consumo/progressão. Reconciliação incompleta inutiliza aprovações anteriores. Rollback/fecho continuam tentáveis sem autoridade; resultado incerto sem confirmação independente. Doubles não demonstram durabilidade/concorrência ou exclusividade reais.
+
+Próxima dependência: completar schemas das camadas/evidências antes de suportar manifesto integral. Sem serviço de autoridade, PostgreSQL, rede, SQL/Alembic, chaves operacionais, infraestrutura ou abertura de AUTH-03/F02/G2/G4. R1/R2/C4/I-04 e restantes limites preservados. Sem staging, commits ou pushes; progbox DEV, deployments em VMs Proxmox e acesso exclusivamente interno.
