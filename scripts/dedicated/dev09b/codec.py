@@ -1,7 +1,7 @@
 """Closed DEV09B-1 schemas and a restricted, integer-only RFC 8785 domain.
 
-Signature/integrity observations NEVER authorize an operation. Semantic,
-physical and provenance layers lack complete schemas and are unsupported.
+Signature/integrity observations NEVER authorize an operation. Outer layers
+have closed schemas; incomplete detailed catalog profiles remain unsupported.
 No R1/R2/G4 compatibility, approval issuance, secrets, I/O or fallback crypto.
 """
 from dataclasses import dataclass
@@ -214,7 +214,8 @@ def validate_plan(p):
 def digest(kind, obj):
     validators = {"target": validate_target, "executor": validate_executor, "plan": validate_plan}
     if kind in {"semantic", "physical", "provenance"}:
-        raise Unsupported("Layer schema incomplete; opaque hashes cannot establish support")
+        from .layers import validate_semantic, validate_physical, validate_provenance
+        validators.update(semantic=validate_semantic, physical=validate_physical, provenance=validate_provenance)
     if kind == "global":
         closed(obj, GLOBAL)
         integer(obj["schema_version"], 1, 1)
@@ -276,4 +277,7 @@ def inspect_bindings(payload, target, executor, plan):
 
 
 def validate_layers(*_args, **_kwargs):
-    raise Unsupported("Semantic/physical/provenance schemas incomplete; full manifest unsupported")
+    from .layers import ExpectationSnapshot, validate_complete_layers
+    if len(_args) != 1 or _kwargs or type(_args[0]) is not ExpectationSnapshot:
+        raise Unsupported("Complete layer validation requires a fixed expectation snapshot, not opaque hashes")
+    return validate_complete_layers(_args[0])

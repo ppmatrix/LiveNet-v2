@@ -127,9 +127,11 @@ class OfflineTests(unittest.TestCase):
                     c.verify_envelope(c.canonical(obj), bytes(32))
                 verifier.assert_not_called()
 
-    def test_incomplete_layers_never_supported(self):
+    def test_opaque_layers_and_incomplete_manifest_never_supported(self):
         for kind in ("semantic", "physical", "provenance"):
-            with self.subTest(kind=kind), self.assertRaises(c.Unsupported):
+            # Closed outer layers now exist; this opaque object is invalid.
+            # A complete catalog profile is still explicitly unsupported.
+            with self.subTest(kind=kind), self.assertRaises(c.Invalid):
                 c.digest(kind, {"hash": "a"*64})
         global_obj = dict(schema_version=1, semantic_sha256="a"*64, physical_sha256="b"*64, provenance_sha256="c"*64)
         self.assertEqual(len(c.digest("global", global_obj)), 64)
