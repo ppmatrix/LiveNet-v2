@@ -1,0 +1,72 @@
+{
+  "name": "livenetv2-dev09b-querytrial",
+  "services": {
+    "db": {
+      "image": "postgres:16-alpine@sha256:f4610795587492cd4fb887c2dc3de301b813278bb6f616992061141b5f15ac36",
+      "platform": "linux/amd64",
+      "pull_policy": "never",
+      "restart": "no",
+      "environment": {
+        "POSTGRES_DB": "livenet_v2_dev",
+        "POSTGRES_USER": "dev09b_trial_admin",
+        "POSTGRES_PASSWORD_FILE": "/run/secrets/querytrial_admin_password",
+        "POSTGRES_INITDB_ARGS": "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+      },
+      "command": [
+        "postgres",
+        "-c",
+        "log_statement=none",
+        "-c",
+        "log_min_error_statement=panic",
+        "-c",
+        "log_parameter_max_length=0",
+        "-c",
+        "log_parameter_max_length_on_error=0",
+        "-c",
+        "log_min_messages=fatal",
+        "-c",
+        "log_error_verbosity=terse"
+      ],
+      "secrets": [
+        "querytrial_admin_password"
+      ],
+      "volumes": [
+        "querytrial_data:/var/lib/postgresql/data"
+      ],
+      "networks": [
+        "backend"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "pg_isready",
+          "-U",
+          "dev09b_trial_admin",
+          "-d",
+          "livenet_v2_dev"
+        ],
+        "interval": "5s",
+        "timeout": "5s",
+        "retries": 12,
+        "start_period": "10s"
+      }
+    }
+  },
+  "secrets": {
+    "querytrial_admin_password": {
+      "file": "${DEV09B_QUERYTRIAL_STATE_DIR:?Set an absolute private directory outside Git}/admin_password"
+    }
+  },
+  "volumes": {
+    "querytrial_data": {
+      "name": "livenetv2-dev09b-querytrial_data"
+    }
+  },
+  "networks": {
+    "backend": {
+      "name": "livenetv2-dev09b-querytrial_backend",
+      "internal": true,
+      "driver": "bridge"
+    }
+  }
+}

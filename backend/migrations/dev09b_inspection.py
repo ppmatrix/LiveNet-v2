@@ -12,6 +12,7 @@ from typing import Protocol
 
 from sqlalchemy import text
 from . import dev09b_prerequisites as h
+from . import dev09b_inspection_support as support
 from .dev09b_inspection_queries import QUERIES, LEDGER_SQL
 from scripts.dedicated.dev09b import codec as c
 
@@ -83,7 +84,16 @@ def rows(name, values):
                 else:h.require(value is None, 'Unsupported extension property family')
             else:
                 h.require(value is None or type(value) is str, 'String required: '+name+'.'+key)
+        if name=='identity':
+            try:support.host_address(row['address'])
+            except support.InspectionInputError as exc:raise h.PrerequisiteRefused(exc.code) from None
         c.canonical(row)
+    if name=='settings':
+        try:support.settings_inventory(values)
+        except support.InspectionInputError as exc:
+            if exc.code=='SETTINGS_VALUE_UNAVAILABLE':
+                raise h.MissingParameter('dev09b.settings.'+','.join(exc.names)+'.trusted_observation') from None
+            raise h.PrerequisiteRefused(exc.code) from None
     result = sorted(values, key=c.canonical)
     h.require(len({c.canonical(row) for row in result}) == len(result), 'Duplicate query row: '+name)
     return result
@@ -101,6 +111,8 @@ def check_contract(raw, p):
         h.require(type(binding[k]) is str and bool(binding[k]), 'Missing binding: '+k)
     for k in ('pid','port','server_version_num'):
         h.require(type(binding[k]) is int and binding[k] > 0, 'Invalid binding: '+k)
+    try:support.host_address(binding['address'])
+    except support.InspectionInputError as exc:raise h.PrerequisiteRefused(exc.code) from None
     h.require(160000 <= binding['server_version_num'] < 170000, 'PG16 required')
     sources = v['source_inventory']
     h.require(type(sources) is list and bool(sources))
@@ -157,6 +169,8 @@ class PreparedInspectionPort:
         h.require(not self._failed, 'Inspection port failed; no automatic retry')
         h.require(connection is self._connection and connection is not None, 'Connection changed')
         h.require(connection.closed is False and connection.dialect.name == 'postgresql', 'Connection unavailable')
+        try:support.check_client_logging(connection)
+        except support.InspectionInputError as exc:raise h.PrerequisiteRefused(exc.code) from None
         h.require(connection.in_transaction() is True and connection.get_transaction() is self._transaction
                   and self._transaction is not None and self._transaction.is_active is True, 'Transaction changed')
 
@@ -185,7 +199,8 @@ class PreparedInspectionPort:
         try:
             collected = []
             for row in result.mappings():
-                collected.append(dict(row))
+                try:collected.append(support.row_mapping(row))
+                except support.InspectionInputError as exc:raise h.PrerequisiteRefused(exc.code) from None
                 if len(collected) > (QUERIES[name].maximum if sql is None else 2):
                     raise h.PrerequisiteRefused('Oversized query: '+name)
             return rows(name,collected) if sql is None else collected
@@ -219,12 +234,7 @@ class PreparedInspectionPort:
             if name == 'identity':continue
             observations[name] = self._collect(name)
             h.require(c.canonical(observations[name]) == c.canonical(point['queries'][name]), 'Catalog/ACL/settings mismatch: '+name)
-        h.require({r['name'] for r in observations['settings']} == {
-            'search_path','session_replication_role','row_security','standard_conforming_strings',
-            'shared_preload_libraries','session_preload_libraries','local_preload_libraries',
-            'server_encoding','lc_collate','lc_ctype','transaction_isolation','transaction_read_only'}, 'Settings coverage incomplete')
-        settings = {r['name']:r['setting'] for r in observations['settings']}
-        h.require(len(settings)==len(observations['settings']), 'Duplicate setting')
+        settings = support.settings_inventory(observations['settings'])
         h.require(settings['search_path']=='public' and settings['session_replication_role']=='origin' and settings['row_security']=='on'
                   and settings['standard_conforming_strings']=='on', 'Unsafe execution settings')
         # Distinct ABSENT, PRESENT-empty, PRESENT-revision; never infer base from

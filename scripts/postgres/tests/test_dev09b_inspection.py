@@ -33,6 +33,7 @@ class Connection:
         self.binding=binding;self.point=point;self.calls=[];self.results=[]
         self.transaction=SimpleNamespace(is_active=True)
         self.closed=False;self.dialect=SimpleNamespace(name='postgresql')
+        self._echo=False;self.engine=SimpleNamespace(echo=False,hide_parameters=True,logger=SimpleNamespace(isEnabledFor=lambda level:False))
         self.identity_calls=0;self.mutation=None
     def in_transaction(self):return True
     def get_transaction(self):return self.transaction
@@ -132,7 +133,7 @@ def test_all_application_checkpoints_and_complete_readonly_queries(tmp_path):
 @pytest.mark.parametrize('key',['database','system_identifier','pid','backend_start','xact_start','virtualxid','address','port','current_user','session_user'])
 def test_binding_changes_rejected(tmp_path,key):
     raw,contract,conn,v,adapter=port(tmp_path)
-    conn.binding[key]=999 if type(conn.binding[key]) is int else 'changed'
+    conn.binding[key]='192.0.2.2' if key=='address' else 999 if type(conn.binding[key]) is int else 'changed'
     with pytest.raises(h.PrerequisiteRefused,match='changed'):adapter.observe(raw,'environment')
     assert len(conn.calls)==1
 
@@ -276,3 +277,119 @@ def test_opaque_extension_properties_are_not_a_catalog_schema():
     row=dict(extension='btree_gist',identity='public.fixture_operator',catalog='pg_operator',properties={'sha256':'a'*64})
     with pytest.raises(h.PrerequisiteRefused,match='Incomplete extension properties'):
         i.rows('extension_properties',[row])
+
+
+@pytest.mark.parametrize('kind',['echo','cached','logger','missing'])
+def test_port_refuses_unsafe_or_uninspectable_logging_before_sql(tmp_path,kind):
+    raw,contract,conn,v,adapter=port(tmp_path)
+    if kind=='echo':conn.engine.echo=True
+    elif kind=='cached':conn._echo=True
+    elif kind=='logger':conn.engine.logger.isEnabledFor=lambda level:True
+    else:del conn._echo
+    with pytest.raises(h.PrerequisiteRefused,match='CLIENT_LOGGING_REFUSED'):
+        adapter.observe(raw,'environment')
+    assert conn.calls==[] and v.calls==0
+
+
+@pytest.mark.parametrize('address',['192.0.2.1','2001:db8::1'])
+def test_port_host_literal_binding_and_host_sql(tmp_path,address):
+    raw,contract,conn,v,adapter=port(tmp_path)
+    contract['binding']['address']=address
+    conn.binding['address']=address
+    adapter._contract_json=c.canonical(contract)
+    assert 'pg_catalog.host(pg_catalog.inet_server_addr()) AS address' in QUERIES['identity'].sql
+    adapter.observe(raw,'environment')
+
+
+@pytest.mark.parametrize('address',['192.0.2.1/32','2001:db8::1/128','192.0.2.0/24','2001:db8::/64','fe80::1%eth0','bad'])
+def test_port_rejects_network_and_zone_in_fixed_binding(tmp_path,address):
+    raw,contract,conn,v,adapter=port(tmp_path)
+    contract['binding']['address']=address
+    adapter._contract_json=c.canonical(contract)
+    with pytest.raises(h.PrerequisiteRefused,match='IDENTITY_ADDRESS_INVALID'):
+        adapter.observe(raw,'environment')
+    assert conn.calls==[]
+
+
+def test_port_real_sqlalchemy_row_and_rowmapping(tmp_path):
+    from sqlalchemy import create_engine,select,literal,Integer,String
+    raw,contract,conn,v,adapter=port(tmp_path)
+    engine=create_engine('sqlite://',echo=False,hide_parameters=True)
+    binding=contract['binding']
+    statement=select(*(literal(value,Integer() if type(value) is int else String()).label(key) for key,value in binding.items()))
+    try:
+        with engine.connect() as real:
+            i.support.check_client_logging(real)
+            row=real.execute(statement).one()
+            for value in (row,row._mapping,real.execute(statement).mappings().one()):
+                conn.binding=value
+                assert adapter._collect('identity')==[binding]
+    finally:engine.dispose()
+
+
+# Fixed independently of the production constant: losing a requirement must fail.
+TWELVE_SETTINGS = {
+    'search_path','session_replication_role','row_security','standard_conforming_strings',
+    'shared_preload_libraries','session_preload_libraries','local_preload_libraries',
+    'server_encoding','lc_collate','lc_ctype','transaction_isolation','transaction_read_only',
+}
+EIGHT_VISIBLE_GUCS = TWELVE_SETTINGS - {
+    'lc_collate','lc_ctype','shared_preload_libraries','session_preload_libraries',
+}
+
+
+def setting_records():
+    return [dict(name=name,setting='fixture') for name in sorted(TWELVE_SETTINGS)]
+
+
+def test_settings_twelve_names_and_distinct_locale_sources():
+    assert set(i.support.SETTINGS_NAMES)==TWELVE_SETTINGS
+    assert len(i.support.SETTINGS_NAMES)==12
+    sql=QUERIES['settings'].sql
+    import re
+    wanted=re.search(r'FROM \(VALUES (.*?)\) AS wanted\(name\)',sql).group(1)
+    assert re.findall(r"\('([a-z_]+)'\)",wanted)==list(i.support.SETTINGS_NAMES)
+    assert "WHEN 'lc_collate' THEN db.datcollate" in sql
+    assert "WHEN 'lc_ctype' THEN db.datctype" in sql
+    assert 'LEFT JOIN pg_catalog.pg_settings' in sql and 'CROSS JOIN pg_catalog.pg_database' in sql
+    assert 'COALESCE' not in sql and 'pg_read_all_settings' not in sql
+    result=i.rows('settings',setting_records())
+    assert {r['name'] for r in result}==TWELVE_SETTINGS
+    # An actual empty string is a valid setting; it is distinct from unavailable.
+    result[0]['setting']=''
+    assert i.support.settings_inventory(result)[result[0]['name']]==''
+
+
+@pytest.mark.parametrize('missing',sorted(TWELVE_SETTINGS))
+def test_settings_each_missing_name_refuses(missing):
+    values=[r for r in setting_records() if r['name']!=missing]
+    with pytest.raises(h.PrerequisiteRefused,match='SETTINGS_COVERAGE_INCOMPLETE'):
+        i.rows('settings',values)
+
+
+@pytest.mark.parametrize('duplicate',sorted(TWELVE_SETTINGS))
+def test_settings_duplicate_name_refuses_even_different_values(duplicate):
+    values=setting_records()+[dict(name=duplicate,setting='different')]
+    with pytest.raises(h.PrerequisiteRefused,match='SETTINGS_DUPLICATE'):
+        i.rows('settings',values)
+
+
+def test_settings_original_eight_and_restricted_nulls_never_confirm():
+    original=[r for r in setting_records() if r['name'] in EIGHT_VISIBLE_GUCS]
+    assert len(original)==8
+    with pytest.raises(h.PrerequisiteRefused,match='SETTINGS_COVERAGE_INCOMPLETE'):
+        i.rows('settings',original)
+    nominal=setting_records()
+    for r in nominal:
+        if r['name'] in {'shared_preload_libraries','session_preload_libraries'}:r['setting']=None
+    assert len(nominal)==12
+    with pytest.raises(h.MissingParameter,match='trusted_observation') as error:
+        i.rows('settings',nominal)
+    assert 'shared_preload_libraries' in str(error.value) and 'session_preload_libraries' in str(error.value)
+
+
+def test_settings_unavailable_and_wrong_types_are_not_empty_values():
+    values=setting_records();values[0]['setting']=None
+    with pytest.raises(h.MissingParameter):i.rows('settings',values)
+    values=setting_records();values[0]['setting']=False
+    with pytest.raises(h.PrerequisiteRefused):i.rows('settings',values)

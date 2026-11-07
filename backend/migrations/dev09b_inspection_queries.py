@@ -5,6 +5,7 @@ Each query is completely drained; bounds are refusal thresholds, not LIMITs.
 """
 from dataclasses import dataclass
 from types import MappingProxyType
+from .dev09b_inspection_support import SETTINGS_NAMES
 
 
 @dataclass(frozen=True)
@@ -23,7 +24,7 @@ _sql = {}
 _sql['identity'] = query("""current_database() AS database, current_user AS current_user,
  session_user AS session_user, s.system_identifier::text AS system_identifier,
  pg_backend_pid() AS pid, a.backend_start::text AS backend_start, a.xact_start::text AS xact_start,
- l.virtualxid::text AS virtualxid, inet_server_addr()::text AS address, inet_server_port() AS port,
+ l.virtualxid::text AS virtualxid, host(inet_server_addr()) AS address, inet_server_port() AS port,
  current_setting('server_version_num')::integer AS server_version_num""",
  'database current_user session_user system_identifier pid backend_start xact_start virtualxid address port server_version_num',
  """FROM pg_catalog.pg_control_system() s CROSS JOIN pg_catalog.pg_stat_activity a
@@ -117,10 +118,15 @@ _sql['default_acl'] = query("""pg_get_userbyid(a.defaclrole) AS owner,n.nspname 
  pg_get_userbyid(x.grantor) AS grantor,CASE WHEN x.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(x.grantee) END AS grantee,
  x.privilege_type AS privilege,x.is_grantable AS grant_option""", 'owner schema kind grantor grantee privilege grant_option',
  'FROM pg_catalog.pg_default_acl a LEFT JOIN pg_catalog.pg_namespace n ON n.oid=a.defaclnamespace CROSS JOIN LATERAL pg_catalog.aclexplode(a.defaclacl) x')
-_sql['settings'] = query("""name,setting FROM pg_catalog.pg_settings WHERE name IN
- ('search_path','session_replication_role','row_security','standard_conforming_strings',
- 'shared_preload_libraries','session_preload_libraries','local_preload_libraries','server_encoding',
- 'lc_collate','lc_ctype','transaction_isolation','transaction_read_only')""", 'name setting', maximum=32)
+# pg_settings omits superuser-only rows for the probe. Preserve their names
+# with NULL values (not COALESCE to ''). PG16 lc_collate/lc_ctype are database
+# attributes, absent from its GUC table; read their actual catalog values.
+_wanted_settings = ','.join("('"+name+"')" for name in SETTINGS_NAMES)
+_sql['settings'] = Query("SELECT wanted.name, CASE wanted.name "
+    "WHEN 'lc_collate' THEN db.datcollate WHEN 'lc_ctype' THEN db.datctype "
+    "ELSE s.setting END AS setting FROM (VALUES "+_wanted_settings+") AS wanted(name) "
+    "CROSS JOIN pg_catalog.pg_database db LEFT JOIN pg_catalog.pg_settings s ON s.name=wanted.name "
+    "WHERE db.datname=pg_catalog.current_database()", ('name','setting'), 32)
 LEDGER_SQL = MappingProxyType({
  'application': 'SELECT version_num FROM public.alembic_version',
  'security': 'SELECT version_num FROM public.alembic_security_version',
@@ -170,7 +176,7 @@ _sql['default_acl_objects'] = query('pg_get_userbyid(a.defaclrole) AS owner,n.ns
 
 # Qualify builtins regardless of supplied search_path. No SET or implicit state changes.
 import re as _re
-_functions = ('current_database','pg_backend_pid','inet_server_addr','inet_server_port','current_setting',
+_functions = ('host','current_database','pg_backend_pid','inet_server_addr','inet_server_port','current_setting',
  'has_database_privilege','pg_has_role','has_schema_privilege','pg_get_userbyid','pg_get_expr','pg_get_viewdef',
  'format_type','pg_get_constraintdef','pg_get_indexdef','pg_get_function_identity_arguments','pg_get_functiondef',
  'pg_get_triggerdef','pg_get_ruledef','has_function_privilege','cardinality','to_jsonb')
