@@ -5,6 +5,7 @@ Downgrade is deliberately blocked pending a separately reviewed recovery plan.
 """
 
 from alembic import op
+from migrations.dev09b_prerequisites import require_prepared_schema, refuse_prepared_downgrade
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
@@ -16,7 +17,7 @@ depends_on = None
 
 
 def upgrade():
-    op.execute("CREATE SCHEMA security")
+    require_prepared_schema("security")
     op.create_table(
         "local_users",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),

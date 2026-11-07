@@ -7,6 +7,7 @@ Revises: 7c4e2a91b605
 from typing import Sequence, Union
 
 from alembic import op
+from migrations.dev09b_prerequisites import require_prepared_extension, refuse_prepared_downgrade
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
@@ -20,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     # Necessária para igualdade UUID/VARCHAR em índices GiST.
     # Preservar a extensão durante o downgrade.
-    op.execute("CREATE EXTENSION IF NOT EXISTS btree_gist")
+    require_prepared_extension("btree_gist")
 
     op.create_table(
         "resource_tags",
@@ -103,6 +104,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    refuse_prepared_downgrade()
     op.drop_index(
         "ix_resource_tags_tag_valid_until",
         table_name="resource_tags",

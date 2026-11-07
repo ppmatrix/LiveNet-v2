@@ -10,7 +10,14 @@ from sqlalchemy.exc import OperationalError
 
 import auth03_alembic_executor as executor
 
+from scripts.postgres.tests.dev09b_historical_fixtures import historical_tree, historical_auth
+
 PRIVATE_READ = executor.private_read
+
+
+@pytest.fixture
+def historical_executor(tmp_path, monkeypatch):
+    return historical_auth(historical_tree(tmp_path), monkeypatch)
 
 
 @pytest.fixture(autouse=True)
@@ -120,19 +127,26 @@ def test_env_uses_exact_external_connection(monkeypatch):
     from alembic.config import Config
     import runpy
 
+    from migrations.dev09b_prerequisites import MissingParameter
+
     config = Config()
     connection = Mock()
+    connection.in_transaction.return_value = True
+    connection.dialect.name = "postgresql"
     config.attributes.update(connection=connection, auth03_require_external_connection=True)
     monkeypatch.setattr(context, "config", config, raising=False)
     monkeypatch.setattr(context, "is_offline_mode", lambda: False)
     configure = Mock()
     monkeypatch.setattr(context, "configure", configure)
     monkeypatch.setattr(context, "begin_transaction", MagicMock())
-    monkeypatch.setattr(context, "run_migrations", Mock())
+    run_migrations = Mock()
+    monkeypatch.setattr(context, "run_migrations", run_migrations)
     fallback = Mock(side_effect=AssertionError("Fallback de producao"))
     monkeypatch.setattr(database, "get_database_url", fallback)
-    runpy.run_path(str(executor.ROOT / "backend/migrations/env.py"))
-    assert configure.call_args.kwargs["connection"] is connection
+    with pytest.raises(MissingParameter, match="dev09b_prepared_context"):
+        runpy.run_path(str(executor.ROOT / "backend/migrations/env.py"))
+    configure.assert_not_called()
+    run_migrations.assert_not_called()
     fallback.assert_not_called()
 
 
@@ -372,8 +386,8 @@ def test_cli_mutations_cannot_be_enabled_by_config_or_environment(monkeypatch, c
 
 
 def test_verified_manifest_and_tampering(tmp_path):
-    digest = executor.verify_bundle()
-    assert len(digest) == 64
+    with pytest.raises(executor.Refused, match="Historical AUTH-03 bundle incompatible"):
+        executor.verify_bundle()
     # Um manifesto vazio nao pode retirar fontes do conjunto verificado.
     target = tmp_path / executor.MANIFEST
     target.parent.mkdir(parents=True)
@@ -384,14 +398,54 @@ def test_verified_manifest_and_tampering(tmp_path):
 
 def test_future_lock_conflict_and_wrong_source(config, monkeypatch):
     conn = Mock()
-    conn.execute.return_value.scalar_one.return_value = False
     plan = executor.migration_plan("upgrade-auth03", executor.PREVIOUS, executor.AUTH03)
-    with pytest.raises(executor.Refused, match="em curso"):
+    with pytest.raises(executor.Refused, match="Historical AUTH-03 bundle incompatible"):
         executor.future_transaction_preflight(conn, plan, config, "172.25.0.2")
+    conn.execute.assert_not_called()
+
+
+def test_historical_2f86582_lock_conflict_and_wrong_source(config, monkeypatch, historical_executor):
+    old = historical_executor
+    conn = Mock()
+    conn.execute.return_value.scalar_one.return_value = False
+    plan = old.migration_plan("upgrade-auth03", old.PREVIOUS, old.AUTH03)
+    with pytest.raises(old.Refused, match="em curso"):
+        old.future_transaction_preflight(conn, plan, config, "172.25.0.2")
     conn.execute.return_value.scalar_one.return_value = True
-    monkeypatch.setattr(executor, "read_database_state", lambda *args: {"revision": None})
-    with pytest.raises(executor.Refused, match="origem"):
-        executor.future_transaction_preflight(conn, plan, config, "172.25.0.2")
+    monkeypatch.setattr(old, "read_database_state", lambda *args: {"revision": None})
+    with pytest.raises(old.Refused, match="origem"):
+        old.future_transaction_preflight(conn, plan, config, "172.25.0.2")
+
+
+def test_historical_2f86582_verified_manifest_and_tampering(historical_executor):
+    old = historical_executor
+    assert len(old.verify_bundle()) == 64
+    source = old.ROOT / "backend/alembic.ini"
+    source.write_bytes(source.read_bytes() + b"\n# tampered fixture\n")
+    with pytest.raises(old.Refused, match="Integridade"):
+        old.verify_bundle()
+
+
+def test_historical_2f86582_env_exact_connection(monkeypatch, historical_executor):
+    from alembic import context
+    from alembic.config import Config
+    import app.core.database as database
+    import runpy
+
+    connection = Mock()
+    config = Config()
+    config.attributes.update(connection=connection, auth03_require_external_connection=True)
+    monkeypatch.setattr(context, "config", config, raising=False)
+    monkeypatch.setattr(context, "is_offline_mode", lambda: False)
+    configure = Mock()
+    monkeypatch.setattr(context, "configure", configure)
+    monkeypatch.setattr(context, "begin_transaction", MagicMock())
+    monkeypatch.setattr(context, "run_migrations", Mock())
+    fallback = Mock(side_effect=AssertionError("No database fallback"))
+    monkeypatch.setattr(database, "get_database_url", fallback)
+    runpy.run_path(str(historical_executor.ROOT / "backend/migrations/env.py"))
+    assert configure.call_args.kwargs["connection"] is connection
+    fallback.assert_not_called()
 
 
 def test_scope_is_specific_and_does_not_authorize(config):

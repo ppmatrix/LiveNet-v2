@@ -10,6 +10,9 @@ from security_migrations.contract import configure_context
 
 
 config = context.config
+from migrations.dev09b_prerequisites import require_prepared_environment
+
+require_prepared_environment(config)
 if context.is_offline_mode():
     raise RuntimeError("Security exige ligacao externa; modo SQL offline nao permitido")
 

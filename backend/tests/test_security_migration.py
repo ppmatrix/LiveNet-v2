@@ -41,6 +41,12 @@ def declarations():
     for statement in function.body:
         assert isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Call)
         call = statement.value
+        if isinstance(call.func, ast.Name):
+            # Revised DEV09B source: assert the exact prerequisite declaration,
+            # never execute it while extracting SQLAlchemy metadata.
+            assert call.func.id == "require_prepared_schema"
+            assert len(call.args) == 1 and ast.literal_eval(call.args[0]) == "security" and not call.keywords
+            continue
         assert isinstance(call.func, ast.Attribute) and call.func.value.id == "op"
         assert call.func.attr in {"execute", "create_table", "create_index"}
         for expression in [*call.args, *(kw.value for kw in call.keywords)]:
@@ -80,6 +86,18 @@ def test_single_independent_root_and_head():
     assert revision.dependencies is None
     assert Path(script.dir).resolve() == SCRIPT_LOCATION
     assert not {"f066a01a7230", "f067a01a7230"} & {r.revision for r in revisions}
+
+
+def test_historical_executors_explicitly_refuse_revised_sources():
+    import auth03_alembic_executor as historical_auth
+    import m12b_security_migration as historical_security
+    with pytest.raises(historical_auth.Refused, match="Historical AUTH-03 bundle incompatible"):
+        historical_auth.verify_bundle()
+    with pytest.raises(historical_security.Refused, match="Historical M1.2B executor incompatible"):
+        historical_security.security_configuration()
+    assert historical_security.AUTHORIZATION.execution_enabled is False
+    with pytest.raises(historical_auth.Refused, match="bloqueadas"):
+        historical_auth.operation_gate("upgrade-baseline")
 
 
 def test_configuration_has_no_url_or_application_graph():
@@ -134,7 +152,9 @@ def test_expected_security_objects_are_included_but_unknowns_are_not():
 
 def test_exact_schema_tables_and_safe_declaration_order():
     calls = declarations()
-    assert [args for kind, args, _ in calls if kind == "execute"] == [["CREATE SCHEMA security"]]
+    assert [args for kind, args, _ in calls if kind == "execute"] == []
+    function = next(n for n in revision_ast().body if isinstance(n, ast.FunctionDef) and n.name == "upgrade")
+    assert ast.unparse(function.body[0].value) == "require_prepared_schema('security')"
     assert [args[0] for kind, args, _ in calls if kind == "create_table"] == [
         "local_users", "login_sessions", "global_role_grants", "login_throttles",
     ]

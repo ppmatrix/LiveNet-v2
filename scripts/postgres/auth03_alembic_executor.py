@@ -135,6 +135,8 @@ def validate_config(config):
 
 def verify_bundle(root=ROOT):
     """Manifesto revisto, nunca regenerado automaticamente durante execucao."""
+    require(not (root / "backend/migrations/dev09b_prerequisites.py").exists(),
+            "Historical AUTH-03 bundle incompatible with DEV09B-PREPARED-1; use a separately reviewed DEV09B bundle; mutations remain blocked")
     raw = (root / MANIFEST).read_bytes()
     manifest = json.loads(raw)
     expected = {

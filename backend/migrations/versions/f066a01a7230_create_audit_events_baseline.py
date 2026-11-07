@@ -5,6 +5,7 @@ Revises: f065d01a7230
 """
 
 from alembic import op
+from migrations.dev09b_prerequisites import require_prepared_schema, refuse_prepared_downgrade
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
@@ -16,7 +17,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.execute("CREATE SCHEMA audit")
+    require_prepared_schema("audit")
 
     op.create_table(
         "events",
@@ -158,6 +159,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    refuse_prepared_downgrade()
     op.execute(
         "DROP TRIGGER trg_audit_events_immutable "
         "ON audit.events"

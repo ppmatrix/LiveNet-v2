@@ -1,0 +1,399 @@
+{
+  "schema_version": 1,
+  "profile": "DEV09B-PREPARED-1",
+  "status": "CANDIDATE_NOT_APPROVED",
+  "operational_authority": false,
+  "sources": [
+    {
+      "path": "backend/alembic-security.ini",
+      "sha256": "f43ed86b68499b4fb25d75421b30b75251433162b684a7e6a525274718fc0394"
+    },
+    {
+      "path": "backend/alembic.ini",
+      "sha256": "0f2ce09203f8b1dbc1f02965d85339ad455c22f267e79d79c169e3ec412eb9dc"
+    },
+    {
+      "path": "backend/app/__init__.py",
+      "sha256": "0b5d3abe007956211c0bd8167641a991388f9dd0a50d6873124e91c0ed001862"
+    },
+    {
+      "path": "backend/app/audit/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/audit/models.py",
+      "sha256": "fd65ea8eb10b15193f2706319ff5f4a9ff855a2a769ae1e625766c3886ed4da9"
+    },
+    {
+      "path": "backend/app/audit/service.py",
+      "sha256": "89c9fb3b52154b1f5db72c935d70f78d130896c5c5030dc669df3fc8a0ea4e95"
+    },
+    {
+      "path": "backend/app/config.py",
+      "sha256": "05e82252427e37e47bf0e40162f1377e95a26a0297d6725261df83266c2535f9"
+    },
+    {
+      "path": "backend/app/core/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/core/database.py",
+      "sha256": "5da5e8dbd5d439a15292ee41aec36743a31e3c7639f4531c0465c19d3df4f0d1"
+    },
+    {
+      "path": "backend/app/core/model_registry.py",
+      "sha256": "6b9db8825e03e894b4f07870459c2ad64cf14687e1abfcddc255bca77a0efb19"
+    },
+    {
+      "path": "backend/app/core/models.py",
+      "sha256": "9e6e1e48f5dac830be7c9dd5b903d96d10acdb47db54f5d37425c7eeb79a36ee"
+    },
+    {
+      "path": "backend/app/dedicated.py",
+      "sha256": "1a4472e6f06937da0966dccf36542b2ed79a0d4505a019b1b18c192de00e7a2c"
+    },
+    {
+      "path": "backend/app/health/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/health/routes.py",
+      "sha256": "197204afc1549b4b9fb595bb77b95fc86865872f8109ac495d3b4cc60c543d70"
+    },
+    {
+      "path": "backend/app/inventory/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/inventory/access.py",
+      "sha256": "36a5c4d296d843501a6c520499b1f3420cb7d530c7f52dbab2645f9f508f7230"
+    },
+    {
+      "path": "backend/app/inventory/models.py",
+      "sha256": "cb732cd6c1176201e8277fbad16b0affd268ca7f5b76ad9a5a53586d516df61a"
+    },
+    {
+      "path": "backend/app/inventory/routes.py",
+      "sha256": "eb3b427c34fc2f32cf50869a94cb82fa60de282bac46f8175833827482f24830"
+    },
+    {
+      "path": "backend/app/inventory/schemas.py",
+      "sha256": "1cabfe694f36c70f5191937070e3b0b67f54b25e5d66864f9e7a492ea9f8bca5"
+    },
+    {
+      "path": "backend/app/inventory/service.py",
+      "sha256": "030950ae2b4f8b0d48cf7d880cd3975ac5528554b4fb111814e42a34a4814e1c"
+    },
+    {
+      "path": "backend/app/postgres_tls.py",
+      "sha256": "ca3566de364821d1f676954f6ce28646683c6a873da7b58a94c8ccc8c8d10b19"
+    },
+    {
+      "path": "backend/app/readiness.py",
+      "sha256": "b91aeb511c7699b98493d6d70545b43e705b022b73734d4713de97e7edf4f69c"
+    },
+    {
+      "path": "backend/app/readiness_postgres/__init__.py",
+      "sha256": "7df4b413bf7470326d725b74aa8b3ebab175e86e825203b78601ff0f966afcc1"
+    },
+    {
+      "path": "backend/app/readiness_postgres/adapter.py",
+      "sha256": "fe40580c13d92ac68a28b25528932261c127210efb62d4ae18f940b5dd0e8aaf"
+    },
+    {
+      "path": "backend/app/readiness_postgres/evaluate.py",
+      "sha256": "0137f9343672a95fc0138b9e6ac5207fdb23b468162dce65b5867fd2758210d5"
+    },
+    {
+      "path": "backend/app/readiness_postgres/policy.py",
+      "sha256": "7dc4100d063e4cb3c09957e8fb117f2b84fddc7b5b28f73f57422061042bff81"
+    },
+    {
+      "path": "backend/app/readiness_postgres/queries.py",
+      "sha256": "9ddad5dc61f2c5f81ca5db8e410064e506b9a93607b3f2cde3add86c3ad1ed2b"
+    },
+    {
+      "path": "backend/app/security/__init__.py",
+      "sha256": "708f803fc69da2555dfc1f5b2911ea7cd81b2ae9696d13041d2ac4c045c50ee0"
+    },
+    {
+      "path": "backend/app/security/access.py",
+      "sha256": "95570f1bd16179f19013669bc9039a414e15193a03ec697e25b5fccdaa4987c0"
+    },
+    {
+      "path": "backend/app/security/csrf.py",
+      "sha256": "6c7ee69a3a7fea36d9fc8ec7314186aaa3d0b422b00ccc47dded844092148d8c"
+    },
+    {
+      "path": "backend/app/security/errors.py",
+      "sha256": "3b6b8f45bea6603b71e15328c1006dd7e7db2343109afed86018be6f55c1cc7e"
+    },
+    {
+      "path": "backend/app/security/models.py",
+      "sha256": "cf4b247d04831018ca5156cbe12e7fc9924883694587584972892f7d9e716c5c"
+    },
+    {
+      "path": "backend/app/security/policy.py",
+      "sha256": "b42edd0deee71cf92454e5ee49a32e854575249f2bb82014b221551cbdd6f7e5"
+    },
+    {
+      "path": "backend/app/security/routes.py",
+      "sha256": "1e8cffc5258db57d1e0662c0442f1168f217ccc509fe7f9f787e08a4ad316749"
+    },
+    {
+      "path": "backend/app/security/service.py",
+      "sha256": "231cbc88f372071a5fe946ecf164afdd9c7f39d0f6a0edf6f960c29b152c0747"
+    },
+    {
+      "path": "backend/app/trusted_proxy.py",
+      "sha256": "1078a580402a3d2cddb15e5e8797f4e63c5444cb4cba9a8ecfde0dd47d505375"
+    },
+    {
+      "path": "backend/migrations/dev09b_prerequisites.py",
+      "sha256": "1ab767f781aba80fdd96e10acf91c503095997ab956a65b17d91411765b2cf6b"
+    },
+    {
+      "path": "backend/migrations/env.py",
+      "sha256": "c3c087f52aad22e20fc36a911a30c2d3c211054c30f1a9537bdecbe21271afda"
+    },
+    {
+      "path": "backend/migrations/versions/38d641dcd780_create_inventory_resource_relations.py",
+      "sha256": "44888d9186c5e0c17edaad34e1db3e1cedbfde83c0e14db6349a7e8fedf2cf98"
+    },
+    {
+      "path": "backend/migrations/versions/44e7eb855b5a_create_inventory_group_rules.py",
+      "sha256": "19a7573916902015349045813003b3fd9d057c77e6b4ccad0a5e51a0b12b567f"
+    },
+    {
+      "path": "backend/migrations/versions/4f625db33d6d_create_inventory_resource_identifiers.py",
+      "sha256": "dddc5fec81ab2b7859af76292f52b75a16dbd00d310221cc619235762ca65224"
+    },
+    {
+      "path": "backend/migrations/versions/7c4e2a91b605_create_inventory_tags.py",
+      "sha256": "103a4e643911ae119145e64c5d4ffc051d92c2c2f301d069fb5a4564699cd2c1"
+    },
+    {
+      "path": "backend/migrations/versions/9e1b7c42a630_create_inventory_resource_tags.py",
+      "sha256": "aa7201329e8440a07f6e700fb04b485c16e38cf6232d26df0f41518107d58698"
+    },
+    {
+      "path": "backend/migrations/versions/af62df027d9d_create_inventory_resources_baseline.py",
+      "sha256": "775dbc0c8df3857f52d5907466413f2efbece62e07e6c2f1086ee7775bf0a2b2"
+    },
+    {
+      "path": "backend/migrations/versions/ba06dd956da9_create_inventory_group_memberships.py",
+      "sha256": "da5553776449de5584c45015ad8156235d7f0fcb7591e462763beeb14a0b0d21"
+    },
+    {
+      "path": "backend/migrations/versions/c4a91e7b205d_create_inventory_policies.py",
+      "sha256": "6ad79c6718897b2b0a3122d21d28e2ab3ffb1e3504b547114aa76fde9ab97425"
+    },
+    {
+      "path": "backend/migrations/versions/da34876e4210_create_inventory_groups.py",
+      "sha256": "2e7f4713b450421c84d3f741cb02418bec6e8759536fb61f72963b32419ec09b"
+    },
+    {
+      "path": "backend/migrations/versions/e65b01a7c230_create_inventory_policy_versions.py",
+      "sha256": "b0ef045cd58e0385e0b73f4c6fee4482b2ac59047283597c7d0e8a39074c7949"
+    },
+    {
+      "path": "backend/migrations/versions/f065c01a7230_create_inventory_policy_assignments.py",
+      "sha256": "7278fe16f3fbba63ccb01c41ee64e134043eec610a1feada63eb6b5218a52bf2"
+    },
+    {
+      "path": "backend/migrations/versions/f065d01a7230_create_inventory_effective_configs.py",
+      "sha256": "bc8f1e333315eaffd199df4f18a8b71e0e16c85034e707f93399465a184c9dda"
+    },
+    {
+      "path": "backend/migrations/versions/f066a01a7230_create_audit_events_baseline.py",
+      "sha256": "beb9fdf625b211753c8bb11d218dad75b62cb243144a886e79e143c4708611b0"
+    },
+    {
+      "path": "backend/migrations/versions/f067a01a7230_create_authorization_integrity_anchors.py",
+      "sha256": "2556db6186f6002285386727acb9803c73547787248c071a4cf9f0fdc91c1ec1"
+    },
+    {
+      "path": "backend/requirements-container.lock",
+      "sha256": "2bbe864deb5c9f8a15487fb96ca46aa811ae9f4781c24e76d269b046f68c95c9"
+    },
+    {
+      "path": "backend/requirements.txt",
+      "sha256": "aba67440c5f8caf5d3acb0f7aeee7afcaab5afdad4cab0760f90cde7d818bc6c"
+    },
+    {
+      "path": "backend/security_migrations/__init__.py",
+      "sha256": "b450bd910d335f6ec45152bf01af5e8def18616670a430585aad3b7d5e81f677"
+    },
+    {
+      "path": "backend/security_migrations/contract.py",
+      "sha256": "0a29cbc074907a4b9023709a7a8770ea5a48e1d000bcd0197255d4dcf49fb41b"
+    },
+    {
+      "path": "backend/security_migrations/env.py",
+      "sha256": "82d77a4a50b0433de469afb62a94aa8f85ad5f6c45faa7cedcf0470e9756a5ea"
+    },
+    {
+      "path": "backend/security_migrations/versions/b12b01a7230_create_security.py",
+      "sha256": "ecd89d568ae888ce0faa24965be0916f82be090257cf6ad486f592093278bfc9"
+    },
+    {
+      "path": "scripts/dedicated/dev09b/__init__.py",
+      "sha256": "0cb45c2319c98aba2aea9a0ae70cb22291c2e517a85db57616ab3b31ad3fa247"
+    },
+    {
+      "path": "scripts/dedicated/dev09b/bundle.py",
+      "sha256": "2b58b41dccaba9ae5dc174c08d76d9a606d624f972d918b33ce657f230b37ae6"
+    },
+    {
+      "path": "scripts/dedicated/dev09b/codec.py",
+      "sha256": "cea70db1e25715bffcfd27b9a21f0783ee9ffe47aeab2c32e763c143439b969d"
+    },
+    {
+      "path": "scripts/dedicated/dev09b/doubles.py",
+      "sha256": "b96b9fe330c3bc52fc98537b36b79174cd85ea84b87837880be6c936414aab56"
+    },
+    {
+      "path": "scripts/dedicated/dev09b/evidence.py",
+      "sha256": "c3fab94d224c9ff49f6f2224871836efd879888d78c634080f04cc96c688f4db"
+    },
+    {
+      "path": "scripts/dedicated/dev09b/layers.py",
+      "sha256": "51e52a438b879081a74df2e4d8f0f1c507de17ea4cb5eed1e62e092bcb35cb98"
+    },
+    {
+      "path": "scripts/dedicated/dev09b/migration_catalog.py",
+      "sha256": "9c711293c18dfd50901eaecf259593c3cdd8d95c21403026d594f6850dec5895"
+    },
+    {
+      "path": "scripts/dedicated/dev09b/model.py",
+      "sha256": "9d1a91f5a3b356d4e0a2d1dd85f75a21fe9f6dc7a7028a36b2561f3e56d08aab"
+    },
+    {
+      "path": "scripts/dedicated/dev09b/physical.py",
+      "sha256": "d7edcca2737dd8b45c41022437e9c1dc91ba02de88cb34d666a93bade9724b92"
+    },
+    {
+      "path": "scripts/dedicated/dev09b/profiles.py",
+      "sha256": "d1f19221a8c1b1a679aa6e00159fbd56f6501e06a59509061137ddad586a2c09"
+    },
+    {
+      "path": "scripts/postgres/auth03_alembic_executor.py",
+      "sha256": "b433b88edda2fb9e99ea973070dd79bd39a47742ddb522d030afcf190c24e739"
+    },
+    {
+      "path": "scripts/postgres/dev09a2-executor.lock",
+      "sha256": "03a10f5923ceaeff56cd4f53fb8bc95ba7e370b4b7ac3512e7db829b060bca5a"
+    },
+    {
+      "path": "scripts/postgres/g4/__init__.py",
+      "sha256": "72d36a952dcc361e7692ba1d8034d69bb6aaaf0a62e6d3b6f72d1488129bd337"
+    },
+    {
+      "path": "scripts/postgres/g4/contracts.py",
+      "sha256": "04531a6b9f2a33d2c6334dc025ef18b750014305716a9283e81db44dad257ffc"
+    },
+    {
+      "path": "scripts/postgres/m12b_security_adapters.py",
+      "sha256": "66e2fa3ea5fccdcb6b4f3555babd2cd78dd3d8f6ddb2253d9687ef9ac584cba6"
+    },
+    {
+      "path": "scripts/postgres/m12b_security_coordinator.py",
+      "sha256": "33415d4b4c51dbb03a6f67332cc77c63aebc87b7a8f90ba20da1abd79d7a012c"
+    },
+    {
+      "path": "scripts/postgres/m12b_security_migration.py",
+      "sha256": "682e37a733cf00ea2d7bc7c748b3edbf3d257b686d9a18ccabff78026cdda631"
+    }
+  ],
+  "dependency_locks": [
+    {
+      "path": "backend/requirements-container.lock",
+      "sha256": "2bbe864deb5c9f8a15487fb96ca46aa811ae9f4781c24e76d269b046f68c95c9"
+    },
+    {
+      "path": "scripts/postgres/dev09a2-executor.lock",
+      "sha256": "03a10f5923ceaeff56cd4f53fb8bc95ba7e370b4b7ac3512e7db829b060bca5a"
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "alembic",
+      "version": "1.20.0",
+      "artifact_sha256": "77eb101048d95f982c0353e9233404889dcd7a6fc244c107836c0e2fc9cf7d9d"
+    },
+    {
+      "name": "blinker",
+      "version": "1.9.0",
+      "artifact_sha256": "ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc"
+    },
+    {
+      "name": "click",
+      "version": "8.5.0",
+      "artifact_sha256": "255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360"
+    },
+    {
+      "name": "flask",
+      "version": "3.1.3",
+      "artifact_sha256": "f4bcbefc124291925f1a26446da31a5178f9483862233b23c0c96a20701f670c"
+    },
+    {
+      "name": "gunicorn",
+      "version": "23.0.0",
+      "artifact_sha256": "ec400d38950de4dfd418cff8328b2c8faed0edb0d517d3394e457c317908ca4d"
+    },
+    {
+      "name": "itsdangerous",
+      "version": "2.2.0",
+      "artifact_sha256": "c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef"
+    },
+    {
+      "name": "jinja2",
+      "version": "3.1.6",
+      "artifact_sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67"
+    },
+    {
+      "name": "mako",
+      "version": "1.4.3",
+      "artifact_sha256": "723296007c870bfd6b3f0c3230dba7198096e5269297ebf5e4eff9e7ffa39d4f"
+    },
+    {
+      "name": "markupsafe",
+      "version": "3.0.4",
+      "artifact_sha256": "8e124f974786f831d6043728e38296969d3579db8896fe004682f5758e613581"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3",
+      "artifact_sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c"
+    },
+    {
+      "name": "psycopg",
+      "version": "3.3.6",
+      "artifact_sha256": "a1db9f7148b06a28606767efaca51fa6f9398c5c0a3810519be69d7000bdb631"
+    },
+    {
+      "name": "psycopg-binary",
+      "version": "3.3.6",
+      "artifact_sha256": "1679a1cb93fbe5a6d1fd58d82cbddcc6fcb8c61446ba7cae6eb2a7b19bc585de"
+    },
+    {
+      "name": "sqlalchemy",
+      "version": "2.1.4",
+      "artifact_sha256": "3e5045fb6aadbb0f978ab9b9d8822f7b7a97d2281814e7d13d791155664eace3"
+    },
+    {
+      "name": "typing-extensions",
+      "version": "4.16.0",
+      "artifact_sha256": "481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8"
+    },
+    {
+      "name": "werkzeug",
+      "version": "3.1.9",
+      "artifact_sha256": "6392e50c78460ba618e5b21f08a71f59c99ce99cdc6cf6e3dd7e6ccca8754fab"
+    }
+  ],
+  "missing_parameters": [
+    "dependencies.cryptography.approved_transitive_lock"
+  ],
+  "dependency_completeness": "INCOMPLETE"
+}

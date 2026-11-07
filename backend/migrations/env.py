@@ -7,6 +7,11 @@ from app.core.database import get_database_url
 
 config = context.config
 
+from migrations.dev09b_prerequisites import require_prepared_environment
+
+# Refuse before config logging, engine fallback, configure or ledger creation.
+require_prepared_environment(config)
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 

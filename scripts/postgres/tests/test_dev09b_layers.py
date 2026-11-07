@@ -180,6 +180,14 @@ class LayerTests(unittest.TestCase):
     def test_version_and_exact_validator_sources(self):
         root=Path(__file__).resolve().parents[3]
         for path,expected in p.SOURCES.items():
+            actual=sha256((root/path).read_bytes()).hexdigest()
+            if path in {"scripts/postgres/auth03_alembic_executor.py","scripts/postgres/m12b_security_migration.py"}:
+                # Historical profile pins deliberately remain unchanged. The
+                # prepared-only refusal makes these bytes incompatible, not
+                # retroactively approved by rewriting old hashes.
+                self.assertNotEqual(actual,expected)
+            else:self.assertEqual(actual,expected)
+        for path,expected in p.PREPARED_SOURCES.items():
             self.assertEqual(sha256((root/path).read_bytes()).hexdigest(),expected)
         for profile in p.PROFILES:
             cat=catalog(profile);l.catalog(cat);p.validate_inventory_projection(cat)

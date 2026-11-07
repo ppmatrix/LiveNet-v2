@@ -8,6 +8,7 @@ Create Date: 2026-10-15 22:06:18.398424
 from typing import Sequence, Union
 
 from alembic import op
+from migrations.dev09b_prerequisites import require_prepared_schema, refuse_prepared_downgrade
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
@@ -21,7 +22,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Create the initial inventory schema and resources table."""
-    op.execute("CREATE SCHEMA inventory")
+    require_prepared_schema("inventory")
 
     op.create_table(
         "resources",
@@ -110,6 +111,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    refuse_prepared_downgrade()
     """Remove only the objects created by this revision."""
     op.drop_index(
         "ix_resources_type_state",

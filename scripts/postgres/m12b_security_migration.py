@@ -157,6 +157,9 @@ def validate_security_graph(sources):
 
 
 def security_configuration():
+    source = ROOT / "backend/security_migrations/versions/b12b01a7230_create_security.py"
+    require("from migrations.dev09b_prerequisites import" not in source.read_text(),
+            "Historical M1.2B executor incompatible with DEV09B-PREPARED-1; execution remains disabled")
     config = Config(str(ROOT / "backend/alembic-security.ini"))
     validate_configuration(config)
     files = sorted((ROOT / "backend/security_migrations/versions").glob("*.py"))

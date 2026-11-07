@@ -3,6 +3,8 @@ from unittest.mock import Mock
 
 import pytest
 
+from scripts.postgres.tests.dev09b_historical_fixtures import historical_tree, historical_security
+
 import m12b_security_migration as preparation
 from security_migrations.contract import INITIAL_REVISION, TABLE_NAMES, VERSION_SCHEMA, VERSION_TABLE
 
@@ -14,14 +16,20 @@ def target():
             "application_user": "livenet_m12b_app"}
 
 
-@pytest.fixture
-def plan(target):
-    return preparation.prepare_plan(target, confirmed_baseline=preparation.BASELINE)
+@pytest.fixture(params=["2f86582"], ids=["historical-2f86582"])
+def historical_preparation(request, tmp_path, monkeypatch):
+    assert request.param == "2f86582"
+    return historical_security(historical_tree(tmp_path), monkeypatch)
 
 
 @pytest.fixture
-def before(plan):
-    return preparation.ObservedState(
+def plan(target, historical_preparation):
+    return historical_preparation.prepare_plan(target, confirmed_baseline=preparation.BASELINE)
+
+
+@pytest.fixture
+def before(plan, historical_preparation):
+    return historical_preparation.ObservedState(
         database=plan.target.database, system_identifier=plan.target.system_identifier,
         current_user=plan.target.migration_user, session_user=plan.target.migration_user,
         server_version_num=160010, application_revisions=(preparation.BASELINE,), security_revisions=(),
@@ -62,27 +70,27 @@ def test_incomplete_or_credential_configuration_rejected(target):
             preparation.validate_target(config)
 
 
-def test_plan_is_deterministic_and_not_authorization(target, plan):
-    other = preparation.prepare_plan(target, confirmed_baseline=preparation.BASELINE)
+def test_plan_is_deterministic_and_not_authorization(target, plan, historical_preparation):
+    other = historical_preparation.prepare_plan(target, confirmed_baseline=historical_preparation.BASELINE)
     assert other == plan
     assert plan.destination == INITIAL_REVISION and plan.source is None
-    assert plan.application_revision == preparation.BASELINE
+    assert plan.application_revision == historical_preparation.BASELINE
     assert (plan.version_schema, plan.version_table) == ("public", "alembic_security_version")
     assert len(plan.digest) == 64 and plan.required_search_path == ("public",)
     assert all("backend/migrations/" not in name and "auth03" not in name for name, _ in plan.sources)
-    contract = preparation.execution_contract(plan)
+    contract = historical_preparation.execution_contract(plan)
     assert contract["execution_enabled"] is False
     assert contract["automatic_retry"] is False
     assert contract["operational_approval_required"] is True
     assert contract["application_credentials_are_authorization"] is False
 
 
-def test_pre_and_post_observations(plan, before):
-    assert preparation.validate_observation(plan, before, phase="before") is before
+def test_pre_and_post_observations(plan, before, historical_preparation):
+    assert historical_preparation.validate_observation(plan, before, phase="before") is before
     after = replace(before, security_revisions=(INITIAL_REVISION,),
                     schemas=before.schemas | {"security"}, relations=before.relations |
                     {("security", name) for name in TABLE_NAMES} | {(VERSION_SCHEMA, VERSION_TABLE)})
-    assert preparation.validate_observation(plan, after, phase="after") is after
+    assert historical_preparation.validate_observation(plan, after, phase="after") is after
 
 
 @pytest.mark.parametrize("field,value", [
@@ -96,25 +104,25 @@ def test_pre_and_post_observations(plan, before):
     ("schemas", frozenset({"public", "inventory", "audit", "security"})),
     ("relations", frozenset()),
 ])
-def test_pre_observation_divergence_is_rejected(plan, before, field, value):
-    with pytest.raises(preparation.Refused):
-        preparation.validate_observation(plan, replace(before, **{field: value}), phase="before")
+def test_pre_observation_divergence_is_rejected(plan, before, field, value, historical_preparation):
+    with pytest.raises(historical_preparation.Refused):
+        historical_preparation.validate_observation(plan, replace(before, **{field: value}), phase="before")
 
 
-def test_unknown_extra_object_is_rejected(plan, before):
-    with pytest.raises(preparation.Refused):
-        preparation.validate_observation(plan, replace(before, relations=before.relations | {("public", "unexpected")}), phase="before")
+def test_unknown_extra_object_is_rejected(plan, before, historical_preparation):
+    with pytest.raises(historical_preparation.Refused):
+        historical_preparation.validate_observation(plan, replace(before, relations=before.relations | {("public", "unexpected")}), phase="before")
 
 
-def test_post_requires_revision_and_all_objects(plan, before):
-    with pytest.raises(preparation.Refused):
-        preparation.validate_observation(plan, before, phase="after")
+def test_post_requires_revision_and_all_objects(plan, before, historical_preparation):
+    with pytest.raises(historical_preparation.Refused):
+        historical_preparation.validate_observation(plan, before, phase="after")
 
 
-def test_execution_is_always_blocked_before_any_access(plan):
+def test_execution_is_always_blocked_before_any_access(plan, historical_preparation):
     connection = Mock(side_effect=AssertionError("No database operations"))
-    with pytest.raises(preparation.Refused, match="P1"):
-        preparation.execute_security_migration(plan, connection)
+    with pytest.raises(historical_preparation.Refused, match="P1"):
+        historical_preparation.execute_security_migration(plan, connection)
     assert not connection.mock_calls
 
 
@@ -134,3 +142,8 @@ def test_missing_or_multiple_revisions_rejected():
     for sources in ([], ["", ""]):
         with pytest.raises(preparation.Refused):
             preparation.validate_security_graph(sources)
+
+
+def test_current_plan_refuses_revised_sources(target):
+    with pytest.raises(preparation.Refused, match="Historical M1.2B executor incompatible"):
+        preparation.prepare_plan(target, confirmed_baseline=preparation.BASELINE)

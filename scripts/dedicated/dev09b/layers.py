@@ -169,7 +169,10 @@ def freeze_expectations(payload, target, executor, plan, semantic, physical, pro
     wanted_profiles = (("auth03-base-inventory-v1", "m12b-f066-inventory-v1")
                        if semantic["operation"].startswith("application-") else
                        ("m12b-f066-inventory-v1", "m12b-b12-inventory-v1"))
-    c.require(tuple(physical[k]["profile"] for k in ("before", "after")) == wanted_profiles)
+    prepared_profiles=(("dev09b-prepared-base-v1","dev09b-prepared-f066-v1")
+                       if semantic["operation"].startswith("application-") else
+                       ("dev09b-prepared-f066-v1","dev09b-prepared-b12-v1"))
+    c.require(tuple(physical[k]["profile"] for k in ("before", "after")) in {wanted_profiles,prepared_profiles})
     for phase in ("before", "after"):
         c.require(plan["expected_"+phase+"_sha256"] == expected_hash(semantic, physical, phase))
     c.require(plan["migration_sources_sha256"] == document_hash(semantic["installation_chain"]))
