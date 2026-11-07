@@ -1,4 +1,4 @@
-"""Abstract offline interfaces and monotonic attempt state machine.
+"""Abstract ports and shared monotonic attempt state machine.
 
 No method dispatches SQL or calls a runner. Checkpoint validity is not validity
 at a physical effect. Availability of containment never depends on authority.
@@ -104,18 +104,20 @@ class Executor(Protocol):
     def close(self) -> None: ...
 
 
-class OfflineAttempt:
-    """Local transition model: events only, no calls to an Executor port.
+class _AttemptLifecycle:
+    """Shared transitions; no SQL dispatch or independent confirmation here.
 
-    Authority failures never inhibit abort()/close(). Local UNKNOWN is retained
-    even if an authority event cannot be recorded. Confirmation flags represent
-    synthetic independent evidence, not real reconciliation.
+    Subclasses must validate their own receipt boundary. OfflineAttempt accepts
+    synthetic observations; live admission accepts an authenticated client only
+    and disables synthetic boolean reconciliation. Authority failure never
+    inhibits containment. UNKNOWN is never cleared by abort()/close().
     """
+    _event_prefix = 'simulated_'
+
     def __init__(self, authority: Authority, approval_id, session, nonce):
         session.validate()
         observation = authority.consume(approval_id, session, nonce)
-        require(type(observation) is OfflineObservation)
-        require(observation.phase == "consume" and observation.nonce == nonce)
+        self._validate_observation(observation, "consume", nonce)
         self.authority = authority
         self.session = session
         self.attempt_id = observation.attempt_id
@@ -124,11 +126,14 @@ class OfflineAttempt:
         self.closed = False
         self.events = []
 
+    def _validate_observation(self, observation, phase, nonce):
+        raise NotImplementedError("Explicit receipt validation required")
+
     def _checkpoint(self, phase, session, nonce):
         require(not self.closed and session == self.session)
         result = self.authority.check(self.attempt_id, phase, session, nonce)
-        require(type(result) is OfflineObservation and result.attempt_id == self.attempt_id
-                and result.phase == phase and result.nonce == nonce)
+        self._validate_observation(result, phase, nonce)
+        require(result.attempt_id == self.attempt_id)
         return result
 
     def first_effect(self, session, nonce):
@@ -139,7 +144,7 @@ class OfflineAttempt:
             self.abort()
             raise
         self.state = AttemptState.RUNNING
-        self.events.append("simulated_first_effect")
+        self.events.append(self._event_prefix + "first_effect")
 
     def before_commit(self, session, nonce):
         require(self.state is AttemptState.RUNNING)
@@ -152,10 +157,10 @@ class OfflineAttempt:
             self.abort()
             raise
         self.state = AttemptState.COMMIT_INTENT
-        self.events.append("simulated_commit_intent")
+        self.events.append(self._event_prefix + "commit_intent")
 
-    def simulate_commit_dispatch(self, session, nonce):
-        # Recheck on simulated dispatch as well: no cached observation permits
+    def _mark_commit_dispatch(self, session, nonce):
+        # Recheck on dispatch as well: no cached observation permits
         # dispatch after time, revocation, session or continuity has changed.
         require(self.state is AttemptState.COMMIT_INTENT)
         try:
@@ -165,7 +170,7 @@ class OfflineAttempt:
             raise
         self.commit_sent = True
         self.state = AttemptState.UNKNOWN
-        self.events.append("simulated_commit_sent_result_unknown")
+        self.events.append(self._event_prefix + "commit_sent_result_unknown")
 
     def abort(self):
         # Containment is local, even with unavailable authority/time/continuity.
@@ -174,13 +179,13 @@ class OfflineAttempt:
             # can only be resolved by independently confirmed reconciliation.
             self.state = (AttemptState.UNKNOWN if self.commit_sent or self.state is AttemptState.UNKNOWN
                           else AttemptState.ABORTING)
-            self.events.append("simulated_rollback_attempt")
+            self.events.append(self._event_prefix + "rollback_attempt")
 
     def close(self):
         self.closed = True
         if self.state not in {AttemptState.COMMITTED_CONFIRMED, AttemptState.ROLLED_BACK_CONFIRMED}:
             self.state = AttemptState.UNKNOWN
-        self.events.append("simulated_close")
+        self.events.append(self._event_prefix + "close")
 
     def rollback_result(self, *, transaction_confirmed, independent_confirmed):
         require(type(transaction_confirmed) is bool and type(independent_confirmed) is bool)
@@ -193,3 +198,13 @@ class OfflineAttempt:
         require(type(outcome) is AttemptState and outcome in {
             AttemptState.COMMITTED_CONFIRMED, AttemptState.ROLLED_BACK_CONFIRMED})
         self.state = outcome
+
+
+class OfflineAttempt(_AttemptLifecycle):
+    """Synthetic transitions only; never an operational admission controller."""
+    def simulate_commit_dispatch(self, session, nonce):
+        return self._mark_commit_dispatch(session, nonce)
+
+    def _validate_observation(self, observation, phase, nonce):
+        require(type(observation) is OfflineObservation and observation.phase == phase
+                and observation.nonce == nonce)
