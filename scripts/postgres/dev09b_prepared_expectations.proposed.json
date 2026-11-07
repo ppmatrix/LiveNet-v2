@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "status": "PROPOSED_NOT_APPROVED",
+  "target": {
+    "project": "livenetv2-dev09b-querytrial",
+    "database": "livenet_v2_dev",
+    "system_identifier": "7705421224394444834",
+    "image": "postgres:16-alpine@sha256:f4610795587492cd4fb887c2dc3de301b813278bb6f616992061141b5f15ac36"
+  },
+  "sql_sha256": "ba30871a5aafed12ff29278966e03c43f7317fd0901da59dfbd0a3744bc4252d",
+  "query_catalog_sha256": "5739c8347f97d77348baea592f659410feb6cd898605477a37347c4c39ce0d9c",
+  "admin_settings": {
+    "shared_preload_libraries": "",
+    "session_preload_libraries": ""
+  },
+  "probe_settings": {
+    "search_path": "pg_catalog, public",
+    "session_replication_role": "origin",
+    "row_security": "on",
+    "standard_conforming_strings": "on",
+    "shared_preload_libraries": "",
+    "session_preload_libraries": "",
+    "local_preload_libraries": "",
+    "server_encoding": "UTF8",
+    "lc_collate": null,
+    "lc_ctype": null,
+    "transaction_isolation": "repeatable read",
+    "transaction_read_only": "on"
+  },
+  "schema_owners": {
+    "inventory": "dev09b_trial_inventory_owner",
+    "audit": "dev09b_trial_audit_owner",
+    "security": "dev09b_trial_security_owner"
+  },
+  "extension": {
+    "name": "btree_gist",
+    "version": "1.7",
+    "schema": "public",
+    "owner": "dev09b_trial_admin"
+  }
+}
