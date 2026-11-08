@@ -1,0 +1,114 @@
+{
+  "archive_sha256": "c1575341fa7bd40f5274ea465b34390f4dc64cdd0770af327005caaeb9f6b7ed",
+  "image": "postgres:16-alpine@sha256:f4610795587492cd4fb887c2dc3de301b813278bb6f616992061141b5f15ac36",
+  "migration_sources": [
+    {
+      "path": "backend/migrations/versions/af62df027d9d_create_inventory_resources_baseline.py",
+      "sha256": "775dbc0c8df3857f52d5907466413f2efbece62e07e6c2f1086ee7775bf0a2b2"
+    },
+    {
+      "path": "backend/migrations/versions/4f625db33d6d_create_inventory_resource_identifiers.py",
+      "sha256": "dddc5fec81ab2b7859af76292f52b75a16dbd00d310221cc619235762ca65224"
+    },
+    {
+      "path": "backend/migrations/versions/38d641dcd780_create_inventory_resource_relations.py",
+      "sha256": "44888d9186c5e0c17edaad34e1db3e1cedbfde83c0e14db6349a7e8fedf2cf98"
+    },
+    {
+      "path": "backend/migrations/versions/da34876e4210_create_inventory_groups.py",
+      "sha256": "2e7f4713b450421c84d3f741cb02418bec6e8759536fb61f72963b32419ec09b"
+    },
+    {
+      "path": "backend/migrations/versions/ba06dd956da9_create_inventory_group_memberships.py",
+      "sha256": "da5553776449de5584c45015ad8156235d7f0fcb7591e462763beeb14a0b0d21"
+    },
+    {
+      "path": "backend/migrations/versions/44e7eb855b5a_create_inventory_group_rules.py",
+      "sha256": "19a7573916902015349045813003b3fd9d057c77e6b4ccad0a5e51a0b12b567f"
+    },
+    {
+      "path": "backend/migrations/versions/7c4e2a91b605_create_inventory_tags.py",
+      "sha256": "103a4e643911ae119145e64c5d4ffc051d92c2c2f301d069fb5a4564699cd2c1"
+    },
+    {
+      "path": "backend/migrations/versions/9e1b7c42a630_create_inventory_resource_tags.py",
+      "sha256": "aa7201329e8440a07f6e700fb04b485c16e38cf6232d26df0f41518107d58698"
+    },
+    {
+      "path": "backend/migrations/versions/c4a91e7b205d_create_inventory_policies.py",
+      "sha256": "6ad79c6718897b2b0a3122d21d28e2ab3ffb1e3504b547114aa76fde9ab97425"
+    },
+    {
+      "path": "backend/migrations/versions/e65b01a7c230_create_inventory_policy_versions.py",
+      "sha256": "b0ef045cd58e0385e0b73f4c6fee4482b2ac59047283597c7d0e8a39074c7949"
+    },
+    {
+      "path": "backend/migrations/versions/f065c01a7230_create_inventory_policy_assignments.py",
+      "sha256": "7278fe16f3fbba63ccb01c41ee64e134043eec610a1feada63eb6b5218a52bf2"
+    },
+    {
+      "path": "backend/migrations/versions/f065d01a7230_create_inventory_effective_configs.py",
+      "sha256": "bc8f1e333315eaffd199df4f18a8b71e0e16c85034e707f93399465a184c9dda"
+    },
+    {
+      "path": "backend/migrations/versions/f066a01a7230_create_audit_events_baseline.py",
+      "sha256": "beb9fdf625b211753c8bb11d218dad75b62cb243144a886e79e143c4708611b0"
+    }
+  ],
+  "schema_version": 1,
+  "sources": [
+    {
+      "image_path": "/usr/local/include/postgresql/server/pg_config.h",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-application/pg_config.h",
+      "sha256": "8f1f62b2a7e7b982f71fcdfb55e3e1f16556b466e0157ffeb7e1a7aee7d75ac9"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/access/heap/heapam_handler.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-application/src/backend/access/heap/heapam_handler.c",
+      "sha256": "098e4c2edc2b72869ca506104e38765eb11a5c9f84c018f932acc86a355c0749"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/catalog/toasting.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-application/src/backend/catalog/toasting.c",
+      "sha256": "756caf4a74eb768fea456781aef3ef06bfcf015c2793d8a1a6a44766266b86b6"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/parser/parse_coerce.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-application/src/backend/parser/parse_coerce.c",
+      "sha256": "0be658918e0c1cb34673430287e42be1fa9138142697a8258bee964c795e5938"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/parser/parse_expr.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-application/src/backend/parser/parse_expr.c",
+      "sha256": "dd42e097da809c14af31b6d6a7ada7da901a33ddb23db20a544d03492bc86731"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/parser/parse_oper.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-application/src/backend/parser/parse_oper.c",
+      "sha256": "4a6222c50e19affb1163ebf6b7fd9584a45cb037fe74d3f734a585c15a56bf1d"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/utils/adt/numeric.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-application/src/backend/utils/adt/numeric.c",
+      "sha256": "c453e583776bd88c301197d6b8190cfba1491132f34fb1b2b30bd7f40f00a49b"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/include/parser/kwlist.h",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-application/src/include/parser/kwlist.h",
+      "sha256": "b9db8bdeecc085e015e6e958a53545ebe0d8fbadf1094bc885ae511d32ace819"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/include/storage/bufpage.h",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-application/src/include/storage/bufpage.h",
+      "sha256": "2bba251374a847a91389fa43b7b8180095f6a0ba25aa298f4973554ed2686328"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/include/storage/itemid.h",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-application/src/include/storage/itemid.h",
+      "sha256": "9cd585a906ff9e9ebd54b75646d0ee02af30ce8a3944037bc5327f0bafba5199"
+    }
+  ],
+  "status": "CANDIDATE_NOT_APPROVED",
+  "url": "https://ftp.postgresql.org/pub/source/v16.15/postgresql-16.15.tar.bz2",
+  "version": "16.15"
+}

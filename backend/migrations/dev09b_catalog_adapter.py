@@ -681,3 +681,14 @@ def convert_results(batch,details,context,*,phase,collector_id,session=None,ledg
                **{k:meta[k] for k in ('request_id','approval_id','attempt_id')})
     d.normalize_observations(value)
     return ConvertedObservation(d.encode(value),collector_id,c.canonical(binding))
+
+
+def source_context(root,context,*,phase,roles,encoding,prerequisite=None):
+    """Producer-side fixed-source builder for this adapter's existing format.
+
+    Called before collecting observations; has no connection argument and never
+    rewrites a supplied signed context during conversion or admission.
+    Authorship, artifact approval and the real verifier remain external.
+    """
+    from scripts.dedicated.dev09b.application_catalog_context import extend_context
+    return extend_context(root,context,phase=phase,roles=roles,encoding=encoding,prerequisite=prerequisite)

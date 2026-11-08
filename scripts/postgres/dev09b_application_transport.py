@@ -57,6 +57,12 @@ class ApplicationTransport:
         h.require(c.in_transaction() is True and c.get_transaction() is self.transaction
                   and self.transaction is not None and self.transaction.is_active is True,'Transaction changed')
         check_client_logging(c)
+        # A SQLAlchemy logical transaction in DBAPI AUTOCOMMIT mode cannot
+        # provide the approved single-transaction migration guarantee.
+        h.require(c.get_execution_options().get('isolation_level')!='AUTOCOMMIT'
+                  and c.connection.driver_connection.autocommit is False
+                  and c.get_isolation_level() in {'READ COMMITTED','REPEATABLE READ','SERIALIZABLE'},
+                  'Real PostgreSQL transaction required; AUTOCOMMIT forbidden')
         h.require(type(self.context) is h.PreparedContext,'Canonical migrations.PreparedContext required')
         profile=h.decode_profile(self.context.profile_json)
         h.require(profile['operation']==OPERATION,'Application base-to-f066 only')

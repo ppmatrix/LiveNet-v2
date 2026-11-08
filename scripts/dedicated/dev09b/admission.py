@@ -45,6 +45,7 @@ class AdmissionController(_AttemptLifecycle):
         self.commit_sent = False
         self.closed = False
         self.events = []
+        self.containment = []
 
     def _validate_observation(self, observation, phase, nonce):
         c.require(type(observation) is Receipt and observation.phase == phase and observation.nonce == nonce)
@@ -117,6 +118,21 @@ class AdmissionController(_AttemptLifecycle):
             self.contain()
             raise
 
+    def inspect_precommit(self):
+        """Explicit same-session inspection; no COMMIT and no cached permission."""
+        try:
+            c.require(self.ready_to_commit and not self.commit_sent and not self.closed)
+            self._bound()
+            self._inspecting_commit = True
+            try:
+                c.require(self.supervision.before_commit(self.connection,self.transaction,self.session,self.plan) is None)
+            finally:
+                self._inspecting_commit = False
+            self._bound()
+        except BaseException:
+            self.contain()
+            raise
+
     def commit_once(self):
         """Outside ApplicationTransport. UNKNOWN before sending, even on return.
 
@@ -128,12 +144,7 @@ class AdmissionController(_AttemptLifecycle):
             self._bound()
             # Explicit trusted PRECOMMIT inspection/exclusivity port. This is not
             # the independent PERSISTED/CLOSED confirmation or a boolean flag.
-            self._inspecting_commit = True
-            try:
-                c.require(self.supervision.before_commit(self.connection, self.transaction,
-                                                         self.session, self.plan) is None)
-            finally:
-                self._inspecting_commit = False
+            self.inspect_precommit()
             self.before_commit(self.session, str(uuid4()))
             self._mark_commit_dispatch(self.session, str(uuid4()))
             self._committing = True
@@ -155,17 +166,51 @@ class AdmissionController(_AttemptLifecycle):
 
     def contain(self):
         """Always try rollback AND close, including with unavailable authority."""
+        if self.closed and self.connection.closed is True:return
         self.abort()
         self._containing = True
+        result=dict(rollback='NOT_ATTEMPTED',close='NOT_ATTEMPTED')
+        self.containment.append(result)
         try:
-            try: self.transaction.rollback()
-            except BaseException: self.state = AttemptState.UNKNOWN
-            try: self.connection.close()
-            except BaseException: self.state = AttemptState.UNKNOWN
+            try:
+                self.transaction.rollback();result['rollback']='RETURNED'
+            except BaseException as exc:
+                result['rollback']='FAILED';result['rollback_exception']=type(exc).__name__;self.state=AttemptState.UNKNOWN
+            try:
+                self.connection.close();result['close']='RETURNED' if self.connection.closed is True else 'UNCERTAIN'
+            except BaseException as exc:
+                result['close']='FAILED';result['close_exception']=type(exc).__name__;self.state=AttemptState.UNKNOWN
         finally:
             self._containing = False
             try: self._remove()
             finally: self.close()
+
+    def confirm_persisted(self, snapshot, primary, independent, *, authenticity, independence):
+        """Authenticated independent comparison, never a driver-return boolean.
+
+        No evidence is collected/fabricated here. The caller supplies two real
+        post-commit collections and explicit trusted origin/independence ports.
+        Failure leaves UNKNOWN. Administrative CLOSED/handoff remains separate.
+        """
+        from dataclasses import asdict
+        from .layers import read_snapshot
+        from . import detailed_catalog as detail,physical
+        c.require(self.used and type(self.authority) is AuthenticatedAuthorityClient)
+        c.require(self.state is AttemptState.UNKNOWN and self.commit_sent and self.closed and self.connection.closed is True)
+        c.validate_layers(snapshot)
+        payload,target,executor,plan,semantic,phys,provenance=read_snapshot(snapshot)
+        c.require(snapshot.payload==self.authority.payload and snapshot.plan==self.plan)
+        c.require(phys['schema_version']==2 and payload['operation']=='application-base-to-f066a01a7230')
+        for evidence in (primary,independent):
+            c.require(evidence['phase']=='APP-F066-PERSISTED')
+            for key in ('request_id','approval_id','attempt_id'):c.require(evidence[key]==payload[key])
+            c.require(c.canonical(evidence['subject_session'])==c.canonical(asdict(self.session)))
+        expected=detail.validate_contract(phys,target,semantic,provenance)['APP-F066-PERSISTED']
+        comparison=physical.compare_independent_pair(expected,primary,independent,authenticity,independence)
+        from .layers import document_hash
+        self.authority.record(payload['attempt_id'],'independent_reconciliation',document_hash([primary,independent]))
+        _AttemptLifecycle.reconcile(self,AttemptState.COMMITTED_CONFIRMED,independent_confirmed=True)
+        return comparison
 
     def rollback_result(self, **kwargs):
         raise c.Unsupported('Independent operational reconciliation is not a boolean')

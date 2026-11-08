@@ -226,6 +226,11 @@ def compile_profile(phase,target,parameters,migrations,*,prerequisite=None):
         owner=owner_overrides.get((o["family"],tuple(o["identity"]))) or role_for(o,phase,r)
         ownership.append({"family":o["family"],"identity":o["identity"],"owner":owner})
         values=[grant("PUBLIC","EXECUTE")] if o["family"]=="routine" and not (closed or sec) else []
+        if parameters["schema_version"]==2 and o["family"] in {"composite_type","array_type"}:
+            # Explicit human approval: represent acldefault('T') for dependent
+            # types whose typacl is NULL (pg_type.c / acl.c). No GRANT is issued;
+            # underlying table/schema/function/runtime ACLs are unchanged.
+            values=[grant("PUBLIC","USAGE")]
         if (closed or sec) and o["family"]=="schema" and o["identity"][0] in {"inventory","audit"}:
             values=[grant(r["inspector"],"USAGE")]
         # No runtime grants, no broad default privileges. Inherited owner rights
@@ -394,8 +399,8 @@ def compare_independent_pair(expected,primary,independent,authenticity,independe
     c.require(primary["collector_id"]!=independent["collector_id"] and primary["evidence_id"]!=independent["evidence_id"])
     for e in (primary,independent):
         c.require(e["classification"]=="OPERATIONAL")
-        result=authenticity.inspect(c.canonical(e))
+        result=authenticity.inspect(c.canonical(e,maximum_depth=32))
         c.require(type(result) is OriginObservation and result.authenticated is True and result.classification=="OPERATIONAL"
                   and result.evidence_sha256==document_hash(e) and result.collector_id==e["collector_id"])
-    c.require(independence.confirm(c.canonical(primary),c.canonical(independent)) is True)
+    c.require(independence.confirm(c.canonical(primary,maximum_depth=32),c.canonical(independent,maximum_depth=32)) is True)
     return compare_profile(expected,primary["snapshot"])

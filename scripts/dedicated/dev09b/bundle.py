@@ -146,3 +146,44 @@ def verify_application_candidate(root,candidate):
     c.require(c.canonical(candidate,maximum_depth=32)==c.canonical(expected,maximum_depth=32))
     return CandidateIntegrity(sha256(c.canonical(candidate,maximum_depth=32)).hexdigest(),len(expected['sources']),
         tuple(expected['missing_parameters'])+tuple(expected['missing_target_declarations']))
+
+
+def build_application_maps_candidate(root):
+    """New candidate only; prior prepared/baseline JSON stays historical."""
+    from . import application_catalog_context as app
+    root=Path(root);_,manifest=app.load(root)
+    candidate=build_application_candidate(root)
+    paths={row['path'] for row in candidate['sources']}|{app.MANIFEST}
+    paths.update(row['path'] for row in manifest['sources'])
+    candidate['sources']=[dict(path=path,sha256=sha256(read(root,path)).hexdigest()) for path in sorted(paths)]
+    candidate['missing_target_declarations']=['real target/executor bindings and role identities','independent PostgreSQL validation of candidate application deparse and implicit-object maps','authenticated source artifacts/profile and phase privilege plan','trusted execution-session inspection and independent persisted-ledger confirmation']
+    candidate['application_maps']=dict(schema_version=1,scope='APPLICATION_ONLY',
+        source_manifest_sha256=sha256(read(root,app.MANIFEST)).hexdigest(),
+        postgres_execution='NOT_PERFORMED',operational_profile_approval='NOT_PROVIDED',
+        parameter_binding='EXPLICIT_ROLES_AND_ENCODING_REQUIRED',
+        dependent_type_acl='HUMAN_APPROVED_V2_ONLY_PUBLIC_USAGE_WITHOUT_GRANT_OPTION')
+    return candidate
+
+
+def verify_application_maps_candidate(root,candidate):
+    expected=build_application_maps_candidate(root)
+    c.require(c.canonical(candidate,maximum_depth=32)==c.canonical(expected,maximum_depth=32))
+    return CandidateIntegrity(sha256(c.canonical(expected,maximum_depth=32)).hexdigest(),len(expected['sources']),
+        tuple(expected['missing_parameters'])+tuple(expected['missing_target_declarations']))
+
+
+def build_application_trial_candidate(root):
+    """Procedure/source candidate only, never approval of grants or deployment."""
+    root=Path(root);candidate=build_application_maps_candidate(root)
+    paths={r['path'] for r in candidate['sources']}|{
+        'scripts/postgres/dev09b_application_trial.py',
+        'scripts/postgres/dev09b_application_grants.proposed.sql',
+        'scripts/postgres/dev09b_application_close.proposed.sql',
+        'scripts/postgres/dev09b_application_handoff.proposed.sql'}
+    candidate['sources']=[dict(path=p,sha256=sha256(read(root,p)).hexdigest()) for p in sorted(paths)]
+    candidate['trial_procedure']=dict(target_system_identifier='7705421224394444834',
+        state='BLOCKED_OPERATIONAL_PORTS_PARAMETERS_AND_APPROVALS',
+        authority_storage_trial_is_not_operational_authority=True,
+        administrative_sql='PROPOSED_NOT_AUTHORIZED',commit='NOT_AUTHORIZED',
+        trusted_adapters='NOT_IMPLEMENTED_BY_THIS_PROCEDURE')
+    return candidate

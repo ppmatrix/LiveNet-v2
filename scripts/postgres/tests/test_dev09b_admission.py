@@ -289,6 +289,9 @@ def test_actual_application_transport_calls_integrated_controller(rig,monkeypatc
     # Transport's PG dialect requirement is exercised in its existing tests. The
     # event path here uses real SQLite connection; never invokes migration SQL.
     monkeypatch.setattr(conn.dialect,'name','postgresql')
+    # Configure the REAL SQLite driver's transaction mode explicitly. This is
+    # an event-wiring model, not proof of PostgreSQL transaction behavior.
+    conn.connection.driver_connection.autocommit=False
     port=SimpleNamespace(assert_connection=Mock())
     context=h.PreparedContext(rig.profile,port)
     monkeypatch.setattr(h,'decode_profile',lambda raw:dict(operation=rig.p['operation']))
@@ -531,3 +534,35 @@ def test_failed_close_retains_guards_on_quarantined_connection(rig,monkeypatch):
         with pytest.raises(c.Invalid):conn.execute(text('select 2'))
     finally:
         close();ctl._remove();engine.dispose()
+
+
+def test_explicit_precommit_reads_stay_guarded_and_do_not_commit(rig):
+    engine,conn,tx=sqlite_connection();queries=[]
+    supervision=SimpleNamespace(assert_bound=Mock(return_value=None),before_commit=lambda *args:queries.append(conn.execute(text('select 1')).scalar()))
+    ctl=controller(rig,conn,tx,supervision)
+    try:
+        ctl.dispatch_original(operation=rig.p['operation'],connection=conn,transaction=tx,profile_json=rig.profile,body=lambda:conn.execute(text('select 1')))
+        ctl.inspect_precommit()
+        assert queries==[1] and tx.is_active and not ctl.commit_sent
+        ctl.contain()
+    finally:conn.close();engine.dispose()
+
+
+def test_precommit_supervision_failure_contains_without_authority_fallback(rig):
+    engine,conn,tx=sqlite_connection()
+    supervision=SimpleNamespace(assert_bound=Mock(return_value=None),before_commit=Mock(side_effect=OSError('private failure not logged')))
+    ctl=controller(rig,conn,tx,supervision)
+    try:
+        ctl.dispatch_original(operation=rig.p['operation'],connection=conn,transaction=tx,profile_json=rig.profile,body=lambda:conn.execute(text('select 1')))
+        with pytest.raises(OSError):ctl.inspect_precommit()
+        assert conn.closed and not ctl.commit_sent and ctl.state is AttemptState.UNKNOWN
+    finally:conn.close();engine.dispose()
+
+
+def test_containment_is_idempotent_after_actual_connection_close(rig):
+    engine,conn,tx=sqlite_connection();ctl=controller(rig,conn,tx)
+    try:
+        ctl.dispatch_original(operation=rig.p['operation'],connection=conn,transaction=tx,profile_json=rig.profile,body=lambda:conn.execute(text('select 1')))
+        ctl.contain();events=list(ctl.events);ctl.contain()
+        assert ctl.events==events and conn.closed and ctl.state is AttemptState.UNKNOWN
+    finally:conn.close();engine.dispose()

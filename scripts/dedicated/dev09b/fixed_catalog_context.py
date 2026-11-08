@@ -62,7 +62,7 @@ def function_deparse(identity,definition,*,library=None,body=None):
     """Closed ruleutils.c pg_get_functiondef subset used by these fixed sources."""
     schema,name,args=identity
     c.require(re.fullmatch('[a-z_][a-z0-9_]*',schema) is not None and re.fullmatch('[a-z_][a-z0-9_]*',name) is not None)
-    c.require(definition['language'] in {'c','sql'} and definition['volatility'] in {'IMMUTABLE','STABLE','VOLATILE'}
+    c.require(definition['language'] in {'c','sql','plpgsql'} and definition['volatility'] in {'IMMUTABLE','STABLE','VOLATILE'}
               and definition['parallel'] in {'SAFE','UNSAFE'} and definition['config'] in ([],['search_path=pg_catalog']))
     text='CREATE OR REPLACE FUNCTION '+schema+'.'+name+'('+args+')\n RETURNS '+definition['returns']+'\n LANGUAGE '+definition['language']+'\n'
     options=''

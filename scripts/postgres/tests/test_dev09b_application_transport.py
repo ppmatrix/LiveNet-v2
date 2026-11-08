@@ -25,7 +25,9 @@ def setup():
     tx=SimpleNamespace(is_active=True)
     conn=SimpleNamespace(closed=False,dialect=SimpleNamespace(name='postgresql'),_echo=False,
         engine=SimpleNamespace(echo=False,hide_parameters=True,logger=SimpleNamespace(isEnabledFor=lambda level:False)),
-        in_transaction=lambda:True,get_transaction=lambda:tx)
+        in_transaction=lambda:True,get_transaction=lambda:tx,
+        get_execution_options=lambda:{},get_isolation_level=lambda:'READ COMMITTED',
+        connection=SimpleNamespace(driver_connection=SimpleNamespace(autocommit=False)))
     port=SimpleNamespace(assert_connection=Mock())
     profile,_=records()
     context=h.PreparedContext(json.dumps(profile).encode(),port)
@@ -135,3 +137,12 @@ def test_composition_does_not_turn_offline_data_into_admission(data):
     from scripts.dedicated.dev09b import codec as codec
     with pytest.raises(codec.Invalid):t.apply_authorized_application(connection=None,transaction=None,snapshot=None,session=None,
         authority=data,supervision=None,profile_json=b'{}',profile_verifier=None,prerequisite_contracts=None,source_root=None)
+
+
+@pytest.mark.parametrize('failure',['driver','option','isolation'])
+def test_logical_transaction_cannot_hide_autocommit(failure):
+    conn,tx,ctx,work=setup()
+    if failure=='driver':conn.connection.driver_connection.autocommit=True
+    elif failure=='option':conn.get_execution_options=lambda:{'isolation_level':'AUTOCOMMIT'}
+    else:conn.get_isolation_level=lambda:'AUTOCOMMIT'
+    with pytest.raises(h.PrerequisiteRefused,match='Real PostgreSQL transaction'):work.apply_once(SynchronousTrustedBoundaryDouble())
