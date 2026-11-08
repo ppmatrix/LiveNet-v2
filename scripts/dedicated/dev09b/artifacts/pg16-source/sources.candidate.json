@@ -1,0 +1,85 @@
+{
+  "archive_sha256": "c1575341fa7bd40f5274ea465b34390f4dc64cdd0770af327005caaeb9f6b7ed",
+  "provenance": "PG_VERSION_AND_PG_SHA256_OF_PINNED_QUERYTRIAL_IMAGE",
+  "schema_version": 1,
+  "sources": [
+    {
+      "archive_path": "postgresql-16.15/COPYRIGHT",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/COPYRIGHT",
+      "sha256": "3d6af92ff8a4c2cdf69afb1cf44edea727922f5cd0cf8b5f72b11cdecac8fdfd"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/access/heap/heaptoast.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/backend/access/heap/heaptoast.c",
+      "sha256": "3cdf095a88e65babd39a9b44dfe3898477748838c034f41a7ea7f0320995a980"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/catalog/heap.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/backend/catalog/heap.c",
+      "sha256": "8203f3ec2c3a876703fda6a4b1387a43e8d252c6d28e38503ce5cfd057bb7da7"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/catalog/index.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/backend/catalog/index.c",
+      "sha256": "44f2ff91c6a9e999d87eafdcb09dbc543f8214d63d8481352a0b185f795827e7"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/catalog/pg_type.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/backend/catalog/pg_type.c",
+      "sha256": "93237fa37a52ae9799b3d0a2fb1fa72ee36fa52f3158f9c8ac938fd55135b2a4"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/commands/tablecmds.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/backend/commands/tablecmds.c",
+      "sha256": "fdf9777fa925ef3801754dcf7f5da340b90f1f91258220608ee90ab1afb5d8c8"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/commands/typecmds.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/backend/commands/typecmds.c",
+      "sha256": "86f95ebed328ddf37d132e995a4384d2ef7cf8cc5ba2c748fe8a87e811139dfb"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/utils/adt/acl.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/backend/utils/adt/acl.c",
+      "sha256": "d7022b114917f95e3d249e374f211d6bc14db68be8bcb1708ef032103377512c"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/utils/adt/format_type.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/backend/utils/adt/format_type.c",
+      "sha256": "c4af9d64e54d9186e133df3cca74c4141d06c5cfc2912d0d945cd9e6812cd8a9"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/utils/adt/regproc.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/backend/utils/adt/regproc.c",
+      "sha256": "0d0d6d2da1e931b7089d7721cef704e21825409b607e760609dc644a79d522df"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/backend/utils/adt/ruleutils.c",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/backend/utils/adt/ruleutils.c",
+      "sha256": "0898f93834a25de4fda9d72ee450077713353fed464fe7ca556912ca278ad455"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/include/access/heaptoast.h",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/include/access/heaptoast.h",
+      "sha256": "9991d0af9e696157415f43573fe5d6d79c4aa09af3cd7565c836df5579495dbc"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/include/access/htup_details.h",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/include/access/htup_details.h",
+      "sha256": "00b88e1c5c687e1933fec1cebf7fdb68f93c9432b2149a180788dc89330fbaa2"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/include/catalog/pg_type.h",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/include/catalog/pg_type.h",
+      "sha256": "6e5fd32ffe432d6ca640abacb99acc9a1d54ddb216dc363c3f4a2af616761d66"
+    },
+    {
+      "archive_path": "postgresql-16.15/src/include/pg_config_manual.h",
+      "path": "scripts/dedicated/dev09b/artifacts/pg16-source/src/include/pg_config_manual.h",
+      "sha256": "8b0d42f19610a735f6d59230e6213d2822d808f37f3f6e2c27873ab5ca91771f"
+    }
+  ],
+  "status": "CANDIDATE_NOT_APPROVED",
+  "url": "https://ftp.postgresql.org/pub/source/v16.15/postgresql-16.15.tar.bz2",
+  "version": "16.15"
+}

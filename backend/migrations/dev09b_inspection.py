@@ -99,13 +99,7 @@ def rows(name, values):
     return result
 
 
-def check_contract(raw, p):
-    v = c.parse(raw, maximum=16*1024*1024)
-    c.closed(v, {'schema_version', 'profile_sha256', 'query_inventory_sha256', 'binding', 'source_inventory', 'checkpoints'})
-    c.integer(v['schema_version'], 1, 1)
-    h.require(v['profile_sha256'] == sha256(p).hexdigest())
-    h.require(v['query_inventory_sha256'] == digest({k:{'sql':q.sql,'fields':list(q.fields),'maximum':q.maximum} for k,q in QUERIES.items()}), 'Query inventory divergence')
-    binding = v['binding']
+def check_collector_binding(binding):
     c.closed(binding, set(QUERIES['identity'].fields))
     for k in ('database', 'current_user', 'session_user', 'system_identifier','backend_start','xact_start','virtualxid','address'):
         h.require(type(binding[k]) is str and bool(binding[k]), 'Missing binding: '+k)
@@ -114,6 +108,16 @@ def check_contract(raw, p):
     try:support.host_address(binding['address'])
     except support.InspectionInputError as exc:raise h.PrerequisiteRefused(exc.code) from None
     h.require(160000 <= binding['server_version_num'] < 170000, 'PG16 required')
+
+
+def check_contract(raw, p):
+    v = c.parse(raw, maximum=16*1024*1024)
+    c.closed(v, {'schema_version', 'profile_sha256', 'query_inventory_sha256', 'binding', 'source_inventory', 'checkpoints'})
+    c.integer(v['schema_version'], 1, 1)
+    h.require(v['profile_sha256'] == sha256(p).hexdigest())
+    h.require(v['query_inventory_sha256'] == digest({k:{'sql':q.sql,'fields':list(q.fields),'maximum':q.maximum} for k,q in QUERIES.items()}), 'Query inventory divergence')
+    binding = v['binding']
+    check_collector_binding(binding)
     sources = v['source_inventory']
     h.require(type(sources) is list and bool(sources))
     for s in sources:
@@ -154,7 +158,8 @@ def check_contract(raw, p):
 
 class PreparedInspectionPort:
     def __init__(self, connection, transaction, *, profile_verifier=None,
-                 contract_json=None, source_root=None, independent_baseline=None):
+                 contract_json=None, source_root=None, independent_baseline=None,
+                 detailed_snapshot=None, detailed_session=None, prerequisite_contracts=None):
         # No calls on the connection, filesystem, verifier or database here.
         self._connection = connection
         self._transaction = transaction
@@ -162,6 +167,9 @@ class PreparedInspectionPort:
         self._contract_json = contract_json
         self._root = source_root
         self._baseline = independent_baseline
+        self._detailed_snapshot = detailed_snapshot
+        self._detailed_session = detailed_session
+        self._prerequisite_contracts = prerequisite_contracts
         self._cursor = 0
         self._failed = False
 
@@ -176,6 +184,10 @@ class PreparedInspectionPort:
 
     def verify_approved_profile(self, profile_json):
         self.assert_connection(self._connection)
+        if self._detailed_snapshot is not None:
+            raw=self._prerequisite_contract()
+            return _detailed_setup(self,profile_json,self._detailed_snapshot,phase='APP-ENTRY',
+                session=self._detailed_session,prerequisite=self._cursor,contract_raw=raw)[-1]
         if self._verifier is None:raise h.MissingParameter('dev09b.trusted_profile_verifier')
         if type(self._contract_json) is not bytes:raise h.MissingParameter('dev09b.fixed_inspection_contract')
         contract = check_contract(self._contract_json, profile_json)
@@ -207,8 +219,29 @@ class PreparedInspectionPort:
         finally:
             result.close()
 
+    def observe_detailed(self, profile_json, snapshot, *, phase, session=None):
+        try:return _observe_detailed(self,profile_json,snapshot,phase=phase,session=session)
+        except BaseException:
+            self._failed=True
+            raise
+
+    def _prerequisite_contract(self):
+        h.require(type(self._prerequisite_contracts) is tuple and len(self._prerequisite_contracts)==5
+                  and all(type(x) is bytes for x in self._prerequisite_contracts),'Five fixed detailed prerequisite contracts required')
+        h.require(self._cursor<5,'Checkpoint sequence exhausted')
+        return self._prerequisite_contracts[self._cursor]
+
     def observe(self, profile_json, requested):
         try:
+            if self._detailed_snapshot is not None:
+                expected=('environment','inventory','btree_gist','btree_gist','audit')
+                raw=self._prerequisite_contract()
+                h.require(requested==expected[self._cursor],'Unexpected/repeated checkpoint')
+                result=_observe_detailed(self,profile_json,self._detailed_snapshot,phase='APP-ENTRY',
+                    session=self._detailed_session,prerequisite=self._cursor,contract_raw=raw)
+                h.validate_observation(h.decode_profile(profile_json),result,requested)
+                self._cursor+=1
+                return result
             return self._observe(profile_json, requested)
         except Exception:
             self._failed = True
@@ -302,3 +335,194 @@ class PreparedInspectionPort:
         h.validate_observation(p,result,requested)
         self._cursor += 1
         return result
+
+
+@dataclass(frozen=True)
+class DetailedSQLBatch:
+    historical: dict
+    supplemental: dict
+    ledger_rows: dict
+    collector_id: str
+    binding_json: bytes
+    # Observations only; no profile approval or operational capability.
+
+
+def collect_detailed_sql(connection, transaction, *, collector_id, role_names, system_routines, language_names, query_progress=None, expected_binding=None, raw_capture=None, approved_helpers=()):
+    """Explicit borrowed connection/transaction; no opening, commit or retry.
+
+    Caller owns rollback/close. Every result is drained and closed. This low-level
+    read port does not authenticate an approval or authorize migration dispatch.
+    """
+    from .dev09b_detailed_queries import DETAIL_QUERIES
+    from .dev09b_catalog_adapter import needed_references,supplemental_rows
+    c.identifier(collector_id)
+    def bound():
+        h.require(connection is not None and connection.closed is False and connection.dialect.name=='postgresql','Explicit PG connection required')
+        support.check_client_logging(connection)
+        h.require(connection.in_transaction() is True and connection.get_transaction() is transaction
+                  and transaction.is_active is True,'Detailed collector transaction changed')
+    def collect(query,parameters=None,*,label):
+        result=None
+        try:
+            bound();result=connection.execute(text(query.sql),parameters or {})
+            values=[]
+            for item in result.mappings():
+                values.append(support.row_mapping(item))
+                h.require(len(values)<=query.maximum,'Detailed result bound exceeded')
+            if raw_capture is not None:raw_capture[label]=values
+            if query_progress is not None:query_progress(label,dict(status='RETURNED',count=len(values)))
+            return values
+        except BaseException as exc:
+            if query_progress is not None:
+                diagnostic=dict(status='REFUSED',exception_class=type(exc).__name__)
+                sqlstate=getattr(getattr(exc,'orig',None),'sqlstate',None)
+                import re
+                if type(sqlstate) is str and re.fullmatch('[0-9A-Z]{5}',sqlstate):diagnostic['sqlstate']=sqlstate
+                query_progress(label,diagnostic)
+            raise
+        finally:
+            if result is not None:result.close()
+    for selection in (role_names,system_routines,language_names):
+        h.require(type(selection) is list and len(selection)==len(set(selection)),'Unique explicit selections required')
+        h.require(all(type(x) is str and bool(x) for x in selection),'Selection type')
+    first=rows('identity',collect(QUERIES['identity'],label='identity_before'))
+    h.require(len(first)==1,'Exactly one detailed collector identity')
+    check_collector_binding(first[0])
+    if expected_binding is not None:
+        h.require(type(expected_binding) is dict and bool(expected_binding)
+                  and set(expected_binding)<=set(first[0]),'Detailed expected identity fields')
+        h.require(c.canonical({key:first[0][key] for key in expected_binding})==c.canonical(expected_binding),
+                  'Detailed identity divergence before collection')
+    historical={'identity':first}
+    for name,query in QUERIES.items():
+        if name!='identity':historical[name]=collect(query,label=name)
+    # Do not promote hidden NULL settings to values. Conversion below will
+    # refuse; raw collection can still report complete query coverage separately.
+    parameters=dict(role_names=role_names,system_routines=system_routines,language_names=language_names)
+    # Validate property shapes before resolving their referenced OIDs.
+    for name in ('extension_properties','operator_members','type_details'):
+        try:historical[name]=rows(name,historical[name])
+        except BaseException as exc:
+            if query_progress is not None:query_progress('process.'+name,dict(status='REFUSED',exception_class=type(exc).__name__))
+            raise
+    references=needed_references(historical)
+    for catalog in ('pg_namespace','pg_type','pg_opfamily','pg_operator','pg_roles','pg_class','pg_am','pg_collation'):
+        parameters['reference_'+catalog]=[oid for family,oid in references if family==catalog]
+    supplemental={name:supplemental_rows(name,collect(query,parameters,label='detail.'+name)) for name,query in DETAIL_QUERIES.items() if name!='helper_preload_settings'}
+    h.require(type(approved_helpers) in {tuple,list} and len(approved_helpers)<=1,'Fixed helper scope')
+    supplemental['helper_preload_settings']=[]
+    if approved_helpers:
+        from scripts.dedicated.dev09b import own_settings
+        own_settings.validate(approved_helpers[0])
+        own_settings.verify_observed(historical,supplemental)
+        if first[0]['current_user']==own_settings.PROBE:
+            query=DETAIL_QUERIES['helper_preload_settings']
+            supplemental['helper_preload_settings']=supplemental_rows('helper_preload_settings',collect(query,label='detail.helper_preload_settings'))
+            h.require(len(supplemental['helper_preload_settings'])==2 and all(r['backend_pid']==first[0]['pid'] for r in supplemental['helper_preload_settings']),'Helper backend binding')
+    relation_map={(r['schema'],r['name']):r for r in historical['relations']}
+    h.require(len(relation_map)==len(historical['relations']),'Duplicate relation identity')
+    ledgers={}
+    for chain,sql in LEDGER_SQL.items():
+        table='alembic_version' if chain=='application' else 'alembic_security_version'
+        if ('public',table) not in relation_map:ledgers[chain]=None
+        else:
+            h.require(relation_map[('public',table)]['kind']=='r','Ledger is not ordinary table')
+            from .dev09b_inspection_queries import Query
+            ledgers[chain]=collect(Query(sql,('version_num',),2),label='ledger.'+chain)
+    last=rows('identity',collect(QUERIES['identity'],label='identity_after'))
+    h.require(c.canonical(first)==c.canonical(last),'Detailed collector identity/session/transaction changed')
+    bound()
+    return DetailedSQLBatch(historical,supplemental,ledgers,collector_id,c.canonical(first[0]))
+
+
+def _detailed_setup(self,profile_json,snapshot,*,phase,session=None,prerequisite=None,contract_raw=None):
+    """Trusted versioned contract; raw SQL never authorizes a profile by itself."""
+    from .dev09b_catalog_adapter import convert_results
+    from .dev09b_detailed_queries import DETAIL_QUERIES
+    from scripts.dedicated.dev09b import detailed_catalog as detail,layers
+    self.assert_connection(self._connection)
+    c.validate_layers(snapshot);detail.validate_profile_binding(snapshot,profile_json)
+    raw=self._contract_json if contract_raw is None else contract_raw
+    if raw is None or self._verifier is None:raise h.MissingParameter('dev09b.detailed_trusted_inspection_contract')
+    contract=c.parse(raw,maximum=16*1024*1024,maximum_depth=32)
+    c.closed(contract,{'schema_version','profile_sha256','snapshot_sha256','query_inventory_sha256','binding','collector_id','context','selections','subject_session','conversion_source'}|({'prerequisite'} if prerequisite is not None else set()))
+    c.integer(contract['schema_version'],3 if prerequisite is not None else 2,3 if prerequisite is not None else 2)
+    if prerequisite is not None:
+        c.integer(prerequisite,0,4);h.require(type(contract['prerequisite']) is int and contract['prerequisite']==prerequisite,'Detailed checkpoint binding')
+    check_collector_binding(contract['binding'])
+    h.require(contract['profile_sha256']==sha256(profile_json).hexdigest(),'Detailed profile bytes changed')
+    h.require(contract['snapshot_sha256']==sha256(snapshot.physical).hexdigest(),'Detailed snapshot changed')
+    query_inventory={**QUERIES,**{'detail.'+k:v for k,v in DETAIL_QUERIES.items()}}
+    h.require(contract['query_inventory_sha256']==sha256(detail.encode({k:{'sql':q.sql,'fields':list(q.fields),'maximum':q.maximum} for k,q in query_inventory.items()})).hexdigest(),'Detailed query inventory changed')
+    approval=self._verifier.verify(profile_json,raw)
+    h.require(type(approval) is InspectionApproval,'Trusted detailed approval required')
+    att=approval.attestation;p=h.decode_profile(profile_json)
+    h.require(type(att) is h.ProfileAttestation and att.operationally_authenticated is True and att.classification=='OPERATIONAL'
+              and att.profile_sha256==contract['profile_sha256'] and att.target_sha256==p['target_sha256'] and att.bundle_sha256==p['bundle_sha256'],'Detailed profile authentication')
+    h.require(approval.contract_sha256==sha256(raw).hexdigest() and approval.binding_sha256==digest(contract['binding'])
+              and type(approval.decision_reference) is str and bool(approval.decision_reference),'Detailed approval binding')
+    from dataclasses import asdict
+    subject=None if session is None else asdict(session)
+    h.require(detail.encode(contract['subject_session'])==detail.encode(subject),'Detailed subject session changed')
+    target=layers.read_snapshot(snapshot)[1]
+    from scripts.dedicated.dev09b import own_settings
+    parameters=layers.read_snapshot(snapshot)[5]['parameters']
+    declared=contract['context'].get('approved_helpers',[])
+    installed=[o for o in parameters['system_objects'] if o['family']=='routine' and o['identity']==own_settings.IDENTITY]
+    h.require(type(declared) is list and len(declared)==len(installed),'Detailed fixed helper declaration coverage')
+    if declared:own_settings.validate(declared[0])
+    h.require(contract['binding']['database']==target['database_name'] and contract['binding']['system_identifier']==target['system_identifier'],'Detailed target identity changed')
+    collector_role=target['migrator_role'] if phase in {'APP-ENTRY','APP-F066-PRECOMMIT'} else target['inspector_role']
+    h.require(contract['binding']['current_user']==collector_role and contract['binding']['session_user']==collector_role,'Detailed collector role changed')
+    if session is not None and phase in {'APP-ENTRY','APP-F066-PRECOMMIT'}:
+        h.require(contract['binding']['pid']==session.backend_pid,'Detailed backend PID changed')
+    # Numeric transaction IDs are not inferred from virtualxid/timestamp strings.
+    # The explicit trusted verifier must attest that cross-representation binding.
+    if self._root is None:raise h.MissingParameter('dev09b.source_root')
+    root=Path(self._root)
+    for source in layers.read_snapshot(snapshot)[6]['source_inventory']:
+        file=root/source['path']
+        h.require(not any(x.is_symlink() for x in (file,*file.parents)),'Detailed symlink source')
+        h.require(file.is_file() and sha256(file.read_bytes()).hexdigest()==source['sha256'],'Detailed source divergence')
+    ref=contract['conversion_source'];c.closed(ref,{'path','sha256'})
+    h.require(ref in layers.read_snapshot(snapshot)[6]['source_inventory'],'Conversion source not signed')
+    h.require(sha256(detail.encode(contract['context'])).hexdigest()==ref['sha256'],'Conversion source bytes changed')
+    # Every source-side conversion declaration must be authenticated by this
+    # explicit verifier, including deparse/fixed properties; no synthetic default.
+    c.closed(contract['selections'],{'role_names','system_routines','language_names'})
+    return contract,target,p,subject,att
+
+
+def _observe_detailed(self,profile_json,snapshot,*,phase,session=None,prerequisite=None,contract_raw=None):
+    from .dev09b_catalog_adapter import convert_results
+    from scripts.dedicated.dev09b import detailed_catalog as detail,layers,physical
+    contract,target,p,subject,att=_detailed_setup(self,profile_json,snapshot,phase=phase,session=session,
+        prerequisite=prerequisite,contract_raw=contract_raw)
+    batch=collect_detailed_sql(self._connection,self._transaction,collector_id=contract['collector_id'],expected_binding=contract['binding'],approved_helpers=contract['context'].get('approved_helpers',[]),**contract['selections'])
+    h.require(batch.binding_json==c.canonical(contract['binding']),'Detailed collector binding divergence')
+    converted=convert_results(batch.historical,batch.supplemental,contract['context'],phase=phase,
+                              collector_id=batch.collector_id,session=subject,ledger_rows=batch.ledger_rows)
+    observation=detail.parse(converted.rows_json)
+    if prerequisite is None:
+        detail.compare_observations(snapshot,phase,observation,session=session)
+        return converted
+    # Validate the same signed subject binding before comparing a source-derived
+    # prefix. No observed row supplies the prefix or changes its expectation.
+    parts=layers.read_snapshot(snapshot);payload,_,_,_,semantic,phys,provenance=parts
+    detail.validate_subject(snapshot,'APP-ENTRY',observation,session)
+    expected=physical.compile_profile('APP-ENTRY',target,phys['parameters'],
+        detail.migration_inputs(phys,semantic,provenance),prerequisite=prerequisite)
+    physical.compare_profile(expected,detail.normalize_observations(observation))
+    raw=batch.historical;identity=c.parse(batch.binding_json);schema_rows={r['name']:r for r in raw['schemas']}
+    extension=[r for r in raw['extension'] if r['name']=='btree_gist'];h.require(len(extension)==1)
+    extension={k:v for k,v in extension[0].items() if k!='name'}
+    extension['members_sha256']=digest(rows('extension_members',[r for r in raw['extension_members'] if r['extension']=='btree_gist']))
+    extension['acl_sha256']=digest(rows('extension_acl',[r for r in raw['extension_acl'] if r['extension']=='btree_gist']))
+    h.require(extension==p['btree_gist'],'Detailed legacy digest binding')
+    return {**{k:identity[k] for k in ('database','system_identifier','current_user','session_user')},
+        **raw['privileges'][0],'extension_install_power':False,'memberships':[],
+        'schemas':{n:{'owner':schema_rows[n]['owner'],'owner_login':schema_rows[n]['owner_login']} for n in p['schema_owners']},
+        'extension':extension,'residual_objects':[],
+        'schema_create':sorted(r['name'] for r in raw['schemas'] if r['can_create']),
+        'schema_usage':sorted(r['name'] for r in raw['schemas'] if r['name'] in {'inventory','audit','security','public'} and r['can_use']),
+        'prior_application_confirmed':False,'source_inventory_sha256':p['source_inventory_sha256']}

@@ -187,7 +187,15 @@ class LayerTests(unittest.TestCase):
                 # retroactively approved by rewriting old hashes.
                 self.assertNotEqual(actual,expected)
             else:self.assertEqual(actual,expected)
+        # These two pins were already stale at HEAD before this increment,
+        # following the recorded query/logging fixes. Preserve and assert that
+        # incompatibility explicitly; never rewrite historical hashes to pass.
+        stale={"backend/migrations/dev09b_inspection_queries.py","backend/migrations/dev09b_inspection.py"}
         for path,expected in p.PREPARED_SOURCES.items():
+            actual=sha256((root/path).read_bytes()).hexdigest()
+            if path in stale:self.assertNotEqual(actual,expected)
+            else:self.assertEqual(actual,expected)
+        for path,expected in p.DETAILED_SOURCES.items():
             self.assertEqual(sha256((root/path).read_bytes()).hexdigest(),expected)
         for profile in p.PROFILES:
             cat=catalog(profile);l.catalog(cat);p.validate_inventory_projection(cat)

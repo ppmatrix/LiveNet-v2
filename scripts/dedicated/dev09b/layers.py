@@ -1,10 +1,11 @@
-"""Closed outer layer schemas and fixed expectation snapshots, offline only.
+"""Closed signed layers and fixed snapshots; no operational permission.
 
-Structural hashes are not approved expectations. Full catalog support remains
-Unsupported. No opaque detailed-catalog payload or observation-derived policy.
+Structural hashes are not approved expectations. Legacy projections remain
+Unsupported; application v2 validates detailed source-derived phase catalogs.
 """
 from dataclasses import dataclass
 from hashlib import sha256
+from functools import lru_cache
 
 from . import codec as c
 from .profiles import validate_profile_reference, validate_inventory_projection, require_complete_profile
@@ -51,7 +52,7 @@ def sources(values):
 
 def document_hash(obj):
     """Reference to a closed document: SHA256 of its DEV09B canonical bytes."""
-    return sha256(c.canonical(obj)).hexdigest()
+    return sha256(c.canonical(obj,maximum_depth=32)).hexdigest()
 
 
 def revision_state(s, chain):
@@ -111,11 +112,19 @@ def catalog(cat):
     ordered_set(cat["schemas"], lambda x: x, name)
     ordered_set(cat["relations"], lambda r: (r["schema"], r["name"]), relation)
     c.require(all(r["schema"] in cat["schemas"] for r in cat["relations"]))
-    c.closed(cat["detailed_catalog"], {"profile"})
+    from .profiles import DETAILED_PROFILE
+    if cat["profile"] != DETAILED_PROFILE:c.closed(cat["detailed_catalog"], {"profile"})
     validate_profile_reference(cat)
 
 
 def validate_physical(p):
+    if type(p) is dict and type(p.get("schema_version")) is int and p["schema_version"] == 2:
+        from .detailed_catalog import FIELDS, PHASES
+        from .migration_catalog import exact
+        exact(p,FIELDS,"detailed_physical")
+        for field in ("target_binding_sha256","privilege_plan_sha256","exclusivity_plan_sha256"):c.digest_text(p[field])
+        for key in PHASES:catalog(p[key])
+        return
     c.closed(p, {"schema_version", "target_binding_sha256", "before", "after", "privilege_plan_sha256", "exclusivity_plan_sha256"})
     c.integer(p["schema_version"], 1, 1)
     for key in ("target_binding_sha256", "privilege_plan_sha256", "exclusivity_plan_sha256"):
@@ -172,7 +181,11 @@ def freeze_expectations(payload, target, executor, plan, semantic, physical, pro
     prepared_profiles=(("dev09b-prepared-base-v1","dev09b-prepared-f066-v1")
                        if semantic["operation"].startswith("application-") else
                        ("dev09b-prepared-f066-v1","dev09b-prepared-b12-v1"))
-    c.require(tuple(physical[k]["profile"] for k in ("before", "after")) in {wanted_profiles,prepared_profiles})
+    if physical["schema_version"] == 2:
+        from .detailed_catalog import OPERATION, PHASES, PROFILE
+        c.require(payload["operation"] == OPERATION)
+        c.require(all(physical[key]["profile"]==PROFILE for key in PHASES))
+    else:c.require(tuple(physical[k]["profile"] for k in ("before", "after")) in {wanted_profiles,prepared_profiles})
     for phase in ("before", "after"):
         c.require(plan["expected_"+phase+"_sha256"] == expected_hash(semantic, physical, phase))
     c.require(plan["migration_sources_sha256"] == document_hash(semantic["installation_chain"]))
@@ -180,20 +193,49 @@ def freeze_expectations(payload, target, executor, plan, semantic, physical, pro
     inventory = {s["path"]: s["sha256"] for s in provenance["source_inventory"]}
     for migration in semantic["installation_chain"]:
         c.require(inventory.get(migration["source_path"]) == migration["source_sha256"])
-    for phase in ("before", "after"):
+    catalog_keys=("before","entry","precommit","after","closed") if physical["schema_version"]==2 else ("before","after")
+    for phase in catalog_keys:
         for s in physical[phase]["validator_inventory"]:
             c.require(inventory.get(s["path"]) == s["sha256"])
     global_doc = {"schema_version": 1, **{k+"_sha256": c.digest(k, obj) for k, obj in
                   (("semantic", semantic), ("physical", physical), ("provenance", provenance))}}
     c.require(c.digest("global", global_doc) == payload["global_digest_sha256"])
-    return ExpectationSnapshot(*(c.canonical(x) for x in (payload,target,executor,plan,semantic,physical,provenance)))
+    return ExpectationSnapshot(*(c.canonical(x,maximum_depth=32 if key=="physical" and physical["schema_version"]==2 else 8)
+        for key,x in zip(("payload","target","executor","plan","semantic","physical","provenance"),
+                         (payload,target,executor,plan,semantic,physical,provenance))))
 
 
 def validate_complete_layers(snapshot):
     c.require(type(snapshot) is ExpectationSnapshot)
+    c.require(all(type(getattr(snapshot,k)) is bytes for k in ExpectationSnapshot.__dataclass_fields__))
+    return _validate_complete_layers(snapshot)
+
+
+@lru_cache(maxsize=8)
+def _validate_complete_layers(snapshot):
+    # Pure immutable-input cache only. Signature/trust/time/revocation/continuity
+    # and live observations are NEVER cached or authorized here.
     # Revalidate hashes even if someone constructs a snapshot directly.
-    freeze_expectations(*(c.parse(getattr(snapshot,k)) for k in
-                          ("payload","target","executor","plan","semantic","physical","provenance")))
-    physical = c.parse(snapshot.physical)
-    for phase in ("before", "after"):
-        require_complete_profile(physical[phase]["profile"])
+    parts=read_snapshot(snapshot)
+    freeze_expectations(*parts)
+    physical=parts[5]
+    if physical['schema_version']==2:
+        require_complete_profile(physical['before']['profile'],snapshot=snapshot)
+    else:
+        for phase in ("before", "after"):
+            require_complete_profile(physical[phase]["profile"],snapshot=snapshot)
+
+
+def read_snapshot(snapshot):
+    c.require(type(snapshot) is ExpectationSnapshot)
+    # Larger/deeper physical documents are explicitly versioned; old contracts
+    # retain their parser defaults. Signature payload/envelope limits unchanged.
+    parts=[]
+    for key in ("payload","target","executor","plan","semantic","physical","provenance"):
+        raw=getattr(snapshot,key)
+        if key=="physical":
+            value=c.parse(raw,maximum=16*1024*1024,maximum_depth=32)
+            if type(value) is not dict or value.get("schema_version")!=2:value=c.parse(raw)
+        else:value=c.parse(raw)
+        parts.append(value)
+    return tuple(parts)

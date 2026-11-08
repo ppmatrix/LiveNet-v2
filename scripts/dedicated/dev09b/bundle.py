@@ -109,3 +109,40 @@ def inspect_crypto_dependencies(root, **explicit_ports):
     Never installs artifacts or enables a runner.
     """
     return crypto.inspect(root, **explicit_ports)
+
+
+def build_application_candidate(root):
+    """New source candidate, never rewrite/approve the historical prepared one.
+
+    The image scripts are source declarations, not a complete target profile or
+    observed catalog. Unresolved target parameters and conversion maps are kept
+    explicit alongside the cryptographic dependency's independent limitations.
+    """
+    from . import fixed_catalog_sources as fixed
+    from .migration_catalog import load_repository_sources
+    root=Path(root);base=build_candidate(root)
+    facts=fixed.source_declarations(root,load_repository_sources(root)[:-1])
+    extra={'scripts/dedicated/dev09b/artifacts/pg16-source/sources.candidate.json',*(r['path'] for r in facts['postgres_sources']['sources']),'scripts/postgres/dev09b_own_settings.proposed.sql',fixed.MANIFEST,str(Path(fixed.MANIFEST).parent/'LICENSE.PostgreSQL'),
+        'scripts/postgres/dev09b_application_transport.py',
+        'scripts/postgres/dev09b_detailed_querytrial.py','scripts/postgres/dev09b_querytrial_launcher.py',
+        'scripts/postgres/dev09b_query_trial.py',
+        'scripts/postgres/dev09b_detailed_querytrial_inputs.proposed.json',
+        'scripts/postgres/dev09b_detailed_querytrial_helper_inputs.proposed.json',
+        *(r['path'] for r in facts['sources'])}
+    paths={r['path'] for r in base['sources']}|extra
+    base.update(profile='dev09b-application-f066-catalog-v2',
+        sources=[dict(path=p,sha256=sha256(read(root,p)).hexdigest()) for p in sorted(paths)],
+        source_declarations=facts,
+        physical_profile_state='INCOMPLETE_TARGET_DECLARATIONS',
+        missing_target_declarations=['target/executor bindings and role identities',
+            'application checkpoint deparse and fixed catalog property maps; DEV-BASE querytrial technical context completed',
+            'source-bound resolver declarations for row/array/TOAST objects',
+            'trusted execution-session inspection contracts; own-session helper verified only for querytrial probe'])
+    return base
+
+
+def verify_application_candidate(root,candidate):
+    expected=build_application_candidate(root)
+    c.require(c.canonical(candidate,maximum_depth=32)==c.canonical(expected,maximum_depth=32))
+    return CandidateIntegrity(sha256(c.canonical(candidate,maximum_depth=32)).hexdigest(),len(expected['sources']),
+        tuple(expected['missing_parameters'])+tuple(expected['missing_target_declarations']))

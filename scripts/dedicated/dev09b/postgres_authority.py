@@ -177,6 +177,10 @@ class PostgresConsumptionService:
             ('payload', 'target', 'executor', 'plan', 'semantic', 'physical', 'provenance')))
         c.require(snap.payload == signature.payload_json)
         c.validate_layers(snap)  # Unsupported schemas/profiles never become opaque hashes.
+        from .layers import read_snapshot
+        if read_snapshot(snap)[5].get('schema_version')==2:
+            from .detailed_catalog import validate_profile_binding
+            validate_profile_binding(snap,profile_json)
         c.require(self.trust.validate_artifacts(snap, profile_json) is None)
         t, e, plan = (c.parse(getattr(snap, k)) for k in ('target', 'executor', 'plan'))
         c.inspect_bindings(p, t, e, plan)

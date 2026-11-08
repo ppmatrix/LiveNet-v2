@@ -75,8 +75,8 @@ def closed(obj, fields):
     require(type(obj) is dict and set(obj) == fields)
 
 
-def _tree(v, depth=0):
-    require(depth <= 8)
+def _tree(v, depth=0, maximum_depth=8):
+    require(depth <= maximum_depth)
     if type(v) is str:
         try:
             v.encode("utf-8", errors="strict")
@@ -88,23 +88,23 @@ def _tree(v, depth=0):
         pass
     elif type(v) is list:
         for x in v:
-            _tree(x, depth + 1)
+            _tree(x, depth + 1, maximum_depth)
     elif type(v) is dict:
         for k, x in v.items():
             require(type(k) is str)
-            _tree(k, depth + 1)
-            _tree(x, depth + 1)
+            _tree(k, depth + 1, maximum_depth)
+            _tree(x, depth + 1, maximum_depth)
     else:
         raise Invalid("Unsupported JSON type")
 
 
-def canonical(obj):
+def canonical(obj, *, maximum_depth=8):
     """JCS for the explicitly supported no-floats, safe-integer domain.
 
     UTF-16 code-unit property ordering is essential; Python sort_keys is NOT JCS.
     No Unicode normalization is performed.
     """
-    _tree(obj)
+    _tree(obj, maximum_depth=maximum_depth)
 
     def encode(v):
         if type(v) is dict:
@@ -117,7 +117,7 @@ def canonical(obj):
     return encode(obj).encode("utf-8")
 
 
-def parse(raw, maximum=32768):
+def parse(raw, maximum=32768, *, maximum_depth=8):
     require(type(raw) is bytes and len(raw) <= maximum)
 
     def pairs(items):
@@ -133,7 +133,7 @@ def parse(raw, maximum=32768):
     try:
         obj = json.loads(raw.decode("utf-8", errors="strict"), object_pairs_hook=pairs,
                          parse_float=reject, parse_constant=reject)
-        _tree(obj)
+        _tree(obj, maximum_depth=maximum_depth)
         return obj
     except (UnicodeError, ValueError, RecursionError):
         raise Invalid("Invalid DEV09B-1 JSON") from None
@@ -225,7 +225,7 @@ def digest(kind, obj):
         validators[kind](obj)
     else:
         raise Unsupported("Unsupported digest type")
-    return sha256(b"LiveNet/DEV09B-1/" + kind.encode("ascii") + b"\x00" + canonical(obj)).hexdigest()
+    return sha256(b"LiveNet/DEV09B-1/" + kind.encode("ascii") + b"\x00" + canonical(obj, maximum_depth=32 if kind == "physical" and obj.get("schema_version") == 2 else 8)).hexdigest()
 
 
 def signed_bytes(payload):

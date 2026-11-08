@@ -108,9 +108,9 @@ _sql['rules'] = query('n.nspname AS schema,c.relname AS relation,r.rulename AS n
 # Expanded grants, including PUBLIC and grant options; ownership kept separate.
 parts = []
 for family, source, key, owner, acl, kind in (
- ('relation', 'pg_catalog.pg_class o', 'o.relname', 'o.relowner', 'o.relacl', "CASE WHEN o.relkind='S' THEN 's'::\"char\" ELSE 'r'::\"char\" END"),
- ('routine', 'pg_catalog.pg_proc o', 'o.proname || pg_get_function_identity_arguments(o.oid)', 'o.proowner', 'o.proacl', "'f'"),
- ('type', 'pg_catalog.pg_type o', 'o.typname', 'o.typowner', 'o.typacl', "'T'")):
+ ('relation', 'pg_catalog.pg_class o', 'o.relname::text', 'o.relowner', 'o.relacl', "CASE WHEN o.relkind='S' THEN 's'::\"char\" ELSE 'r'::\"char\" END"),
+ ('routine', 'pg_catalog.pg_proc o', 'o.proname::text || pg_get_function_identity_arguments(o.oid)', 'o.proowner', 'o.proacl', "'f'"),
+ ('type', 'pg_catalog.pg_type o', 'o.typname::text', 'o.typowner', 'o.typacl', "'T'")):
  ns = {'relation':'relnamespace','routine':'pronamespace','type':'typnamespace'}[family]
  parts.append(f"SELECT '{family}' AS family,n.nspname AS schema,{key} AS name,pg_get_userbyid(x.grantor) AS grantor,CASE WHEN x.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(x.grantee) END AS grantee,x.privilege_type AS privilege,x.is_grantable AS grant_option FROM {source} JOIN pg_catalog.pg_namespace n ON n.oid=o.{ns} CROSS JOIN LATERAL pg_catalog.aclexplode(COALESCE({acl},pg_catalog.acldefault({kind},{owner}))) x WHERE {SCOPE}")
 _sql['object_acl'] = Query(' UNION ALL '.join(parts), tuple('family schema name grantor grantee privilege grant_option'.split()))
@@ -137,12 +137,14 @@ _sql['sequences'] = query('n.nspname AS schema,c.relname AS name,s.seqstart::tex
  'schema name start increment maximum minimum cache cycle', 'FROM pg_catalog.pg_sequence s JOIN pg_catalog.pg_class c ON c.oid=s.seqrelid JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE ' + SCOPE)
 _sql['inheritance'] = query('i.inhrelid::regclass::text AS child,i.inhparent::regclass::text AS parent,i.inhseqno AS position',
  'child parent position', 'FROM pg_catalog.pg_inherits i JOIN pg_catalog.pg_class c ON c.oid=i.inhrelid JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE ' + SCOPE)
-_sql['extension_properties'] = query("""e.extname AS extension,i.identity AS identity,d.classid::regclass::text AS catalog,
+_sql['extension_properties'] = query("""e.extname AS extension,i.identity AS identity,'pg_catalog.'||catalog.relname AS catalog,
  CASE d.classid WHEN 'pg_catalog.pg_operator'::regclass THEN (SELECT to_jsonb(o)-'oid' FROM pg_catalog.pg_operator o WHERE o.oid=d.objid)
  WHEN 'pg_catalog.pg_opclass'::regclass THEN (SELECT to_jsonb(o)-'oid' FROM pg_catalog.pg_opclass o WHERE o.oid=d.objid)
  WHEN 'pg_catalog.pg_opfamily'::regclass THEN (SELECT to_jsonb(o)-'oid' FROM pg_catalog.pg_opfamily o WHERE o.oid=d.objid)
+ WHEN 'pg_catalog.pg_type'::regclass THEN (SELECT to_jsonb(o)-'oid' FROM pg_catalog.pg_type o WHERE o.oid=d.objid)
  ELSE NULL END AS properties""", 'extension identity catalog properties',
  """FROM pg_catalog.pg_depend d JOIN pg_catalog.pg_extension e ON e.oid=d.refobjid
+ JOIN pg_catalog.pg_class catalog ON catalog.oid=d.classid AND catalog.relnamespace='pg_catalog'::pg_catalog.regnamespace
  CROSS JOIN LATERAL pg_catalog.pg_identify_object(d.classid,d.objid,d.objsubid) i
  WHERE d.refclassid='pg_catalog.pg_extension'::regclass AND d.deptype='e'""")
 _sql['operator_members'] = query("""n.nspname AS schema,f.opfname AS family,'operator' AS kind,to_jsonb(m)-'oid' AS properties""",
@@ -174,6 +176,32 @@ _sql['ranges'] = query('n.nspname AS schema,t.typname AS name,to_jsonb(r) AS pro
 _sql['default_acl_objects'] = query('pg_get_userbyid(a.defaclrole) AS owner,n.nspname AS schema,a.defaclobjtype::text AS kind,cardinality(a.defaclacl) AS entries',
  'owner schema kind entries', 'FROM pg_catalog.pg_default_acl a LEFT JOIN pg_catalog.pg_namespace n ON n.oid=a.defaclnamespace')
 
+# PostgreSQL to_jsonb(oid) produces a JSON string, unlike int4/int8. Keep
+# strict downstream integer types: cast the selected catalog OIDs in SQL,
+# rather than accepting/coercing arbitrary strings in the validator.
+_oid_columns = {
+ 'pg_type': 'typnamespace typowner typrelid typelem typarray typbasetype typcollation',
+ 'pg_operator': 'oprnamespace oprowner oprleft oprright oprresult oprcom oprnegate',
+ 'pg_opclass': 'opcmethod opcnamespace opcowner opcfamily opcintype opckeytype',
+ 'pg_opfamily': 'opfmethod opfnamespace opfowner',
+ 'pg_amop': 'amopfamily amoplefttype amoprighttype amopopr amopmethod amopsortfamily',
+ 'pg_amproc': 'amprocfamily amproclefttype amprocrighttype',
+}
+def _numeric_oid_json(alias, catalog):
+    fields=','.join("'"+key+"',"+alias+'.'+key+'::bigint' for key in _oid_columns[catalog].split())
+    return "(to_jsonb("+alias+")-'oid') || pg_catalog.jsonb_build_object("+fields+")"
+
+for _catalog in ('pg_type','pg_operator','pg_opclass','pg_opfamily'):
+    _q=_sql['extension_properties']
+    _old="to_jsonb(o)-'oid' FROM pg_catalog."+_catalog
+    _new=_numeric_oid_json('o',_catalog)+' FROM pg_catalog.'+_catalog
+    _sql['extension_properties']=Query(_q.sql.replace(_old,_new),_q.fields,_q.maximum)
+_q=_sql['type_details']
+_sql['type_details']=Query(_q.sql.replace("to_jsonb(t)-'oid'",_numeric_oid_json('t','pg_type')),_q.fields,_q.maximum)
+_q=_sql['operator_members']
+_sql['operator_members']=Query(_q.sql.replace("to_jsonb(m)-'oid' AS properties FROM pg_catalog.pg_amop",_numeric_oid_json('m','pg_amop')+' AS properties FROM pg_catalog.pg_amop')
+    .replace("to_jsonb(m)-'oid' AS properties FROM pg_catalog.pg_amproc",_numeric_oid_json('m','pg_amproc')+' AS properties FROM pg_catalog.pg_amproc'),_q.fields,_q.maximum)
+
 # Qualify builtins regardless of supplied search_path. No SET or implicit state changes.
 import re as _re
 _functions = ('host','current_database','pg_backend_pid','inet_server_addr','inet_server_port','current_setting',
@@ -185,6 +213,7 @@ for _key, _q in tuple(_sql.items()):
     for _fn in _functions:
         _text = _re.sub(r'(?<![\w.])'+_fn+r'\(', 'pg_catalog.'+_fn+'(', _text)
     _text = _text.replace('::regclass','::pg_catalog.regclass').replace('::text','::pg_catalog.text').replace('::integer','::pg_catalog.int4').replace('::\"char\"','::pg_catalog.\"char\"')
+    _text = _text.replace('::bigint','::pg_catalog.int8')
     _text = _text.replace("-'oid'", " OPERATOR(pg_catalog.-) 'oid'")
     _sql[_key] = Query(_text, _q.fields, _q.maximum)
 QUERIES = MappingProxyType(_sql)

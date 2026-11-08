@@ -113,3 +113,39 @@ class ApplicationTransport:
             active=False
         # None means command returned inside the borrowed transaction. It is NOT
         # commit success, independent confirmation, approval or a retry token.
+
+
+def apply_authorized_application(*, connection, transaction, snapshot, session,
+                                 authority, supervision, profile_json,
+                                 profile_verifier, prerequisite_contracts,
+                                 source_root):
+    """Composition for an explicitly supplied, originally authorized attempt.
+
+    No connection/factory discovery, synthetic receipt, commit or reconciliation.
+    The caller owns containment of setup failures and the borrowed connection.
+    On return the real AdmissionController owns the guarded uncommitted result;
+    its commit_once() and independent reconciliation remain explicit next calls.
+    """
+    from scripts.dedicated.dev09b import codec as c
+    from scripts.dedicated.dev09b.admission import AdmissionController
+    from scripts.dedicated.dev09b.postgres_authority import AuthenticatedAuthorityClient
+    from migrations.dev09b_inspection import PreparedInspectionPort
+    c.require(type(authority) is AuthenticatedAuthorityClient)
+    c.validate_layers(snapshot)
+    h.require(authority.payload==snapshot.payload and authority.session==session
+              and authority.profile_json==profile_json,'Authority/snapshot binding')
+    c.require(profile_verifier is not None and supervision is not None)
+    port=PreparedInspectionPort(connection,transaction,profile_verifier=profile_verifier,
+        source_root=source_root,detailed_snapshot=snapshot,detailed_session=session,
+        prerequisite_contracts=prerequisite_contracts)
+    context=h.PreparedContext(profile_json,port)
+    controller=AdmissionController(authority=authority,session=session,connection=connection,
+        transaction=transaction,supervision=supervision,plan=snapshot.plan)
+    transport=ApplicationTransport(connection,transaction,context)
+    try:
+        transport.apply_once(controller)
+        h.require(port._cursor==5,'Incomplete prepared prerequisite sequence')
+    except BaseException:
+        if connection.closed is not True:controller.contain()
+        raise
+    return controller

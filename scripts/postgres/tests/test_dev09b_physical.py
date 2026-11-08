@@ -65,14 +65,19 @@ class PhysicalTests(unittest.TestCase):
         _,self.target,*_=fixture()
         self.parameters=params(self.target,self.extracted)
 
-    def compile(self,phase):return p.compile_profile(phase,self.target,self.parameters,self.sources)
+    def compile(self,phase):
+        if phase=="APP-ENTRY":
+            parameters=deepcopy(self.parameters);parameters["schema_version"]=2
+            parameters["distribution"]["locale_provider"]="libc"
+            return p.compile_profile(phase,self.target,parameters,self.sources[:-1])
+        return p.compile_profile(phase,self.target,self.parameters,self.sources)
 
     def decode(self,expected):return c.parse(expected.json,maximum=len(expected.json))
 
     def test_seven_prepared_profiles_without_database_create(self):
         phases={"DEV-BASE","APP-F066-PRECOMMIT","APP-F066-PERSISTED","APP-F066-CLOSED",
                 "SEC-B12-PRECOMMIT","SEC-B12-PERSISTED","SEC-B12-CLOSED"}
-        self.assertEqual(set(p.PHASES),phases)
+        self.assertEqual(set(p.PHASES),phases|{"APP-ENTRY"})
         for phase in sorted(phases):
             exp=self.compile(phase);obs=self.decode(exp)
             self.assertEqual(p.compare_normalized(exp,obs).phase,phase)

@@ -125,7 +125,14 @@ class PreparedTests(unittest.TestCase):
     def test_revised_physical_profiles_no_schema_handoff_or_database_create(self):
         _,target,*_=fixture();src=m.load_repository_sources(ROOT);ex=m.extract_sources(src);parameters=params(target,ex)
         for phase in p.PHASES:
-            expected=p.compile_profile(phase,target,parameters,src)
+            if phase=='APP-ENTRY':
+                # Detailed entry is v2 only. Preserve the explicit historical
+                # incompatibility AND test the new entry, not a blanket skip.
+                with self.assertRaises(c.Unsupported):p.compile_profile(phase,target,parameters,src)
+                detailed=deepcopy(parameters);detailed['schema_version']=2
+                detailed['distribution']['locale_provider']='libc'
+                expected=p.compile_profile(phase,target,detailed,src[:-1])
+            else:expected=p.compile_profile(phase,target,parameters,src)
             snapshot=c.parse(expected.json,maximum=len(expected.json))
             p.compare_profile(expected,snapshot)
             self.assertFalse(any(a["privilege"]=="CREATE" for a in snapshot["database_acl"]))

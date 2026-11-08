@@ -1,4 +1,4 @@
-"""Seven offline phase profiles, source-derived LiveNet catalog and minimal ACL.
+"""Versioned offline phase profiles, source-derived catalog and minimal ACL.
 
 No SQL, collectors, authority or operational permission. Inputs are normalized
 declarations, NOT arbitrary pg_get_* SQL strings. Missing distribution/resolver
@@ -14,6 +14,7 @@ from .migration_catalog import MissingParameter, exact, extract_sources, object_
 
 PHASES = MappingProxyType({
     "DEV-BASE": (False,False,False),
+    "APP-ENTRY": (False,False,False),
     "APP-F066-PRECOMMIT": (True,False,False),
     "APP-F066-PERSISTED": (True,False,False),
     "APP-F066-CLOSED": (True,False,True),
@@ -22,7 +23,7 @@ PHASES = MappingProxyType({
     "SEC-B12-CLOSED": (True,True,True),
 })
 ROLE_KEYS=frozenset("database_owner inventory_owner audit_owner security_owner application_ledger_owner security_ledger_owner admin recovery migrator inspector runtime".split())
-FAMILIES=frozenset("schema table column constraint index routine trigger composite_type array_type toast sequence view materialized_view foreign_table policy rule partition extension operator opclass opfamily cast collation language role".split())
+FAMILIES=frozenset("schema table column constraint index routine trigger composite_type array_type base_type toast sequence view materialized_view foreign_table policy rule partition extension operator opclass opfamily cast collation language role".split())
 PARAMS=frozenset("schema_version target_binding_sha256 distribution roles administrative_roles btree_gist system_objects system_ownership system_acls system_memberships system_default_acl resolver_objects".split())
 
 
@@ -107,7 +108,7 @@ def sort_objects(values):
 
 
 def validate_parameters(p,target):
-    exact(p,PARAMS,"target_profile");c.integer(p["schema_version"],1,1)
+    exact(p,PARAMS,"target_profile");c.integer(p["schema_version"],1,2)
     c.validate_target(target)
     c.require(p["target_binding_sha256"]==c.digest("target",target))
     r=p["roles"];exact(r,ROLE_KEYS,"target_profile.roles")
@@ -119,7 +120,12 @@ def validate_parameters(p,target):
     c.require({x.get("name") for x in p["administrative_roles"]}=={r["admin"],r["recovery"]})
     for role in p["administrative_roles"]:validate_role(role)
     d=p["distribution"]
-    exact(d,{"image_sha256","server_version_num","template_name","template_sources","alembic_sources","sqlalchemy_sources","encoding","collation","ctype","settings"},"target_profile.distribution")
+    distribution_fields={"image_sha256","server_version_num","template_name","template_sources","alembic_sources","sqlalchemy_sources","encoding","collation","ctype","settings"}
+    if p["schema_version"] == 2:distribution_fields.add("locale_provider")
+    exact(d,distribution_fields,"target_profile.distribution")
+    if p["schema_version"] == 2:
+        if not d["locale_provider"]:raise MissingParameter("target_profile.distribution.locale_provider")
+        if d["locale_provider"] != "libc":raise c.Unsupported("Detailed application profile supports libc only")
     c.digest_text(d["image_sha256"]);c.require(d["image_sha256"]==target["image_sha256"])
     c.integer(d["server_version_num"],160000,169999)
     for k in ("template_name","encoding","collation","ctype"):
@@ -182,15 +188,28 @@ def role_for(o,phase,r):
     return r[schema+"_owner"] if closed or sec else r["migrator"]
 
 
-def compile_profile(phase,target,parameters,migrations):
+def compile_profile(phase,target,parameters,migrations,*,prerequisite=None):
     if type(phase) is not str or phase not in PHASES:raise c.Unsupported("Unknown physical phase profile")
     validate_parameters(parameters,target)
-    m=extract_sources(migrations)
+    if phase=="APP-ENTRY" and parameters["schema_version"]!=2:
+        raise c.Unsupported("APP-ENTRY requires versioned detailed parameters")
+    if parameters["schema_version"]==2 and PHASES[phase][1]:
+        raise c.Unsupported("Detailed v2 security profiles are not implemented")
+    m=extract_sources(migrations,application_only=parameters["schema_version"]==2)
     app,sec,closed=PHASES[phase];r=parameters["roles"]
     managed=[object_record("schema",[s],{}) for s in ("inventory","audit","security")]
     owner_overrides={}
     if app:managed+=m["application"]+ledger("alembic_version")
     if sec:managed+=m["security"]+ledger("alembic_security_version")
+    if prerequisite is not None:
+        c.require(phase=='APP-ENTRY' and parameters['schema_version']==2)
+        c.integer(prerequisite,0,4)
+        prior=(None,None,'da34876e4210','7c4e2a91b605','f065d01a7230')[prerequisite]
+        if prerequisite:managed+=ledger('alembic_version')
+        if prior is not None:managed+=m['application_progress'][prior]
+    if (app or prerequisite is not None) and parameters['schema_version']==2:
+        from .migration_catalog import foreign_key_triggers
+        managed+=foreign_key_triggers(managed)
     for table in [".".join(x["identity"]) for x in managed if x["family"]=="table"]:
         if table not in parameters["resolver_objects"]:raise MissingParameter("target_profile.resolver_objects."+table)
         implicit=parameters["resolver_objects"][table]
@@ -212,7 +231,7 @@ def compile_profile(phase,target,parameters,migrations):
         # No runtime grants, no broad default privileges. Inherited owner rights
         # are represented by ownership, not confused with an empty ACL.
         acls.append({"family":o["family"],"identity":o["identity"],"grants":values})
-    window=app and not closed
+    window=(app or phase=="APP-ENTRY") and not closed
     db_acl=[grant(r[k],"CONNECT") for k in ("admin","recovery","inspector","migrator")]
     public_acl=[grant("PUBLIC","USAGE")]
     if window:
@@ -249,7 +268,7 @@ def compile_profile(phase,target,parameters,migrations):
     # Administrative recovery powers are outside migrator/runtime identities.
     # Their exact trusted mechanism must be separately fixed, never silently
     # inferred from these NOSUPERUSER role records.
-    result=dict(schema_version=1,profile="dev09b-prepared-"+phase.lower()+"-v1",phase=phase,target_binding_sha256=c.digest("target",target),
+    result=dict(schema_version=parameters["schema_version"],profile="dev09b-prepared-"+phase.lower()+"-v"+str(parameters["schema_version"]),phase=phase,target_binding_sha256=c.digest("target",target),
                 parameters_sha256=document_hash(parameters),sources=m["sources"],distribution=parameters["distribution"],
                 system_objects=parameters["system_objects"],system_ownership=parameters["system_ownership"],
                 system_acls=system_acls,system_memberships=parameters["system_memberships"],system_default_acl=parameters["system_default_acl"],
@@ -261,8 +280,10 @@ def compile_profile(phase,target,parameters,migrations):
                 control_system_acl=sort_acl(control_acl),
                 ledgers=[{"chain":"application","presence":"PRESENT" if app else "ABSENT","revisions":["f066a01a7230"] if app else []},
                          {"chain":"security","presence":"PRESENT" if sec else "ABSENT","revisions":["b12b01a7230"] if sec else []}])
+    if prerequisite is not None:
+        result['ledgers'][0]=dict(chain='application',presence='PRESENT' if prerequisite else 'ABSENT',revisions=[prior] if prior else [])
     validate_snapshot(result)
-    return PhaseExpectation(phase,c.canonical(result),c.canonical(target),c.canonical(parameters),tuple(migrations))
+    return PhaseExpectation(phase,c.canonical(result),c.canonical(target),c.canonical(parameters),tuple(migrations),prerequisite)
 
 
 @dataclass(frozen=True)
@@ -272,6 +293,7 @@ class PhaseExpectation:
     target_json: bytes
     parameters_json: bytes
     migration_sources: tuple
+    prerequisite: int | None = None
 
 
 @dataclass(frozen=True)
@@ -286,9 +308,9 @@ def validate_snapshot(s):
     c.closed(s,{"schema_version","profile","phase","target_binding_sha256","parameters_sha256","sources","distribution",
                 "system_objects","system_ownership","system_acls","system_memberships","system_default_acl","extensions","managed_objects","ownership","acls","roles","memberships",
                 "database_owner","public_owner","database_acl","public_acl","inspection_column_grants","temporary_rights","control_system_acl","ledgers"})
-    c.integer(s["schema_version"],1,1)
+    c.integer(s["schema_version"],1,2)
     c.require(type(s["phase"]) is str and s["phase"] in PHASES)
-    c.require(s["profile"]=="dev09b-prepared-"+s["phase"].lower()+"-v1")
+    c.require(s["profile"]=="dev09b-prepared-"+s["phase"].lower()+"-v"+str(s["schema_version"]))
     c.digest_text(s["target_binding_sha256"]);c.digest_text(s["parameters_sha256"]);sources(s["sources"])
     objects(s["managed_objects"]);objects(s["system_objects"])
     access_inventory(s["ownership"],s["acls"],s["managed_objects"])
@@ -310,7 +332,7 @@ def compare_normalized(expected,observed):
     c.require(type(expected) is PhaseExpectation)
     # Regenerate from fixed inputs, never repair the expectation from observation.
     regenerated=compile_profile(expected.phase,c.parse(expected.target_json,maximum=len(expected.target_json)),
-                                c.parse(expected.parameters_json,maximum=len(expected.parameters_json)),expected.migration_sources)
+                                c.parse(expected.parameters_json,maximum=len(expected.parameters_json)),expected.migration_sources,prerequisite=expected.prerequisite)
     c.require(expected.json==regenerated.json)
     # Validating before equality prevents bool/int substitution even where a
     # Python dict comparison would accept it. Canonical bytes are authoritative.

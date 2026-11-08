@@ -128,3 +128,10 @@ def test_controller_refusal_never_dispatches(monkeypatch):
         def dispatch_original(self,**kw):raise RuntimeError('authority/continuity unavailable')
     with pytest.raises(RuntimeError):work.apply_once(Refuse())
     assert upgrade.call_count==0 and tx.is_active
+
+
+@pytest.mark.parametrize('data',[True,{},b'approval',OfflineObservation('attempt','consume','nonce')])
+def test_composition_does_not_turn_offline_data_into_admission(data):
+    from scripts.dedicated.dev09b import codec as codec
+    with pytest.raises(codec.Invalid):t.apply_authorized_application(connection=None,transaction=None,snapshot=None,session=None,
+        authority=data,supervision=None,profile_json=b'{}',profile_verifier=None,prerequisite_contracts=None,source_root=None)

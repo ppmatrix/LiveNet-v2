@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "status": "PROPOSED_READ_ONLY_INPUTS",
+  "collector_id": "querytrial-prepared-readonly",
+  "selections": {
+    "role_names": [
+      "dev09b_trial_admin",
+      "dev09b_trial_probe",
+      "dev09b_trial_inventory_owner",
+      "dev09b_trial_audit_owner",
+      "dev09b_trial_security_owner"
+    ],
+    "system_routines": [
+      "pg_catalog.pg_control_system",
+      "pg_catalog.plpgsql_call_handler",
+      "pg_catalog.plpgsql_inline_handler",
+      "pg_catalog.plpgsql_validator",
+      "pg_catalog.RI_FKey_check_ins",
+      "pg_catalog.RI_FKey_check_upd",
+      "pg_catalog.RI_FKey_noaction_del",
+      "pg_catalog.RI_FKey_noaction_upd"
+    ],
+    "language_names": [
+      "plpgsql"
+    ]
+  },
+  "context": null
+}

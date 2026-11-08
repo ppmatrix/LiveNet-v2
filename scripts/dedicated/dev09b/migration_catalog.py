@@ -82,6 +82,40 @@ def object_record(family, identity, definition):
     return {"family":family,"identity":identity,"definition":definition}
 
 
+FK_TRIGGER_FUNCTIONS = {
+    'check_ins': ('RI_FKey_check_ins', 'INSERT', 'child'),
+    'check_upd': ('RI_FKey_check_upd', 'UPDATE', 'child'),
+    'noaction_del': ('RI_FKey_noaction_del', 'DELETE', 'parent'),
+    'noaction_upd': ('RI_FKey_noaction_upd', 'UPDATE', 'parent'),
+}
+
+
+def foreign_key_triggers(records):
+    """PG16 NO ACTION/nondeferrable FK triggers, derived from source constraints.
+
+    The allocated OID suffix of RI_ConstraintTrigger_* is NOT an expectation.
+    Stable identities bind the source FK, side and event; the collector must
+    verify the actual pg_trigger -> pg_constraint -> relations linkage.
+    This covers only the already-supported migration grammar (default MATCH
+    SIMPLE/NO ACTION, no deferrable/action kwargs); not arbitrary future FKs.
+    """
+    result=[]
+    for co in records:
+        if co['family']!='constraint' or co['definition']['kind']!='f':continue
+        d=co['definition'];child=co['identity'][:2]
+        c.require(d['deferrable'] is False and d['initially_deferred'] is False)
+        refs=[value.split('.') for value in d['references']]
+        c.require(bool(refs) and len(refs)==len(d['columns']) and all(len(x)==3 for x in refs))
+        parent=refs[0][:2];c.require(all(x[:2]==parent for x in refs))
+        for suffix,(function,event,side) in FK_TRIGGER_FUNCTIONS.items():
+            relation=child if side=='child' else parent
+            symbol='@fk:'+'.'.join(co['identity'])+':'+suffix
+            c.require(len(symbol)<=128)
+            result.append(object_record('trigger',[*relation,symbol],dict(timing='AFTER',events=[event],row=True,
+                function=['pg_catalog',function,''],enabled='O',internal=True)))
+    return sorted(result,key=lambda x:tuple(x['identity']))
+
+
 def constraint(node, schema, table):
     func,args,kw = call(node)
     kinds = {"sa.PrimaryKeyConstraint":"p","sa.UniqueConstraint":"u","sa.ForeignKeyConstraint":"f",
@@ -165,11 +199,11 @@ def ddl_objects(sql):
     raise c.Unsupported("Unrecognized migration DDL; no partial extraction")
 
 
-def extract_sources(sources):
+def extract_sources(sources, *, application_only=False):
     """sources: ordered (repository-relative path, exact source bytes) pairs."""
-    expected=(*APP_REVISIONS,"b12b01a7230")
+    expected=APP_REVISIONS if application_only else (*APP_REVISIONS,"b12b01a7230")
     c.require(len(sources)==len(expected))
-    objects=[]; inventory=[]; application=None
+    objects=[]; inventory=[]; application=None;progress={}
     previous=None
     for (path,raw),rev in zip(sources,expected):
         c.require(type(raw) is bytes)
@@ -222,9 +256,10 @@ def extract_sources(sources):
                     predicate=sql_expr(kw["postgresql_where"]) if "postgresql_where" in kw else None,constraint=None,valid=True,ready=True)))
             else:raise c.Unsupported("Unsupported migration operation: "+func)
         inventory.append({"path":path,"sha256":sha256(raw).hexdigest()})
+        if rev in APP_REVISIONS:progress[rev]=list(objects)
         if rev=="f066a01a7230":application=list(objects)
         previous=rev
-    return {"application":application,"security":objects[len(application):],"sources":sorted(inventory,key=lambda x:x["path"])}
+    return {"application":application,"security":objects[len(application):],"sources":sorted(inventory,key=lambda x:x["path"]),"application_progress":progress}
 
 
 def load_repository_sources(root):
