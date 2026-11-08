@@ -58,6 +58,17 @@ def test_detail_has_scope_and_id_in_same_query():
     assert " AND " in str(query)
 
 
+def test_update_scope_and_version_mapping():
+    session=Mock(spec=Session)
+    allowed_id,requested_id=uuid4(),uuid4()
+    session.scalar.return_value=None
+    assert service.update_resource(session,Resource.id==allowed_id,requested_id,{},InventoryIdentity(uuid4())) is None
+    query=compiled(session.scalar.call_args.args[0])
+    assert allowed_id in query.params.values() and requested_id in query.params.values()
+    assert Resource.__mapper__.version_id_col is Resource.__table__.c.row_version
+    session.flush.assert_not_called()
+
+
 @pytest.mark.parametrize("scope", [None, True, False, "global"])
 def test_scope_must_be_explicit_sql_predicate(scope):
     session = Mock(spec=Session)

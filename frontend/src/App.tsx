@@ -4,6 +4,7 @@ import { AppLayout } from './layout/AppLayout';
 import { LoginPage } from './pages/LoginPage';
 import { ResourceDetailPage } from './pages/ResourceDetailPage';
 import { ResourcesPage } from './pages/ResourcesPage';
+import { ResourceCreatePage, ResourceEditPage } from './pages/ResourceFormPage';
 
 export function App() {
   return <Routes>
@@ -12,6 +13,8 @@ export function App() {
       <Route element={<AppLayout />}>
         <Route index element={<Navigate to="/inventory" replace />} />
         <Route path="/inventory" element={<ResourcesPage />} />
+        <Route path="/inventory/new" element={<ResourceCreatePage />} />
+        <Route path="/inventory/:resourceId/edit" element={<ResourceEditPage />} />
         <Route path="/inventory/:resourceId" element={<ResourceDetailPage />} />
         <Route path="*" element={<><h1>Página não encontrada</h1><p>Este endereço não está disponível.</p><Link to="/inventory">Voltar ao inventário</Link></>} />
       </Route>

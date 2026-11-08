@@ -7,7 +7,7 @@ from werkzeug.datastructures import MultiDict
 from app.inventory.models import Resource
 from app.inventory.schemas import (
     RESOURCE_TYPES, InventoryValidationError, serialize_resource,
-    validate_creation, validate_query, validate_resource_id,
+    validate_creation, validate_query, validate_resource_id, validate_update,
 )
 
 
@@ -40,7 +40,7 @@ def test_invalid_creation(payload):
     ("attributes", {"ip": "192.0.2.1"}),
     ("id", str(uuid4())), ("created_at", "2026-01-01"),
     ("updated_at", "2026-01-01"), ("row_version", 2),
-    ("administrative_state", "active"), ("archived_at", None),
+    ("administrative_state", "archived"), ("archived_at", None),
     ("scope", "global"), ("actor_id", str(uuid4())),
 ])
 def test_disallowed_fields_and_types(key, value):
@@ -53,6 +53,22 @@ def test_optional_fields_and_boundary():
                               "description": "description", "attributes": {}})
     assert len(data["display_name"]) == 255
     assert data["description"] == "description"
+
+
+@pytest.mark.parametrize('state', ['active', 'maintenance', 'disabled'])
+def test_editable_states_on_create_and_update(state):
+    data = dict(resource_type='service', display_name=' Host ', description=None, administrative_state=state)
+    assert validate_creation(data)['administrative_state'] == state
+    assert validate_update({**data, 'row_version': 1}) == {**data, 'display_name': 'Host', 'row_version': 1}
+
+
+@pytest.mark.parametrize('patch', [dict(row_version=True), dict(row_version=0), dict(row_version='1'),
+    dict(row_version=2147483647), dict(administrative_state='archived'), dict(administrative_state=[]),
+    dict(attributes={}), dict(archived_at=None), dict(id=str(uuid4()))])
+def test_invalid_or_protected_update_fields(patch):
+    with pytest.raises(InventoryValidationError):
+        validate_update(dict(resource_type='service', display_name='Host', description=None,
+                             administrative_state='active', row_version=1) | patch)
 
 
 def test_query_defaults_and_limits():

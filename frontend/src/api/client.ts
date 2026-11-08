@@ -20,6 +20,8 @@ export function errorMessage(error: unknown): string {
   if (error.status === 401) return 'A sessão terminou. Inicie sessão novamente.';
   if (error.status === 403) return 'Não tem permissão para aceder a este conteúdo.';
   if (error.status === 404) return 'Recurso não encontrado ou não acessível.';
+  if (error.code === 'version_conflict') return 'O recurso foi alterado entretanto. Os seus valores foram mantidos. Cancele para consultar a versão atual antes de voltar a editar.';
+  if (error.code === 'resource_archived') return 'Este recurso está arquivado e não pode ser editado.';
   if (error.status === 429) return 'Demasiadas tentativas. Aguarde antes de tentar novamente.';
   if (error.code === 'network_error') return 'Não foi possível contactar o servidor. Verifique a ligação.';
   if (error.code === 'invalid_response') return 'O servidor devolveu uma resposta incompatível.';
@@ -40,7 +42,7 @@ export function apiUrl(path: string, base = import.meta.env.VITE_API_BASE_URL ||
 }
 
 interface RequestOptions {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PATCH';
   body?: unknown;
   csrf?: string;
   signal?: AbortSignal;

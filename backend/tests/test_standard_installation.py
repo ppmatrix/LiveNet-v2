@@ -229,6 +229,7 @@ def test_admin_provision_migrate_and_minimum_runtime_grants(tmp_path):
     assert runner.migrate(config,expected_application='base',expected_security='base')['state']=='CONFIRMED'
     assert grants(config)['state']=='CONFIRMED'
     assert any('UPDATE(updated_at)' in sql for sql in RUNTIME_GRANTS)
+    assert any('UPDATE(resource_type,display_name,description,administrative_state,updated_at,row_version) ON TABLE inventory.resources' in sql for sql in RUNTIME_GRANTS)
     assert not any('ALL TABLES' in sql or 'PASSWORD' in sql or 'UPDATE ON' in sql for sql in RUNTIME_GRANTS)
     assert not any('synthetic_random_database_password' in sql for sql in db.sql)
 

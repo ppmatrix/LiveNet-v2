@@ -7,6 +7,8 @@ GET /resources accepts page (default 1), per_page (default 50, maximum 100),
 resource_type and administrative_state. It returns items/total/page/per_page.
 GET /resources/<id> hides nonexistent and unauthorized rows behind the same 404.
 POST /resources returns the resource and Location after resource + audit commit.
+PATCH /resources/<id> accepts the four editable fields and row_version; a stale
+version returns 409. Archive/unarchive is excluded. Editing requires a SQL scope.
 Input errors use 400/415, missing identity 401, denied permission 403, and internal
 failures a sanitized 500. No mutation retry or idempotent POST is implemented;
 a lost commit response requires reconciliation, not blind client repetition.
@@ -16,6 +18,7 @@ from threading import Lock
 
 from flask import Blueprint, current_app, jsonify, request, url_for
 from sqlalchemy.sql.elements import ColumnElement
+from sqlalchemy.orm.exc import StaleDataError
 from werkzeug.exceptions import HTTPException
 
 from app.core.database import create_database_engine, create_session_factory
@@ -24,11 +27,22 @@ from app.inventory.access import DenyInventoryAccess, InventoryIdentity
 from app.inventory import service
 from app.inventory.schemas import (
     InventoryValidationError, serialize_resource, validate_creation,
-    validate_query, validate_resource_id,
+    validate_query, validate_resource_id, validate_update,
 )
 
 
 inventory_bp = Blueprint("inventory", __name__)
+
+
+@inventory_bp.errorhandler(service.ResourceConflict)
+@inventory_bp.errorhandler(StaleDataError)
+def handle_version_conflict(error):
+    return _error(409, "version_conflict", "O recurso foi alterado. Consulte a versão atual antes de guardar.")
+
+
+@inventory_bp.errorhandler(service.ArchivedResource)
+def handle_archived_resource(error):
+    return _error(409, "resource_archived", "Não é permitida a edição de recursos arquivados.")
 
 
 class InventoryDependencies:
@@ -151,3 +165,24 @@ def create_resource():
     response.status_code = 201
     response.headers["Location"] = url_for("inventory.get_resource", resource_id=payload["id"])
     return response
+
+
+@inventory_bp.patch("/resources/<resource_id>")
+def update_resource(resource_id):
+    dependencies, identity = _caller()
+    scope = dependencies.access.update_scope(identity)
+    if scope is None:
+        raise InventoryHTTPError(403, "forbidden", "Operação não permitida.")
+    if not isinstance(scope, ColumnElement):
+        raise RuntimeError("Invalid edit scope integration")
+    identifier = validate_resource_id(resource_id)
+    if not request.is_json:
+        raise InventoryHTTPError(415, "unsupported_media_type", "É necessário application/json.")
+    data = validate_update(request.get_json())
+    with dependencies.open_session() as session:
+        with session.begin():
+            resource = service.update_resource(session, scope, identifier, data, identity)
+            if resource is None:
+                raise InventoryHTTPError(404, "not_found", "Recurso não encontrado.")
+            payload = serialize_resource(resource)
+    return jsonify(payload)

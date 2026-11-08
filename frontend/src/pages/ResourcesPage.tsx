@@ -6,12 +6,15 @@ import { getResources } from '../api/inventory';
 import { useRemote } from '../api/useRemote';
 import { ErrorNotice, Loading } from '../components/Feedback';
 import { ResourceState } from '../components/ResourceState';
+import { useSession } from '../auth/SessionProvider';
 
 function positive(value: string | null, fallback: number, max: number): number {
   return value && /^[1-9][0-9]{0,9}$/.test(value) && Number(value) <= max ? Number(value) : fallback;
 }
 
 export function ResourcesPage() {
+  const { session } = useSession();
+  const canEdit = session.user?.roles.includes('inventory_editor');
   const [params, setParams] = useSearchParams();
   const page = positive(params.get('page'), 1, 2 ** 31 - 1);
   const perPage = positive(params.get('per_page'), 50, 100);
@@ -32,7 +35,8 @@ export function ResourcesPage() {
   return <>
     <div className="page-heading"><div><p className="eyebrow">RECURSOS</p><h1>Inventário</h1>
       <p className="muted">Consulte os recursos e o seu contexto administrativo.</p></div>
-      {data && <div className="total-count"><strong>{data.total}</strong><span>recursos encontrados</span></div>}
+      <div className="page-actions">{canEdit && <Link className="button" to="/inventory/new">Adicionar recurso</Link>}
+        {data && <div className="total-count"><strong>{data.total}</strong><span>recursos encontrados</span></div>}</div>
     </div>
     <section className="surface" aria-label="Recursos do inventário">
       <div className="filters"><div><label htmlFor="resource-type">Tipo de recurso</label>

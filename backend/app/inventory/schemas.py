@@ -10,6 +10,7 @@ RESOURCE_TYPES = frozenset({
     "storage_device", "iot_device", "service", "cluster",
 })
 ADMINISTRATIVE_STATES = frozenset({"active", "maintenance", "disabled", "archived"})
+EDITABLE_STATES = ADMINISTRATIVE_STATES - {"archived"}
 
 
 class InventoryValidationError(ValueError):
@@ -19,7 +20,7 @@ class InventoryValidationError(ValueError):
 def validate_creation(payload):
     if not isinstance(payload, dict):
         raise InventoryValidationError("O corpo JSON deve ser um objeto.")
-    if set(payload) - {"resource_type", "display_name", "description", "attributes"}:
+    if set(payload) - {"resource_type", "display_name", "description", "attributes", "administrative_state"}:
         raise InventoryValidationError("O corpo contém campos não permitidos.")
     resource_type = payload.get("resource_type")
     if not isinstance(resource_type, str) or resource_type not in RESOURCE_TYPES:
@@ -33,8 +34,27 @@ def validate_creation(payload):
     attributes = payload.get("attributes", {})
     if not isinstance(attributes, dict) or attributes:
         raise InventoryValidationError("attributes apenas admite um objeto vazio nesta fase.")
-    return {"resource_type": resource_type, "display_name": name.strip(),
-            "description": description, "attributes": {}}
+    result = {"resource_type": resource_type, "display_name": name.strip(),
+              "description": description, "attributes": {}}
+    if "administrative_state" in payload:
+        state = payload["administrative_state"]
+        if not isinstance(state, str) or state not in EDITABLE_STATES:
+            raise InventoryValidationError("Estado administrativo inválido; arquivo não permitido.")
+        result["administrative_state"] = state
+    return result
+
+
+def validate_update(payload):
+    if not isinstance(payload, dict) or set(payload) != {
+        "resource_type", "display_name", "description", "administrative_state", "row_version",
+    }:
+        raise InventoryValidationError("Indique os quatro campos editáveis e a versão do registo.")
+    version = payload["row_version"]
+    if type(version) is not int or not 1 <= version < 2147483647:
+        raise InventoryValidationError("Versão do registo inválida.")
+    data = validate_creation({key: value for key, value in payload.items() if key != "row_version"})
+    data.pop("attributes")
+    return {**data, "row_version": version}
 
 
 def validate_query(args):

@@ -10,7 +10,7 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button, a, input, select { -webkit-tap-highlight-color: transparent; }
 a { color: #166052; text-underline-offset: 3px; }
 a:hover { color: #0c493e; }
@@ -28,7 +28,14 @@ h2 { font-size: 1.1rem; line-height: 1.4; font-weight: 650; }
 .button-secondary:hover:not(:disabled) { background: #edf3f0; }
 .button-small { padding: 7px 13px; font-size: .85rem; }
 label { display: block; font-weight: 600; font-size: .8rem; color: #3a5359; margin-bottom: 7px; }
-input, select { border: 1px solid #c6d2d0; border-radius: 6px; background: white; color: #20373d; min-height: 44px; padding: 10px 12px; width: 100%; }
+input, select, textarea { border: 1px solid #c6d2d0; border-radius: 6px; background: white; color: #20373d; min-height: 44px; padding: 10px 12px; width: 100%; }
+.page-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.page-actions a.button { text-decoration: none; }
+.resource-form { max-width: 800px; }
+.resource-form fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
+.resource-form fieldset > div { margin-bottom: 22px; }
+.resource-form textarea { resize: vertical; }
+.field-error { color: #7a4530; margin: 6px 0 0; }
 input:disabled { background: #f3f5f4; }
 .brand { display: flex; gap: 10px; align-items: center; font-size: 1.65rem; color: white; font-weight: 650; letter-spacing: -.05em; }
 .brand-mark { display: grid; place-content: center; height: 34px; width: 34px; border: 1px solid #71a699; border-radius: 9px; background: #244a4e; color: #d3e5bc; font-size: 1.2rem; }

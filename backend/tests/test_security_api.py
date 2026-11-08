@@ -61,6 +61,15 @@ def test_csrf_before_login_does_not_authenticate(api):
     assert client.get(INVENTORY, base_url=ORIGIN).status_code == 401
 
 
+def test_reader_cannot_patch_resource_and_patch_requires_csrf(api):
+    _,client,_,_,_=api
+    assert login(client).status_code==200
+    path=INVENTORY+'/'+str(uuid4())
+    assert client.patch(path,base_url=ORIGIN,json={}).status_code==403
+    response=client.patch(path,base_url=ORIGIN,json={},headers={'Origin':ORIGIN,'X-CSRF-Token':csrf(client)})
+    assert response.status_code==403 and response.json['error']['code']=='forbidden'
+
+
 def test_login_secure_cookie_me_and_logout(api):
     _, client, store, user, _ = api
     response = login(client)

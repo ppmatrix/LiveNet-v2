@@ -1,5 +1,23 @@
 import { invalidResponse, isRecord, request } from './client';
 import type { Resource, ResourcePage } from './contracts';
+import { getCsrf } from './auth';
+
+export interface ResourceInput {
+  display_name: string;
+  resource_type: string;
+  description: string | null;
+  administrative_state: string;
+}
+
+export async function createResource(data: ResourceInput): Promise<Resource> {
+  return parseResource(await request('/inventory/resources', { method: 'POST', body: data, csrf: await getCsrf() }));
+}
+
+export async function updateResource(id: string, data: ResourceInput, version: number): Promise<Resource> {
+  return parseResource(await request('/inventory/resources/' + encodeURIComponent(id), {
+    method: 'PATCH', body: { ...data, row_version: version }, csrf: await getCsrf(),
+  }));
+}
 
 function nullableString(value: unknown): value is string | null {
   return value === null || typeof value === 'string';

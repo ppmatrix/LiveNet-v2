@@ -74,6 +74,11 @@ Grants runtime exatos (`RUNTIME_GRANTS`, sem defaults blanket):
 
 * USAGE em inventory/audit/security;
 * SELECT/INSERT em inventory.resources;
+* UPDATE(resource_type,display_name,description,administrative_state,updated_at,row_version)
+  em inventory.resources para edição com controlo de versão. Incluído em
+  `install`/`grant-runtime` e conferido por `grants_state`; no DEV existente foi
+  aplicado após autorização humana explícita. Não concede UPDATE em id,
+  attributes, created_at ou archived_at;
 * INSERT e SELECT(id,occurred_at) em audit.events;
 * SELECT em security.local_users/global_role_grants;
 * UPDATE(updated_at) em security.local_users, estritamente para permitir o
@@ -233,3 +238,9 @@ Checkpoint humano: o utilizador confirmou login, Inventory, abertura do detalhe
 e regresso ao login após logout. Esta confirmação é validação humana da UI;
 não representa testes automáticos adicionais. Nenhum teste ou operação sobre
 serviços/base foi repetido na preparação deste checkpoint.
+
+Incremento UI Inventory concluído após autorização humana do grant adicional delimitado: UPDATE das seis colunas de resources acima aplicado em DEV e confirmado em ligação independente, mantendo runtime sem DDL/administração e as restantes colunas sem UPDATE. Criação e edição do recurso de teste `3423d894-95d7-449f-b58c-17ad6e077853` validadas por HTTPS/runtime, com persistência na lista/detalhe e versão 2. Versão antiga recusada com 409 sem sobrescrita; Primeira VM DEV preservada. Ações Adicionar recurso/Editar disponíveis para inventory_editor em https://localhost:8443/inventory; sem credenciais de equipamento, arquivo ou eliminação.
+
+Validação humana posterior da edição pela UI: nome alterado para terminar em
+“editado-PP”, apresentado no detalhe com `row_version` 3. Registo baseado na
+confirmação do utilizador, sem testes adicionais ou operações sobre serviços/base.

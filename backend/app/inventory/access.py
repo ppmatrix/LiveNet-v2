@@ -37,6 +37,10 @@ class InventoryAccess(Protocol):
         """Evaluate creation permission against validated proposed data."""
         ...
 
+    def update_scope(self, identity: InventoryIdentity) -> ColumnElement | None:
+        """SQL predicate restricting editable rows; None denies editing."""
+        ...
+
 
 class DenyInventoryAccess:
     def resolve_identity(self):
@@ -47,3 +51,6 @@ class DenyInventoryAccess:
 
     def can_create(self, identity, data):
         return False
+
+    def update_scope(self, identity):
+        return None

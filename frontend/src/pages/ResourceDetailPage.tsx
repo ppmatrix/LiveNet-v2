@@ -6,8 +6,10 @@ import { getResource } from '../api/inventory';
 import { useRemote } from '../api/useRemote';
 import { ErrorNotice, Loading } from '../components/Feedback';
 import { formatDate, ResourceState } from '../components/ResourceState';
+import { useSession } from '../auth/SessionProvider';
 
 export function ResourceDetailPage() {
+  const { session } = useSession();
   const { resourceId = '' } = useParams();
   const load = useCallback((signal: AbortSignal) => getResource(resourceId, signal), [resourceId]);
   const { result, retry } = useRemote(load);
@@ -16,7 +18,9 @@ export function ResourceDetailPage() {
     <Link className="back-link" to="/inventory">← Voltar ao inventário</Link>
     <div className="page-heading"><div><p className="eyebrow">DETALHE DO RECURSO</p><h1>{resource?.display_name || 'Recurso'}</h1>
       <p className="muted">Identidade e informação administrativa.</p></div>
-      {resource && <ResourceState value={resource.administrative_state} />}</div>
+      {resource && <div className="page-actions"><ResourceState value={resource.administrative_state} />
+        {session.user?.roles.includes('inventory_editor') && resource.administrative_state !== 'archived' && !resource.archived_at
+          && <Link className="button" to={'/inventory/' + encodeURIComponent(resource.id) + '/edit'}>Editar</Link>}</div>}</div>
     {result.status === 'loading' && <section className="surface"><Loading label="A carregar o recurso…" /></section>}
     {result.status === 'error' && <ErrorNotice message={errorMessage(result.error)}
       retry={result.error instanceof ApiError && [403, 404].includes(result.error.status) ? undefined : retry} />}
@@ -37,5 +41,6 @@ export function ResourceDetailPage() {
         {Object.keys(resource.attributes).length ? <pre>{JSON.stringify(resource.attributes, null, 2)}</pre>
           : <p className="muted">Sem atributos adicionais.</p>}</section>
     </div>}
+    <p className="context-note">O estado administrativo não indica a disponibilidade operacional do recurso.</p>
   </>;
 }

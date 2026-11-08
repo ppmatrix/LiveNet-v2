@@ -192,7 +192,7 @@ describe('inventário e detalhe', () => {
 
     renderApp();
     await screen.findByText('A carregar os recursos…');
-    expect(oldSignal?.aborted).toBe(false);
+    await waitFor(() => expect(oldSignal?.aborted).toBe(false));
     await userEvent.selectOptions(screen.getByLabelText('Tipo de recurso'), 'service');
     expect(oldSignal?.aborted).toBe(true);
 

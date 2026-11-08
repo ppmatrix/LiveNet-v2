@@ -31,6 +31,7 @@ def api(monkeypatch):
     access.resolve_identity.return_value = InventoryIdentity(uuid4())
     access.read_scope.return_value = true()
     access.can_create.return_value = True
+    access.update_scope.return_value = true()
     session = MagicMock(spec=Session)
     staged, committed = [], []
     session.add.side_effect = staged.append
@@ -152,6 +153,66 @@ def test_creation_and_location(api):
     session.commit.assert_called_once()
     session.rollback.assert_not_called()
     session.close.assert_called_once()
+
+
+UPDATE = {**VALID, 'description': 'Descrição atualizada', 'administrative_state': 'maintenance', 'row_version': 1}
+
+
+def test_creation_with_administrative_state(api):
+    client, _, _, _, _ = api
+    response = client.post(BASE, json={**VALID, 'administrative_state': 'disabled'})
+    assert response.status_code == 201 and response.json['administrative_state'] == 'disabled'
+
+
+def test_edit_persists_fields_and_audit_in_same_transaction(api):
+    client, access, session, _, committed = api
+    item = resource(); session.scalar.return_value = item
+    session.flush.side_effect = lambda: setattr(item, 'row_version', 2)
+    response = client.patch(BASE+'/'+str(item.id), json=UPDATE)
+    assert response.status_code == 200
+    assert response.json['row_version'] == 2
+    assert response.json['description'] == UPDATE['description']
+    assert response.json['administrative_state'] == 'maintenance'
+    assert response.json['attributes'] == {} and response.json['archived_at'] is None
+    assert len(committed) == 1 and committed[0].action == 'inventory.resource.updated'
+    assert committed[0].actor_id == access.resolve_identity.return_value.actor_id
+    session.commit.assert_called_once()
+
+
+@pytest.mark.parametrize('reason,status', [('anonymous',401),('reader',403),('invalid_scope',500)])
+def test_edit_denied_before_opening_session(api, reason, status):
+    client, access, _, factory, _ = api
+    if reason=='anonymous':access.resolve_identity.return_value=None
+    elif reason=='reader':access.update_scope.return_value=None
+    else:access.update_scope.return_value=True
+    assert client.patch(BASE+'/'+str(uuid4()), json=UPDATE).status_code==status
+    factory.assert_not_called()
+
+
+@pytest.mark.parametrize('reason', ['stale','concurrent_flush','archived','missing','audit_failure'])
+def test_edit_failure_rolls_back_without_committed_audit(api, monkeypatch, reason):
+    from sqlalchemy.orm.exc import StaleDataError
+    client, _, session, _, committed = api
+    item=resource(); session.scalar.return_value=item
+    status=409
+    if reason=='stale':item.row_version=2
+    elif reason=='concurrent_flush':session.flush.side_effect=StaleDataError('private')
+    elif reason=='archived':item.administrative_state='archived'
+    elif reason=='missing':session.scalar.return_value=None;status=404
+    else:
+        monkeypatch.setattr('app.inventory.service.record_audit_event',Mock(side_effect=RuntimeError('private')))
+        status=500
+    response=client.patch(BASE+'/'+str(item.id),json=UPDATE)
+    assert response.status_code==status
+    assert b'private' not in response.data and committed==[]
+    session.rollback.assert_called_once()
+
+
+@pytest.mark.parametrize('patch', [{'row_version':None},{'attributes':{}},{'administrative_state':'archived'}])
+def test_edit_invalid_data_before_session(api, patch):
+    client, _, _, factory, _=api
+    assert client.patch(BASE+'/'+str(uuid4()),json=UPDATE|patch).status_code==400
+    factory.assert_not_called()
 
 
 @pytest.mark.parametrize("failure", ["audit", "flush", "commit", "serialize"])

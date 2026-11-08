@@ -130,6 +130,7 @@ def provision(settings):
 RUNTIME_GRANTS=(
     'GRANT USAGE ON SCHEMA inventory,audit,security TO {runtime}',
     'GRANT SELECT,INSERT ON TABLE inventory.resources TO {runtime}',
+    'GRANT UPDATE(resource_type,display_name,description,administrative_state,updated_at,row_version) ON TABLE inventory.resources TO {runtime}',
     'GRANT INSERT ON TABLE audit.events TO {runtime}',
     'GRANT SELECT(id,occurred_at) ON TABLE audit.events TO {runtime}',
     'GRANT SELECT ON TABLE security.local_users,security.global_role_grants TO {runtime}',
@@ -147,6 +148,7 @@ def grants_state(connection,settings):
     tests={
         'resources_read':"has_table_privilege(:role,'inventory.resources','SELECT')",
         'resources_insert':"has_table_privilege(:role,'inventory.resources','INSERT')",
+        'resources_update':" AND ".join("has_column_privilege(:role,'inventory.resources','"+column+"','UPDATE')" for column in ('resource_type','display_name','description','administrative_state','updated_at','row_version')),
         'audit_insert':"has_table_privilege(:role,'audit.events','INSERT')",
         'audit_metadata':"has_column_privilege(:role,'audit.events','id','SELECT') AND has_column_privilege(:role,'audit.events','occurred_at','SELECT')",
         'users_read':"has_table_privilege(:role,'security.local_users','SELECT')",

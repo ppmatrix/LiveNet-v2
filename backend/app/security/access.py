@@ -54,3 +54,8 @@ class SessionInventoryAccess:
     def can_create(self, identity, data):
         user = self.runtime.authenticated()
         return bool(user and user.id == identity.actor_id and "inventory_editor" in user.roles)
+
+    def update_scope(self, identity):
+        if self.can_create(identity, {}):
+            return self.read_scope(identity)
+        return None
