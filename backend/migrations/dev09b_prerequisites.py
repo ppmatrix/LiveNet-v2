@@ -124,7 +124,17 @@ def validate_observation(p,o,requested):
 def _require(requested, context=None):
     if context is None:
         from alembic import op
-        context=op.get_context().config.attributes.get(ATTR)
+        config=op.get_context().config
+        # Explicit scope substitution adopted for the STANDARD MVP only.
+        # Historical env.py still requires PreparedContext before any ledger/SQL.
+        from installation import STANDARD_ATTR
+        standard=config.attributes.get(STANDARD_ATTR)
+        if standard is not None:
+            from installation.runner import StandardScope
+            require(ATTR not in config.attributes,'Mixed standard/DEV09B contexts refused')
+            require(type(standard) is StandardScope,'Invalid standard installation context')
+            return standard.require(requested,op.get_bind())
+        context=config.attributes.get(ATTR)
         if type(context) is PreparedContext:
             if not callable(getattr(context.port,"assert_connection",None)):raise MissingParameter("dev09b.connection_binding")
             context.port.assert_connection(op.get_bind())
