@@ -192,6 +192,7 @@ def test_real_signed_public_consumption_to_transport_without_sql(fixture_data,mo
     # SQL is executed: manually emit the event at the mocked Alembic boundary.
     engine=create_engine('sqlite://',hide_parameters=True);conn=engine.connect();tx=conn.begin()
     monkeypatch.setattr(conn.dialect,'name','postgresql')
+    conn.connection.driver_connection.autocommit=False
     physical=parts[5];observed={'value':rows(physical['entry']['detailed_catalog']['snapshot'],parts[0],session)}
     def bound(cn,tr,ss,plan):
         assert cn is conn and tr is tx and ss==session

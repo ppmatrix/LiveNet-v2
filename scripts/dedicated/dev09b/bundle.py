@@ -187,3 +187,52 @@ def build_application_trial_candidate(root):
         administrative_sql='PROPOSED_NOT_AUTHORIZED',commit='NOT_AUTHORIZED',
         trusted_adapters='NOT_IMPLEMENTED_BY_THIS_PROCEDURE')
     return candidate
+
+
+def build_operational_candidate(root):
+    """Separate candidate; leave earlier source manifests byte-for-byte intact."""
+    root=Path(root);candidate=build_application_trial_candidate(root)
+    paths={r['path'] for r in candidate['sources']}|{
+        'scripts/postgres/dev09b_operational_trial.py',
+        'scripts/postgres/dev09b_operational.proposed.json',
+        'scripts/postgres/dev09b_application_identity.proposed.sql',
+        'docs/operations/dev09b-first-application-trial.md'}
+    candidate['sources']=[dict(path=p,sha256=sha256(read(root,p)).hexdigest()) for p in sorted(paths)]
+    candidate['operational_adapters']=dict(state='IMPLEMENTED_OFFLINE_DEPLOYMENT_UNBOUND',
+        control_channel='LINUX_AF_UNIX_SO_PEERCRED',
+        target_tls='REQUIRED_NOT_DEPLOYED',
+        continuity='SEPARATE_DURABLE_ONE_SHOT_WINDOW',
+        supervision='INDEPENDENT_PROCESS_READ_ONLY_OBSERVER',
+        first_trial='PRECOMMIT_THEN_ROLLBACK',
+        approval='NOT_PROVIDED',administrative_changes='NOT_AUTHORIZED')
+    candidate['trial_procedure']['trusted_adapters']='OFFLINE_IMPLEMENTED_LIVE_BINDINGS_REQUIRED'
+    config=c.parse(read(root,'scripts/postgres/dev09b_operational.proposed.json'))
+    candidate['missing_parameters'] += ['operational.'+name for name in config['unbound_required_inputs']]
+    return candidate
+
+
+def build_runtime_candidate(root):
+    """Runtime preparation v2; historical operational-v1 is not regenerated."""
+    root=Path(root);candidate=build_operational_candidate(root)
+    paths={r['path'] for r in candidate['sources']}|{
+        'scripts/postgres/dev09b_operational_cli.py',
+        'scripts/postgres/dev09b_authority_bootstrap.py',
+        'scripts/postgres/dev09b_authority_schema.proposed.sql',
+        'scripts/postgres/dev09b_helper_policy_v2.proposed.sql',
+        'scripts/postgres/dev09b_application_grants_v2.proposed.sql',
+        'scripts/postgres/dev09b_trial_profile_roles.proposed.sql',
+        'scripts/postgres/dev09b_runtime_policy.proposed.json',
+        'scripts/postgres/dev09b_executor_configuration.proposed.json',
+        'scripts/postgres/dev09b_trial.pg_hba.proposed.conf',
+        'scripts/postgres/dev09b-runtime@.service.proposed',
+        'compose.dev09b-querytrial-tls.proposed.yaml'}
+    candidate['sources']=[dict(path=p,sha256=sha256(read(root,p)).hexdigest()) for p in sorted(paths)]
+    candidate['runtime_preparation']=dict(state='IMPLEMENTED_OFFLINE_NOT_DEPLOYED',
+        helper_policy=2,rollback_reconciliation='INDEPENDENT_FULL_PREFIX_ZERO_AND_DURABLE_JOURNAL',
+        containment='INDEPENDENT_OF_RECONCILIATION_AND_AUTHORITY',
+        final_verification='FULL_SOURCE_DERIVED_CLEANED_CATALOG',
+        tls='VERIFY_FULL_AND_SAME_SESSION_DER_SHA256_PIN',
+        storage='DISTINCT_DEVICE_MOUNT_AND_RESTORE_POLICY_REQUIRED',
+        uid_collision_check='NO_MATCH_FOR_PROPOSED_NAMES_UIDS_GIDS_ON_PROGBOX_20261108',
+        execution='NOT_AUTHORIZED',commit='NOT_AUTHORIZED',ledger_select=False)
+    return candidate

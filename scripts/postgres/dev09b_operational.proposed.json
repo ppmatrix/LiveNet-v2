@@ -1,0 +1,69 @@
+{
+  "classification": "DESIGN_ADOPTED_EXECUTION_NOT_AUTHORIZED",
+  "operation": "application-base-to-f066a01a7230",
+  "target_system_identifier": "7705421224394444834",
+  "outcome": "PRECOMMIT_THEN_MANDATORY_ROLLBACK",
+  "executor": {
+    "account": "livenet-dev09b-executor",
+    "composition": "scripts.postgres.dev09b_operational_trial.bind_trial",
+    "dispatch": "scripts.postgres.dev09b_operational_trial.run_rollback_trial",
+    "source_root": "/opt/livenet-dev09b/source",
+    "interpreter": "/opt/livenet-dev09b/source/.venv/bin/python",
+    "restart": "no",
+    "docker_socket": false,
+    "administrative_credentials": false,
+    "target_role": "dev09b_trial_migrator",
+    "target_tls": "verify-full",
+    "authority_socket": "/run/livenet-dev09b-authority/public.sock",
+    "supervisor_socket": "/run/livenet-dev09b-supervisor/executor.sock",
+    "proposed_uid": 62091,
+    "operational_cli": "scripts.postgres.dev09b_operational_cli executor",
+    "certificate_pin": "SAME_SESSION_LIBPQ_OPENSSL_LEAF_DER_SHA256"
+  },
+  "authority": {
+    "account": "livenet-dev09b-authority",
+    "implementation": "scripts.dedicated.dev09b.postgres_authority.PostgresConsumptionService",
+    "dispatch": "scripts.dedicated.dev09b.operational.AuthorityDispatch",
+    "receipt_channel": "scripts.dedicated.dev09b.operational.LocalReceiptChannel",
+    "supervisor_socket": "/run/livenet-dev09b-supervisor/authority.sock",
+    "storage_trial_is_operational_authority": false,
+    "public_methods": [
+      "consume",
+      "check",
+      "record"
+    ],
+    "proposed_uid": 62092
+  },
+  "supervisor": {
+    "account": "livenet-dev09b-supervisor",
+    "implementation": "scripts.dedicated.dev09b.operational.WindowDispatch",
+    "observer": "scripts.dedicated.dev09b.operational.PostgresWindowObserver",
+    "observer_principal": "dev09b_trial_admin",
+    "observer_transaction": "READ ONLY",
+    "concurrent_target_client_sessions": 0,
+    "clock_max_age_seconds": 900,
+    "clock_drift_bound_ppm": 100,
+    "continuity_directory_pattern": "/var/lib/livenet-dev09b-supervisor/windows/first-f066",
+    "restore_with_authority_database": false,
+    "restart_same_window": false,
+    "automatic_retry": false,
+    "proposed_uid": 62093,
+    "storage_requirement": "MOUNTED_DISTINCT_DEVICE_AND_APPROVED_RESTORE_EXCLUSION"
+  },
+  "unbound_required_inputs": [
+    "approved_crypto_lock_compatibility_and_artifact_availability",
+    "approved_source_inventory_profile_and_exact_inspection_contracts",
+    "approved_public_authority_trust_policy_issuer_and_envelope",
+    "authority_database_destination_and_existing_schema_provenance",
+    "actual_service_uids_and_restricted_socket_directories",
+    "target_endpoint_CA_certificate_and_server_certificate_bindings",
+    "reviewed_executor_image_dependencies_and_incarnation",
+    "actual_session_pid_start_numeric_and_virtual_transaction_bindings",
+    "independent_window_token_UTC_anchor_and_administrative_coordination",
+    "authenticated_v2_helper_source_profile_and_joint_privilege_authorization",
+    "authenticated_independent_post_rollback_baseline_collection"
+  ],
+  "helper_policy_version": 2,
+  "ledger_select": false,
+  "runtime_policy_template": "scripts/postgres/dev09b_runtime_policy.proposed.json"
+}

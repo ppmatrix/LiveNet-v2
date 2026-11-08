@@ -73,6 +73,14 @@ class ApplicationTrial:
         except BaseException as exc:
             self._diagnostic(exc,'persisted');raise
 
+    def confirm_rollback(self,evidence,*,authenticity,independence,journal):
+        c.require(self.controller is not None)
+        try:
+            return self.controller.confirm_rollback(self.inputs['snapshot'],evidence,
+                authenticity=authenticity,independence=independence,journal=journal)
+        except BaseException as exc:
+            self._diagnostic(exc,'rollback_reconciliation');self.contain();raise
+
     def contain(self):
         """No authority dependency, no retry or approval release, both closes tried."""
         if self.controller is not None:

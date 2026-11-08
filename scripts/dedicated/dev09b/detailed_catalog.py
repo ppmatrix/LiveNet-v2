@@ -124,8 +124,13 @@ def validate_artifact(physical,target,provenance):
             c.require(inventory.get(own_settings.SOURCE)==own_settings.SOURCE_SHA256)
             owners=[x for x in params['system_ownership'] if x['family']=='routine' and x['identity']==own_settings.IDENTITY]
             permissions=[x for x in params['system_acls'] if x['family']=='routine' and x['identity']==own_settings.IDENTITY]
+            allowed=[own_settings.declaration()['grants']]
+            if inventory.get(own_settings.V2_SOURCE)==own_settings.trial_declaration()['amendment_sha256']:
+                allowed.append(own_settings.trial_declaration()['grants'])
+                if permissions and encode(permissions[0]['grants'])==encode(allowed[-1]):
+                    c.require(params['roles']['migrator']==own_settings.MIGRATOR)
             c.require(len(owners)==len(permissions)==1 and owners[0]['owner']==own_settings.OWNER
-                      and encode(permissions[0]['grants'])==encode(own_settings.declaration()['grants']))
+                      and any(encode(permissions[0]['grants'])==encode(grants) for grants in allowed))
     # Prepared managed schemas/ledgers cannot be smuggled in as template objects.
     for obj in system:
         c.require(obj['identity'][0] not in {'inventory','audit','security'})

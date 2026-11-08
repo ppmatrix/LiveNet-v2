@@ -1,0 +1,22 @@
+[Unit]
+Description=DEV09B controlled rollback trial %i (proposal)
+
+[Service]
+Type=simple
+User=livenet-dev09b-%i
+Group=livenet-dev09b-%i
+WorkingDirectory=/opt/livenet-dev09b/source
+Environment=PYTHONPATH=/opt/livenet-dev09b/source:/opt/livenet-dev09b/source/backend:/usr/lib/python3/dist-packages
+EnvironmentFile=/etc/livenet/dev09b/%i.env
+ExecStart=/opt/livenet-dev09b/source/.venv/bin/python -m scripts.postgres.dev09b_operational_cli %i --policy /etc/livenet/dev09b/deployment.json --policy-sha256 ${DEV09B_POLICY_SHA256}
+Restart=no
+UMask=0077
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/run/livenet-dev09b-%i /var/lib/livenet-dev09b-supervisor
+StandardOutput=journal
+StandardError=journal

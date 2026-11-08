@@ -1,0 +1,18 @@
+{
+  "x-status": "PROPOSAL_ONLY_NOT_AUTHORIZED; existing data volume and image retained",
+  "services": {
+    "db": {
+      "command": ["postgres", "-c", "ssl=on", "-c", "ssl_min_protocol_version=TLSv1.2",
+        "-c", "ssl_cert_file=/run/dev09b-tls/server.crt", "-c", "ssl_key_file=/run/dev09b-tls/server.key",
+        "-c", "hba_file=/run/dev09b-tls/pg_hba.conf", "-c", "log_statement=none",
+        "-c", "log_min_error_statement=panic", "-c", "log_parameter_max_length=0",
+        "-c", "log_parameter_max_length_on_error=0", "-c", "log_min_messages=fatal",
+        "-c", "log_error_verbosity=terse"],
+      "volumes": [
+        {"type":"bind","source":"${DEV09B_TLS_DIR:?Approved private TLS directory required}/server.crt","target":"/run/dev09b-tls/server.crt","read_only":true,"bind":{"create_host_path":false}},
+        {"type":"bind","source":"${DEV09B_TLS_DIR:?Approved private TLS directory required}/server.key","target":"/run/dev09b-tls/server.key","read_only":true,"bind":{"create_host_path":false}},
+        {"type":"bind","source":"${DEV09B_TLS_DIR:?Approved private TLS directory required}/pg_hba.conf","target":"/run/dev09b-tls/pg_hba.conf","read_only":true,"bind":{"create_host_path":false}}
+      ]
+    }
+  }
+}

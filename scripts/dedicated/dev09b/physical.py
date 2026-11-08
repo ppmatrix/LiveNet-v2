@@ -113,7 +113,11 @@ def validate_parameters(p,target):
     c.require(p["target_binding_sha256"]==c.digest("target",target))
     r=p["roles"];exact(r,ROLE_KEYS,"target_profile.roles")
     for v in r.values():name(v)
-    c.require(len(set(r.values()))==len(r))
+    role_values=list(r.values())
+    if p['schema_version']==2 and r['database_owner']==r['admin']:
+        # Existing querytrial admin owns its DB; this alias adds no powers.
+        role_values=[value for key,value in r.items() if key!='database_owner']
+    c.require(len(set(role_values))==len(role_values))
     c.require(r["migrator"]==target["migrator_role"] and r["inspector"]==target["inspector_role"])
     c.require(type(p["administrative_roles"]) is list)
     if not p["administrative_roles"]:raise MissingParameter("target_profile.administrative_roles")
@@ -238,6 +242,13 @@ def compile_profile(phase,target,parameters,migrations,*,prerequisite=None):
         acls.append({"family":o["family"],"identity":o["identity"],"grants":values})
     window=(app or phase=="APP-ENTRY") and not closed
     db_acl=[grant(r[k],"CONNECT") for k in ("admin","recovery","inspector","migrator")]
+    if parameters['schema_version']==2:
+        # An explicitly inert NOLOGIN recovery identity in a rollback-only
+        # declaration needs no dormant CONNECT grant. Legacy v1 is unchanged.
+        inert={role['name'] for role in parameters['administrative_roles'] if role['login'] is False}
+        db_acl=[a for a in db_acl if a['grantee'] not in inert]
+        if r['database_owner']==r['admin']:
+            db_acl=[a for a in db_acl if a['grantee']!=r['admin']]
     public_acl=[grant("PUBLIC","USAGE")]
     if window:
         public_acl.append(grant(r["migrator"],"CREATE"))
@@ -266,6 +277,7 @@ def compile_profile(phase,target,parameters,migrations,*,prerequisite=None):
     roles=[]
     for key,rolname in sorted(r.items()):
         if key in {"admin","recovery"}:continue
+        if parameters['schema_version']==2 and key=='database_owner' and rolname==r['admin']:continue
         roles.append({"name":rolname,"login":key in {"admin","recovery","inspector"} or (key=="migrator" and window),
                       "superuser":False,"createdb":False,"createrole":False,"replication":False,"bypassrls":False,"inherit":False})
     roles+=parameters["administrative_roles"]

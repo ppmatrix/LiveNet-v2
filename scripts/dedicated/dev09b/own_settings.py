@@ -13,6 +13,9 @@ DATABASE='livenet_v2_dev'
 ADMIN='dev09b_trial_admin'
 OWNER='dev09b_trial_settings_owner'
 PROBE='dev09b_trial_probe'
+MIGRATOR='dev09b_trial_migrator'
+V2_SOURCE='scripts/postgres/dev09b_helper_policy_v2.proposed.sql'
+V2_SHA256='43b3c5101a86e83cca3660525cb63054f4bac59cc67209c77b60ef9297051f06'
 NAMES={'shared_preload_libraries','session_preload_libraries'}
 BODY="""SELECT pg_catalog.pg_backend_pid(),wanted.name,pg_catalog.current_setting(wanted.name)
   FROM (VALUES ('shared_preload_libraries'::pg_catalog.text),('session_preload_libraries'::pg_catalog.text)) wanted(name)"""
@@ -44,13 +47,30 @@ def declaration():
         object=OBJECT,owner_role=OWNER_ROLE,owner_membership=OWNER_EDGE,owner_security=SECURITY_FLAGS,owner_object=ROLE_OBJECT,grants=[dict(grantee=PROBE,privilege='EXECUTE',grant_option=False)])))
 
 
-def validate(value):
-    c.require(c.canonical(value)==c.canonical(declaration()))
+def trial_declaration():
+    """V2 adds only the adopted temporary EXECUTE; v1 bytes stay unchanged."""
+    value=declaration()
+    value.update(policy_version=2,amendment_path=V2_SOURCE,
+                 amendment_sha256=V2_SHA256)
+    value['grants']=sorted(value['grants']+[dict(grantee=MIGRATOR,privilege='EXECUTE',grant_option=False)],key=lambda x:x['grantee'])
     return value
 
 
-def verify_observed(historical,supplemental):
+def validate(value):
+    c.require(type(value) is dict)
+    expected=trial_declaration() if value.get('policy_version')==2 else declaration()
+    c.require(c.canonical(value)==c.canonical(expected))
+    return value
+
+
+def callers(policy):
+    validate(policy)
+    return {x['grantee'] for x in policy['grants']}
+
+
+def verify_observed(historical,supplemental,policy=None):
     """Verify body/flags/owner/ACL BEFORE executing the elevated helper."""
+    policy=declaration() if policy is None else validate(policy)
     c.require(historical['identity'][0]['system_identifier']==TARGET_SID and historical['identity'][0]['database']==DATABASE)
     c.require(c.canonical(supplemental['helper_owner_role'])==c.canonical([OWNER_ROLE]))
     c.require(c.canonical(supplemental['helper_owner_edges'])==c.canonical([OWNER_EDGE]))
@@ -64,8 +84,8 @@ def verify_observed(historical,supplemental):
     raw=[x for x in historical['routines'] if [x['schema'],x['name'],x['arguments']]==IDENTITY]
     c.require(len(raw)==1 and raw[0]['security_definer'] is True and raw[0]['owner']==OWNER)
     definers=historical['executable_definers']
-    if historical['identity'][0]['current_user']==PROBE:
-        c.require(historical['identity'][0]['session_user']==PROBE)
+    if historical['identity'][0]['current_user'] in callers(policy):
+        c.require(historical['identity'][0]['session_user']==historical['identity'][0]['current_user'])
         c.require(len(definers)==1 and [definers[0][k] for k in ('schema','name','arguments')]==IDENTITY
             and definers[0]['owner']==OWNER and definers[0]['definition']==raw[0]['definition'])
     else:c.require(not definers)
@@ -74,4 +94,4 @@ def verify_observed(historical,supplemental):
         if (row['family'],row['schema'],row['name'])!=('routine',IDENTITY[0],IDENTITY[1]):continue
         c.require(row['grantor']==OWNER and row['privilege']=='EXECUTE')
         if row['grantee']!=OWNER:grants.append({k:row[k] for k in ('grantee','privilege','grant_option')})
-    c.require(c.canonical(grants)==c.canonical(declaration()['grants']))
+    c.require(c.canonical(sorted(grants,key=lambda x:x['grantee']))==c.canonical(policy['grants']))

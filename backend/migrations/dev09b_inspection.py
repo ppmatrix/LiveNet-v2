@@ -414,8 +414,8 @@ def collect_detailed_sql(connection, transaction, *, collector_id, role_names, s
     if approved_helpers:
         from scripts.dedicated.dev09b import own_settings
         own_settings.validate(approved_helpers[0])
-        own_settings.verify_observed(historical,supplemental)
-        if first[0]['current_user']==own_settings.PROBE:
+        own_settings.verify_observed(historical,supplemental,approved_helpers[0])
+        if first[0]['current_user'] in own_settings.callers(approved_helpers[0]):
             query=DETAIL_QUERIES['helper_preload_settings']
             supplemental['helper_preload_settings']=supplemental_rows('helper_preload_settings',collect(query,label='detail.helper_preload_settings'))
             h.require(len(supplemental['helper_preload_settings'])==2 and all(r['backend_pid']==first[0]['pid'] for r in supplemental['helper_preload_settings']),'Helper backend binding')

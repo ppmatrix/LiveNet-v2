@@ -1,0 +1,154 @@
+{
+  "source_root": "/opt/livenet-dev09b/source",
+  "accounts": {
+    "executor": {
+      "name": "livenet-dev09b-executor",
+      "uid": 62091
+    },
+    "authority": {
+      "name": "livenet-dev09b-authority",
+      "uid": 62092
+    },
+    "supervisor": {
+      "name": "livenet-dev09b-supervisor",
+      "uid": 62093
+    }
+  },
+  "native_providers": {
+    "extension": {
+      "path": "/opt/livenet-dev09b/source/.venv/lib/python3.12/site-packages/psycopg_binary/pq.cpython-312-x86_64-linux-gnu.so",
+      "sha256": "b7015ef9e5fdb129a39295ac2f4f910955334f5076be52e5cdd88d3aed9c3666"
+    },
+    "libpq": {
+      "path": "/opt/livenet-dev09b/source/.venv/lib/python3.12/site-packages/psycopg_binary.libs/libpq-e9b5c9ac.so.5.18",
+      "sha256": "adee4abe45a36e8f147b15e08aceca893c255dfd4133a047884807931ca8046d"
+    },
+    "libssl": {
+      "path": "/opt/livenet-dev09b/source/.venv/lib/python3.12/site-packages/psycopg_binary.libs/libssl-8bd944e8.so.3",
+      "sha256": "ef566b112dc7532a689c07de999c16efda3b4872df0c9d011bdcf00b94dd8a2e"
+    },
+    "libcrypto": {
+      "path": "/opt/livenet-dev09b/source/.venv/lib/python3.12/site-packages/psycopg_binary.libs/libcrypto-2d1629ee.so.3",
+      "sha256": "ac767da23afff24a34a1a86e6464f65ff45c8e3374850c117c1cffbfcd879da0"
+    }
+  },
+  "connections": {
+    "migrator": {
+      "endpoint": {
+        "host": null,
+        "port": 5432,
+        "database_name": "livenet_v2_dev",
+        "tls_server_name": "dev09b-querytrial.internal",
+        "ca_file": "/etc/livenet/dev09b/tls/ca.crt",
+        "ca_sha256": null,
+        "server_certificate_sha256": null
+      },
+      "principal": "dev09b_trial_migrator",
+      "password_file": "/run/livenet-dev09b-executor/migrator_password"
+    },
+    "admin": {
+      "endpoint": {
+        "host": null,
+        "port": 5432,
+        "database_name": "livenet_v2_dev",
+        "tls_server_name": "dev09b-querytrial.internal",
+        "ca_file": "/etc/livenet/dev09b/tls/ca.crt",
+        "ca_sha256": null,
+        "server_certificate_sha256": null
+      },
+      "principal": "dev09b_trial_admin",
+      "password_file": "/run/livenet-dev09b-supervisor/admin_password"
+    },
+    "probe": {
+      "endpoint": {
+        "host": null,
+        "port": 5432,
+        "database_name": "livenet_v2_dev",
+        "tls_server_name": "dev09b-querytrial.internal",
+        "ca_file": "/etc/livenet/dev09b/tls/ca.crt",
+        "ca_sha256": null,
+        "server_certificate_sha256": null
+      },
+      "principal": "dev09b_trial_probe",
+      "password_file": "/run/livenet-dev09b-supervisor/probe_password"
+    },
+    "authority": {
+      "endpoint": {
+        "host": null,
+        "port": 5432,
+        "database_name": "dev09b_authority_dev",
+        "tls_server_name": "dev09b-authority.internal",
+        "ca_file": "/etc/livenet/dev09b/tls/authority-ca.crt",
+        "ca_sha256": null,
+        "server_certificate_sha256": null,
+        "authority": true
+      },
+      "principal": "dev09b_authority_service",
+      "password_file": "/run/livenet-dev09b-authority/authority_password"
+    },
+    "authority_admin": {
+      "endpoint": {
+        "host": null,
+        "port": 5432,
+        "database_name": "dev09b_authority_dev",
+        "tls_server_name": "dev09b-authority.internal",
+        "ca_file": "/etc/livenet/dev09b/tls/authority-ca.crt",
+        "ca_sha256": null,
+        "server_certificate_sha256": null,
+        "authority": true
+      },
+      "principal": "dev09b_authority_admin",
+      "password_file": "/etc/livenet/dev09b/private/authority_admin_password"
+    }
+  },
+  "sockets": {
+    "authority_public": "/run/livenet-dev09b-authority/public.sock",
+    "supervisor_executor": "/run/livenet-dev09b-supervisor/executor.sock",
+    "supervisor_authority": "/run/livenet-dev09b-supervisor/authority.sock"
+  },
+  "storage": {
+    "mountpoint": "/var/lib/livenet-dev09b-supervisor",
+    "device": null,
+    "mountinfo_sha256": null,
+    "excluded_from_authority_restore": false,
+    "authority_and_target_storage_paths": [
+      "/run/livenet-dev09b-storage/authority-device",
+      "/run/livenet-dev09b-storage/target-device"
+    ],
+    "restore_exclusion_reference": null
+  },
+  "inspection_templates": {
+    "prerequisite_0": {
+      "path": "/etc/livenet/dev09b/contracts/prerequisite_0.json",
+      "sha256": null
+    },
+    "prerequisite_1": {
+      "path": "/etc/livenet/dev09b/contracts/prerequisite_1.json",
+      "sha256": null
+    },
+    "prerequisite_2": {
+      "path": "/etc/livenet/dev09b/contracts/prerequisite_2.json",
+      "sha256": null
+    },
+    "prerequisite_3": {
+      "path": "/etc/livenet/dev09b/contracts/prerequisite_3.json",
+      "sha256": null
+    },
+    "prerequisite_4": {
+      "path": "/etc/livenet/dev09b/contracts/prerequisite_4.json",
+      "sha256": null
+    },
+    "precommit": {
+      "path": "/etc/livenet/dev09b/contracts/precommit.json",
+      "sha256": null
+    },
+    "rollback": {
+      "path": "/etc/livenet/dev09b/contracts/rollback.json",
+      "sha256": null
+    },
+    "final": {
+      "path": "/etc/livenet/dev09b/contracts/final.json",
+      "sha256": null
+    }
+  }
+}

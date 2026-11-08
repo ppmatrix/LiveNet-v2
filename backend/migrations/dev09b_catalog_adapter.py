@@ -181,9 +181,9 @@ def convert_results(batch,details,context,*,phase,collector_id,session=None,ledg
     require(type(helpers) is list and len(helpers)<=1,'Fixed helper scope')
     if helpers:
         from scripts.dedicated.dev09b import own_settings
-        own_settings.validate(helpers[0]);own_settings.verify_observed(helper_facts,details)
+        own_settings.validate(helpers[0]);own_settings.verify_observed(helper_facts,details,helpers[0])
         helper_rows=keyed(details['helper_preload_settings'],lambda r:r['name'],'helper_preload_settings')
-        require((set(helper_rows)==own_settings.NAMES if helper_facts['identity'][0]['current_user']==own_settings.PROBE else not helper_rows) and all(type(r['backend_pid']) is int and r['backend_pid']==row_mapping(batch['identity'][0])['pid'] for r in helper_rows.values()),'HELPER_SESSION_BINDING')
+        require((set(helper_rows)==own_settings.NAMES if helper_facts['identity'][0]['current_user'] in own_settings.callers(helpers[0]) else not helper_rows) and all(type(r['backend_pid']) is int and r['backend_pid']==row_mapping(batch['identity'][0])['pid'] for r in helper_rows.values()),'HELPER_SESSION_BINDING')
     else:
         require(not details['helper_preload_settings'],'UNEXPECTED_HELPER_OBSERVATION');helper_rows={}
     direct=keyed(details['own_preload_settings'],lambda r:r['name'],'own_preload_settings')

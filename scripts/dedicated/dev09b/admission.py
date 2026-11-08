@@ -215,5 +215,33 @@ class AdmissionController(_AttemptLifecycle):
     def rollback_result(self, **kwargs):
         raise c.Unsupported('Independent operational reconciliation is not a boolean')
 
+    def confirm_rollback(self,snapshot,evidence,*,authenticity,independence,journal):
+        """Full independent prefix-zero proof; record outside restored authority.
+
+        Does not remove temporary rights or unblock a window. Record loss and
+        all comparison/origin failures leave UNKNOWN and still close locally.
+        """
+        from . import rollback
+        from .evidence import OriginObservation
+        from .layers import document_hash
+        try:
+            c.require(self.used and self.state is AttemptState.UNKNOWN and not self.commit_sent
+                      and self.closed and self.connection.closed is True)
+            c.validate_layers(snapshot)
+            c.require(snapshot.payload==self.authority.payload and snapshot.plan==self.plan)
+            comparison=rollback.validate(snapshot,self.session,evidence)
+            raw=c.canonical(evidence,maximum_depth=32)
+            origin=authenticity.inspect(raw)
+            c.require(type(origin) is OriginObservation and origin.authenticated is True
+                and origin.classification=='OPERATIONAL' and origin.collector_id==evidence['collector_id']
+                and origin.evidence_sha256==document_hash(evidence))
+            c.require(independence.confirm(raw) is None)
+            c.require(journal.persist(raw) is None)
+            _AttemptLifecycle.reconcile(self,AttemptState.ROLLED_BACK_CONFIRMED,independent_confirmed=True)
+            return comparison
+        except BaseException:
+            self.contain()
+            raise
+
     def reconcile(self, *args, **kwargs):
         raise c.Unsupported('Independent operational reconciliation port required')
