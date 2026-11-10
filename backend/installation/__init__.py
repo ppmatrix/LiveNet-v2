@@ -1,6 +1,7 @@
 """Standard MVP installation, explicitly separate from historical DEV09B."""
 
-APPLICATION_TARGET = 'f066a01a7230'
+APPLICATION_TARGET = 'd001a01a7230'
+APPLICATION_BASELINE = 'f066a01a7230'
 SECURITY_TARGET = 'b12b01a7230'
 STANDARD_ATTR = 'livenet_standard_installation_v1'
 

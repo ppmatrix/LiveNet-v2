@@ -4,16 +4,17 @@ import { useNavigate, useParams } from 'react-router';
 import { ApiError, errorMessage } from '../api/client';
 import { administrativeStates, resourceTypes } from '../api/contracts';
 import type { Resource } from '../api/contracts';
+import type { ResourceInput } from '../api/inventory';
 import { createResource, getResource, updateResource } from '../api/inventory';
 import { useRemote } from '../api/useRemote';
 import { useSession } from '../auth/SessionProvider';
 import { ErrorNotice, Loading } from '../components/Feedback';
 
-function ResourceForm({ resource }: { resource?: Resource }) {
+export function ResourceForm({ resource, candidateSave, onPendingChange }: { resource?: Resource; candidateSave?: (data: ResourceInput) => Promise<Resource>; onPendingChange?: (pending: boolean) => void }) {
   const navigate = useNavigate();
   const { expire } = useSession();
   const [name, setName] = useState(resource?.display_name || '');
-  const [type, setType] = useState(resource?.resource_type || 'virtual_machine');
+  const [type, setType] = useState(resource?.resource_type || (candidateSave ? '' : 'virtual_machine'));
   const [description, setDescription] = useState(resource?.description || '');
   const [state, setState] = useState(resource?.administrative_state || 'active');
   const [pending, setPending] = useState(false);
@@ -21,7 +22,7 @@ function ResourceForm({ resource }: { resource?: Resource }) {
   const [nameError, setNameError] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const busy = useRef(false);
-  const cancelTo = resource ? '/inventory/' + encodeURIComponent(resource.id) : '/inventory';
+  const cancelTo = candidateSave ? '/discovery' : resource ? '/inventory/' + encodeURIComponent(resource.id) : '/inventory';
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -29,13 +30,15 @@ function ResourceForm({ resource }: { resource?: Resource }) {
     const invalidName = !name.trim() || name.trim().length > 255;
     setNameError(invalidName);
     if (invalidName) return;
+    if (!Object.hasOwn(resourceTypes,type)) { setError('Selecione o tipo de recurso após rever o candidato.'); return; }
     busy.current = true;
+    onPendingChange?.(true);
     setPending(true);
     setError(null);
     try {
       const data = { display_name: name.trim(), resource_type: type,
         description: description || null, administrative_state: state };
-      const saved = resource ? await updateResource(resource.id, data, resource.row_version) : await createResource(data);
+      const saved = candidateSave ? await candidateSave(data) : resource ? await updateResource(resource.id, data, resource.row_version) : await createResource(data);
       navigate('/inventory/' + encodeURIComponent(saved.id));
     } catch (failure) {
       if (failure instanceof ApiError && failure.status === 401) { expire(); return; }
@@ -44,12 +47,12 @@ function ResourceForm({ resource }: { resource?: Resource }) {
       setError(uncertain
         ? 'Não foi possível confirmar o resultado. Os seus valores foram mantidos. Cancele e consulte o inventário antes de repetir a operação.'
         : errorMessage(failure));
-    } finally { busy.current = false; setPending(false); }
+    } finally { busy.current = false; setPending(false); onPendingChange?.(false); }
   }
 
   return <>
     <div className="page-heading"><div><p className="eyebrow">INVENTORY</p>
-      <h1>{resource ? 'Editar recurso' : 'Adicionar recurso'}</h1>
+      <h1>{candidateSave ? 'Adicionar candidato ao Inventory' : resource ? 'Editar recurso' : 'Adicionar recurso'}</h1>
       <p className="muted">Registe informação administrativa. Não são necessárias credenciais do equipamento.</p></div></div>
     <section className="surface detail-panel resource-form">
       {error && <ErrorNotice message={error} />}
@@ -62,13 +65,13 @@ function ResourceForm({ resource }: { resource?: Resource }) {
             {nameError && <p className="field-error" id="resource-name-error" role="alert">Indique um nome entre 1 e 255 caracteres.</p>}</div>
           <div><label htmlFor="resource-form-type">Tipo de recurso</label>
             <select id="resource-form-type" value={type} onChange={event => setType(event.target.value)} required>
-              {Object.entries(resourceTypes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              {candidateSave && <option value="">Selecione o tipo</option>}{Object.entries(resourceTypes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select></div>
           <div><label htmlFor="resource-description">Descrição</label>
             <textarea id="resource-description" value={description} onChange={event => setDescription(event.target.value)} rows={4} /></div>
           <div><label htmlFor="resource-form-state">Estado administrativo</label>
             <select id="resource-form-state" value={state} onChange={event => setState(event.target.value)} required aria-describedby="administrative-state-help">
-              {Object.entries(administrativeStates).filter(([value]) => value !== 'archived')
+              {Object.entries(administrativeStates).filter(([value]) => value !== 'archived' && (!candidateSave || value === 'active'))
                 .map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
             <p className="context-note" id="administrative-state-help">O estado administrativo não indica a disponibilidade operacional do recurso.</p></div>

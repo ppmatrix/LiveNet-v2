@@ -70,6 +70,15 @@ def test_reader_cannot_patch_resource_and_patch_requires_csrf(api):
     assert response.status_code==403 and response.json['error']['code']=='forbidden'
 
 
+def test_discovery_write_requires_csrf_and_editor(api):
+    _,client,_,_,_=api
+    assert login(client).status_code==200
+    path='/api/v1/discovery/jobs'
+    assert client.post(path,base_url=ORIGIN,json={'target':'10.42.0.1/32'},headers={'Origin':ORIGIN}).json['error']['code']=='invalid_csrf'
+    response=client.post(path,base_url=ORIGIN,json={'target':'10.42.0.1/32'},headers={'Origin':ORIGIN,'X-CSRF-Token':csrf(client)})
+    assert response.status_code==403 and response.json['error']['code']=='forbidden'
+
+
 def test_login_secure_cookie_me_and_logout(api):
     _, client, store, user, _ = api
     response = login(client)

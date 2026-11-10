@@ -4,6 +4,7 @@ No account/schema creation at startup. The historical dedicated factory remains
 unchanged. HTTPS origin is environment data, never a lab hostname in this core.
 """
 from pathlib import Path
+import os
 
 from flask import request, send_from_directory, abort
 from sqlalchemy import text
@@ -23,7 +24,7 @@ def runtime_connection(settings):
         row=conn.execute(text("""SELECT current_database() AS database,session_user::text AS principal,current_user::text AS effective_principal,
           r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolreplication OR r.rolbypassrls AS elevated,
           EXISTS(SELECT FROM pg_catalog.pg_auth_members WHERE member=r.oid) AS memberships,
-          EXISTS(SELECT FROM pg_catalog.pg_namespace n WHERE n.nspname IN ('inventory','audit','security','public')
+          EXISTS(SELECT FROM pg_catalog.pg_namespace n WHERE n.nspname IN ('inventory','audit','security','public','discovery')
             AND (n.nspowner=r.oid OR pg_catalog.has_schema_privilege(r.oid,n.oid,'CREATE'))) AS ddl,
           EXISTS(SELECT FROM pg_catalog.pg_shdepend WHERE refclassid='pg_catalog.pg_authid'::pg_catalog.regclass AND refobjid=r.oid AND deptype='o') AS ownership,
           d.datdba=r.oid OR pg_catalog.has_database_privilege(r.oid,d.oid,'CREATE') OR pg_catalog.has_database_privilege(r.oid,d.oid,'TEMP') AS database_power
@@ -47,10 +48,14 @@ def create_standard_app(config_file):
         def close(self):
             try:super().close()
             finally:self.owned_connection.close()
+    from app.discovery.policy import Policy
+    discovery_file=os.environ.get('LIVENET_DISCOVERY_CONFIG')
+    discovery_policy=Policy.load(discovery_file) if discovery_file else None
     app=create_app('production',security_config=dict(SECURITY_ENABLED=True,
         SECURITY_HTTPS_ORIGIN=settings.values['https']['origin'],
         SECURITY_CSRF_KEY=_secret(settings.values['csrf_key_file'])),
-        inventory_session_factory=RuntimeSession,security_session_factory=RuntimeSession)
+        inventory_session_factory=RuntimeSession,security_session_factory=RuntimeSession,
+        discovery_policy=discovery_policy,discovery_leader_factory=(lambda: runtime_connection(settings)) if discovery_policy else None)
     SecurityPolicy.load(app.config)
     app.wsgi_app=TrustedProxy(app.wsgi_app,enabled=False,peers=(),authority='')
     dist=Path(settings.values['frontend_dist'])
@@ -59,7 +64,7 @@ def create_standard_app(config_file):
     @app.get('/<path:path>')
     def frontend(path=''):
         if path=='api' or path.startswith('api/'):abort(404)
-        if path in {'','login','login/','inventory','inventory/'} or path.startswith('inventory/'):
+        if path in {'','login','login/','inventory','inventory/'} or path.startswith('inventory/') or path=='discovery' or path.startswith('discovery/'):
             response=send_from_directory(dist,'index.html')
             response.headers['Cache-Control']='no-store'
             return response

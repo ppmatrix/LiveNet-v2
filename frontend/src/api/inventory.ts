@@ -23,7 +23,7 @@ function nullableString(value: unknown): value is string | null {
   return value === null || typeof value === 'string';
 }
 
-function parseResource(data: unknown): Resource {
+export function parseResource(data: unknown): Resource {
   if (!isRecord(data) || !['id', 'resource_type', 'display_name', 'administrative_state'].every(
     key => typeof data[key] === 'string' && data[key] !== '',
   ) || !nullableString(data.description) || !isRecord(data.attributes)

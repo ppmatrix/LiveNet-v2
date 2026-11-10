@@ -150,11 +150,11 @@ describe('inventário e detalhe', () => {
     mockHttp();
     renderApp();
     await screen.findByRole('heading', { name: 'Inventário' });
-    for (const label of ['Descoberta', 'Monitorização', 'Alertas', 'Administração']) {
+    for (const label of ['Monitorização', 'Alertas', 'Administração']) {
       expect(screen.getByText(label)).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: label })).not.toBeInTheDocument();
     }
-    expect(screen.getAllByText('Em breve')).toHaveLength(4);
+    expect(screen.getAllByText('Em breve')).toHaveLength(3);
   });
 
   it('cancela a consulta anterior quando os filtros mudam', async () => {

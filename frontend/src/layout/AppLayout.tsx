@@ -11,7 +11,8 @@ export function AppLayout() {
       <p className="nav-label">ÁREA DE TRABALHO</p>
       <nav aria-label="Navegação principal">
         <NavLink to="/inventory"><span aria-hidden="true">▦</span> Inventário</NavLink>
-        {['Descoberta', 'Monitorização', 'Alertas', 'Administração'].map(item =>
+        <NavLink to="/discovery"><span aria-hidden="true">⌕</span> Descoberta</NavLink>
+        {['Monitorização', 'Alertas', 'Administração'].map(item =>
           <div className="nav-future" key={item}><span>{item}</span><span className="future-tag">Em breve</span></div>)}
       </nav>
       <div className="sidebar-footer">LiveNet v2<span>Gestão de infraestrutura</span></div>

@@ -73,7 +73,7 @@ def main(argv=None):
     init.add_argument('--system-identifier');init.add_argument('--origin',default='https://localhost:8443')
     init.add_argument('--bind',default='127.0.0.1');init.add_argument('--https-port',type=int,default=8443)
     init.add_argument('--frontend-dist',required=True)
-    for name in ('inspect','backup','provision','migrate','reconcile','grant-runtime','initial-user','install','serve'):
+    for name in ('inspect','backup','provision','migrate','reconcile','grant-runtime','prepare-discovery','initial-user','install','serve'):
         command=commands.add_parser(name)
         command.add_argument('--config',required=True)
         if name=='backup':command.add_argument('--output',required=True)
@@ -95,10 +95,11 @@ def main(argv=None):
             elif args.command=='reconcile':result=reconcile(settings)
             elif args.command=='serve':serve(settings,args.config);return 0
             else:
-                from installation.admin import provision,grants,initial_user,backup
+                from installation.admin import provision,grants,initial_user,backup,prepare_discovery
                 if args.command=='backup':result=backup(settings,args.output)
                 elif args.command=='provision':result=provision(settings)
                 elif args.command=='grant-runtime':result=grants(settings)
+                elif args.command=='prepare-discovery':result=prepare_discovery(settings)
                 else:
                     if args.password_file:password=_secret(args.password_file)
                     else:

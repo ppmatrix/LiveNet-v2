@@ -19,7 +19,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from sqlalchemy import text
 
-from installation import APPLICATION_TARGET, SECURITY_TARGET, STANDARD_ATTR, Refused, require
+from installation import APPLICATION_TARGET, APPLICATION_BASELINE, SECURITY_TARGET, STANDARD_ATTR, Refused, require
 from installation.config import private_directory
 
 BACKEND = Path(__file__).resolve().parents[1]
@@ -75,7 +75,7 @@ def script_config(chain):
     config = Config()
     config.set_main_option('script_location', str(BACKEND/'installation/alembic'))
     versions = BACKEND/('migrations' if chain == 'application' else 'security_migrations')/'versions'
-    config.set_main_option('version_locations', str(versions))
+    config.set_main_option('version_locations', str(versions) + (os.pathsep + str(BACKEND/'installation/versions') if chain=='application' else ''))
     config.set_main_option('path_separator', 'os')
     config.set_main_option('version_table', LEDGERS[chain])
     config.set_main_option('version_table_schema', 'public')
@@ -102,7 +102,7 @@ def revisions(connection):
         require(len(rows) == 1 and type(rows[0]) is str, 'INVALID_OR_EMPTY_LEDGER')
         require(rows[0] in {row.revision for row in chain_sources(chain)}, 'UNSUPPORTED_REVISION')
         result[chain] = rows[0]
-    require(result['security'] == 'base' or result['application'] == APPLICATION_TARGET, 'SECURITY_WITHOUT_APPLICATION')
+    require(result['security'] == 'base' or result['application'] in {APPLICATION_BASELINE,APPLICATION_TARGET}, 'SECURITY_WITHOUT_APPLICATION')
     return result
 
 
@@ -121,7 +121,7 @@ def validate_tables(connection, state):
             if row.revision == revision: break
     found = {(row['schema'], row['name']) for row in connection.execute(text("""SELECT n.nspname AS schema,c.relname AS name
         FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
-        WHERE n.nspname IN ('inventory','audit','security') AND c.relkind IN ('r','p','v','m','f')""")).mappings()}
+        WHERE n.nspname IN ('inventory','audit','security','discovery') AND c.relkind IN ('r','p','v','m','f')""")).mappings()}
     require(found == wanted, 'CATALOG_TABLES_DO_NOT_MATCH_REVISIONS')
 
 
@@ -138,7 +138,7 @@ def runtime_privileges(connection,settings):
     runtime = settings.values['roles']['runtime']
     row = connection.execute(text("""SELECT r.rolsuper OR r.rolcreatedb OR r.rolcreaterole OR r.rolreplication OR r.rolbypassrls AS elevated,
       EXISTS(SELECT FROM pg_catalog.pg_auth_members WHERE member=r.oid) AS memberships,
-      EXISTS(SELECT FROM pg_catalog.pg_namespace n WHERE n.nspname IN ('inventory','audit','security','public')
+      EXISTS(SELECT FROM pg_catalog.pg_namespace n WHERE n.nspname IN ('inventory','audit','security','discovery','public')
         AND (n.nspowner=r.oid OR pg_catalog.has_schema_privilege(r.oid,n.oid,'CREATE'))) AS ddl,
       pg_catalog.has_database_privilege(r.oid,current_database(),'CREATE') OR pg_catalog.has_database_privilege(r.oid,current_database(),'TEMP') AS database_power,
       EXISTS(SELECT FROM pg_catalog.pg_shdepend WHERE refclassid='pg_catalog.pg_authid'::pg_catalog.regclass AND refobjid=r.oid AND deptype='o') AS ownership
@@ -167,7 +167,7 @@ class StandardScope:
 
     def require(self, requested, connection):
         self.assert_bound(connection)
-        allowed = {'inventory','audit','btree_gist'} if self.chain == 'application' else {'security'}
+        allowed = {'inventory','audit','btree_gist','discovery'} if self.chain == 'application' else {'security'}
         require(requested in allowed, 'WRONG_CHAIN_SCHEMA')
         if requested == 'btree_gist':
             row = connection.execute(text("""SELECT n.nspname AS schema FROM pg_catalog.pg_extension e
@@ -243,7 +243,7 @@ def migrate(settings, *, expected_application, expected_security, chain='all'):
             migration_privileges(connection,settings)
             after = dict(before)
             for selected in (('application','security') if chain == 'all' else (chain,)):
-                if selected == 'security': require(after['application'] == APPLICATION_TARGET, 'APPLICATION_FIRST')
+                if selected == 'security': require(after['application'] in {APPLICATION_BASELINE,APPLICATION_TARGET}, 'APPLICATION_FIRST')
                 after[selected] = TARGETS[selected]
             require(before != after, 'ALREADY_AT_TARGET_NO_MIGRATION')
             record = journal.begin('migrate',target,before,after)
@@ -285,10 +285,11 @@ def reconcile(settings):
         if record['kind']=='migrate':
             state=revisions(connection);validate_tables(connection,state)
         else:
-            from installation.admin import provision_state,grants_state,seed_state
-            require(record['kind'] in {'provision','grants','initial-user'},'UNKNOWN_OPERATION_KIND')
+            from installation.admin import provision_state,grants_state,seed_state,discovery_schema_state
+            require(record['kind'] in {'provision','grants','initial-user','discovery-schema'},'UNKNOWN_OPERATION_KIND')
             if record['kind']=='provision':state=provision_state(connection,settings)
             elif record['kind']=='grants':state=grants_state(connection,settings)
+            elif record['kind']=='discovery-schema':state=discovery_schema_state(connection,settings)
             else:state=seed_state(connection,record)
         if state == record['after']: outcome = 'RECONCILED_COMMITTED'
         elif state == record['before']: outcome = 'RECONCILED_ROLLED_BACK'

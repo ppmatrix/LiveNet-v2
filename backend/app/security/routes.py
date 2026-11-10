@@ -96,7 +96,7 @@ def init_security(app, session_factory=None):
         # Trusted dependency injection used by M1.1 tests is not an HTTP switch.
         installed = app.extensions["inventory"].access
         if ((isinstance(installed, SessionInventoryAccess) or app.config.get("SECURITY_ENABLED") is True)
-                and request.path.startswith("/api/v1/inventory/")
+                and request.path.startswith(("/api/v1/inventory/", "/api/v1/discovery/"))
                 and request.method not in {"GET", "HEAD", "OPTIONS"}):
             identity = access.resolve_identity()
             if identity is None:
@@ -105,7 +105,7 @@ def init_security(app, session_factory=None):
 
     @app.after_request
     def prevent_auth_caching(response):
-        if request.path.startswith(("/api/v1/auth/", "/api/v1/inventory/")):
+        if request.path.startswith(("/api/v1/auth/", "/api/v1/inventory/", "/api/v1/discovery/")):
             response.headers["Cache-Control"] = "no-store"
             response.vary.add("Cookie")
         return response

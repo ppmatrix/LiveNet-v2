@@ -35,7 +35,7 @@ class Rows:
 
 class Database:
     def __init__(self):
-        self.data=dict(tables=set(),ledgers={},roles=set(),schemas={s:'schema_writer' for s in ('inventory','audit','security')},grants=False,users={},user_grants=[],resources={})
+        self.data=dict(tables=set(),ledgers={},roles=set(),schemas={s:'schema_writer' for s in ('inventory','audit','security','discovery')},grants=False,users={},user_grants=[],resources={})
         self.lock_owner=None;self.active=set();self.next_pid=100
         self.sql=[];self.commit_lost=False;self.fail_ddl=False;self.elevated=False;self.runtime_ddl=False
         self.entered=Event();self.release=Event();self.pause=False
@@ -78,6 +78,10 @@ class Connection(MockConnection):
             self.working['roles'].add(sql.split()[2]);return Rows()
         if sql.startswith('ALTER SCHEMA '):
             self.working['schemas'][sql.split()[2]]=sql.split()[-1];return Rows()
+        if sql.startswith('CREATE SCHEMA discovery AUTHORIZATION '):
+            self.working['schemas']['discovery']=sql.split()[-1];return Rows()
+        if "SELECT json_build_object('owner',pg_catalog.pg_get_userbyid(nspowner)" in sql:
+            owner=self.working['schemas'].get('discovery');return Rows([(dict(owner=owner,public_acl=False),)] if owner else [])
         if sql.startswith('GRANT '):
             if ' ON TABLE ' in sql:self.working['grants']=True
             return Rows()
@@ -293,3 +297,32 @@ def test_proportional_backup_uses_private_pgpass_not_password_argv(tmp_path,monk
         assert output.stat().st_mode & 0o777==0o600
         assert output.read_bytes()==b'CONSTRUCTED DUMP BYTES'
     assert not db.active and db.lock_owner is None
+
+
+def old_standard_database(tmp_path):
+    db=Database();config=settings(tmp_path,db)
+    runner.migrate(config,expected_application='base',expected_security='base')
+    db.data['ledgers']['alembic_version']='f066a01a7230'
+    db.data['tables']={t for t in db.data['tables'] if t[0]!='discovery'}
+    del db.data['schemas']['discovery']
+    return db,config
+
+
+def test_discovery_preparation_and_existing_f066_upgrade(tmp_path):
+    from installation.admin import prepare_discovery
+    db,config=old_standard_database(tmp_path)
+    assert prepare_discovery(config)['state']=='CONFIRMED'
+    result=runner.migrate(config,expected_application='f066a01a7230',expected_security=SECURITY_TARGET,chain='application')
+    assert result['revisions']==dict(application=APPLICATION_TARGET,security=SECURITY_TARGET)
+    assert {('discovery',name) for name in ('jobs','observations','decisions')}<=db.data['tables']
+    assert not any('authorization_integrity_anchors' in str(t) for t in db.data['tables'])
+    assert any('trg_discovery_immutable' in sql for sql in db.sql)
+
+
+def test_discovery_migration_failure_preserves_old_revision_and_catalog(tmp_path):
+    from installation.admin import prepare_discovery
+    db,config=old_standard_database(tmp_path);prepare_discovery(config)
+    before=deepcopy(db.data);db.fail_ddl=True
+    with pytest.raises(Exception):runner.migrate(config,expected_application='f066a01a7230',expected_security=SECURITY_TARGET,chain='application')
+    assert db.data==before
+    assert runner.reconcile(config)['state']=='RECONCILED_ROLLED_BACK'

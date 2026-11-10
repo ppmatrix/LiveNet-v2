@@ -66,7 +66,7 @@ def backup(settings,output):
 def provision_state(connection,settings):
     names=settings.values['roles']
     roles={row['name'] for row in connection.execute(text('SELECT rolname AS name FROM pg_catalog.pg_roles WHERE rolname IN (:m,:r)'),dict(m=names['migrator'],r=names['runtime'])).mappings()}
-    schemas={row['name']:row['owner'] for row in connection.execute(text("SELECT n.nspname AS name,r.rolname AS owner FROM pg_catalog.pg_namespace n JOIN pg_catalog.pg_roles r ON r.oid=n.nspowner WHERE n.nspname IN ('inventory','audit','security')")).mappings()}
+    schemas={row['name']:row['owner'] for row in connection.execute(text("SELECT n.nspname AS name,r.rolname AS owner FROM pg_catalog.pg_namespace n JOIN pg_catalog.pg_roles r ON r.oid=n.nspowner WHERE n.nspname IN ('inventory','audit','security','discovery')")).mappings()}
     extension=connection.execute(text("SELECT n.nspname FROM pg_catalog.pg_extension e JOIN pg_catalog.pg_namespace n ON n.oid=e.extnamespace WHERE e.extname='btree_gist'")).scalar_one_or_none()
     return dict(roles=sorted(roles),schemas=schemas,extension=extension)
 
@@ -83,7 +83,7 @@ def provision(settings):
             validate_tables(connection,state)
             names=settings.values['roles']
             after=dict(roles=sorted([names['migrator'],names['runtime']]),
-                schemas={schema:names['migrator'] for schema in ('inventory','audit','security')},extension='public')
+                schemas={schema:names['migrator'] for schema in ('inventory','audit','security','discovery')},extension='public')
             record=journal.begin('provision',target,before,after)
             # Quiet password-verifier DDL; refuse if administrator cannot enforce it.
             for setting in ("log_statement='none'","log_min_error_statement='panic'",'log_parameter_max_length=0','log_parameter_max_length_on_error=0'):
@@ -104,7 +104,7 @@ def provision(settings):
                 f'GRANT EXECUTE ON FUNCTION pg_catalog.pg_control_system() TO {m}',
                 'CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA public',
             ):connection.execute(text(sql)).close()
-            for schema in ('inventory','audit','security'):
+            for schema in ('inventory','audit','security','discovery'):
                 for sql in (f'CREATE SCHEMA IF NOT EXISTS {schema} AUTHORIZATION {m}',
                             f'ALTER SCHEMA {schema} OWNER TO {m}',f'REVOKE ALL ON SCHEMA {schema} FROM PUBLIC'):
                     connection.execute(text(sql)).close()
@@ -131,6 +131,10 @@ RUNTIME_GRANTS=(
     'GRANT USAGE ON SCHEMA inventory,audit,security TO {runtime}',
     'GRANT SELECT,INSERT ON TABLE inventory.resources TO {runtime}',
     'GRANT UPDATE(resource_type,display_name,description,administrative_state,updated_at,row_version) ON TABLE inventory.resources TO {runtime}',
+    'GRANT USAGE ON SCHEMA discovery TO {runtime}',
+    'GRANT SELECT,INSERT ON TABLE discovery.jobs,discovery.observations,discovery.decisions TO {runtime}',
+    'GRANT UPDATE(status,processed,finished_at) ON TABLE discovery.jobs TO {runtime}',
+    'GRANT SELECT(resource_id,identifier_type,normalized_value) ON TABLE inventory.resource_identifiers TO {runtime}',
     'GRANT INSERT ON TABLE audit.events TO {runtime}',
     'GRANT SELECT(id,occurred_at) ON TABLE audit.events TO {runtime}',
     'GRANT SELECT ON TABLE security.local_users,security.global_role_grants TO {runtime}',
@@ -149,6 +153,9 @@ def grants_state(connection,settings):
         'resources_read':"has_table_privilege(:role,'inventory.resources','SELECT')",
         'resources_insert':"has_table_privilege(:role,'inventory.resources','INSERT')",
         'resources_update':" AND ".join("has_column_privilege(:role,'inventory.resources','"+column+"','UPDATE')" for column in ('resource_type','display_name','description','administrative_state','updated_at','row_version')),
+        'discovery_read_insert':"has_table_privilege(:role,'discovery.jobs','SELECT') AND has_table_privilege(:role,'discovery.jobs','INSERT') AND has_table_privilege(:role,'discovery.observations','SELECT') AND has_table_privilege(:role,'discovery.observations','INSERT') AND has_table_privilege(:role,'discovery.decisions','SELECT') AND has_table_privilege(:role,'discovery.decisions','INSERT') AND has_schema_privilege(:role,'discovery','USAGE')",
+        'discovery_progress':"has_column_privilege(:role,'discovery.jobs','status','UPDATE') AND has_column_privilege(:role,'discovery.jobs','processed','UPDATE') AND has_column_privilege(:role,'discovery.jobs','finished_at','UPDATE')",
+        'discovery_identifiers':"has_column_privilege(:role,'inventory.resource_identifiers','resource_id','SELECT') AND has_column_privilege(:role,'inventory.resource_identifiers','identifier_type','SELECT') AND has_column_privilege(:role,'inventory.resource_identifiers','normalized_value','SELECT')",
         'audit_insert':"has_table_privilege(:role,'audit.events','INSERT')",
         'audit_metadata':"has_column_privilege(:role,'audit.events','id','SELECT') AND has_column_privilege(:role,'audit.events','occurred_at','SELECT')",
         'users_read':"has_table_privilege(:role,'security.local_users','SELECT')",
@@ -256,3 +263,39 @@ def initial_user(settings,login,password,*,resource_name=None):
             raise
         finally:
             if session is not None:session.close()
+
+
+def discovery_schema_state(connection,settings):
+    return connection.execute(text("""SELECT json_build_object('owner',pg_catalog.pg_get_userbyid(nspowner),
+        'public_acl',EXISTS(SELECT FROM pg_catalog.aclexplode(COALESCE(nspacl,pg_catalog.acldefault('n',nspowner))) a WHERE a.grantee=0))
+        FROM pg_catalog.pg_namespace WHERE nspname='discovery'""")).scalar_one_or_none()
+
+
+def prepare_discovery(settings):
+    """Explicit administrative schema preparation for existing standard installs."""
+    journal=Journal(settings);record=None;sent=False
+    with locked(settings,'admin') as (connection,target):
+        tx=connection.begin()
+        try:
+            from installation import APPLICATION_BASELINE
+            require(revisions(connection)==dict(application=APPLICATION_BASELINE,security=SECURITY_TARGET),'EXPECTED_PRE_DISCOVERY_REVISIONS')
+            require(discovery_schema_state(connection,settings) is None,'DISCOVERY_SCHEMA_ALREADY_PRESENT')
+            owner=settings.values['roles']['migrator']
+            after=dict(owner=owner,public_acl=False)
+            record=journal.begin('discovery-schema',target,None,after)
+            quoted=connection.dialect.identifier_preparer.quote(owner)
+            connection.execute(text('CREATE SCHEMA discovery AUTHORIZATION '+quoted))
+            connection.execute(text('REVOKE ALL ON SCHEMA discovery FROM PUBLIC'))
+            journal.finish(record,'COMMIT_INTENT');sent=True;tx.commit()
+            fresh=settings.connect('admin')
+            try:
+                identity(fresh,settings,'admin')
+                require(discovery_schema_state(fresh,settings)==after,'DISCOVERY_SCHEMA_COMMIT_UNCERTAIN')
+            finally:fresh.close()
+            journal.finish(record,'CONFIRMED')
+            return dict(state='CONFIRMED',operation_id=record['operation_id'])
+        except BaseException as exc:
+            if tx.is_active:tx.rollback()
+            if record:
+                record['exception_class']=type(exc).__name__;journal.finish(record,'UNKNOWN' if sent else 'ROLLBACK_REPORTED')
+            raise

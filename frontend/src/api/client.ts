@@ -20,6 +20,9 @@ export function errorMessage(error: unknown): string {
   if (error.status === 401) return 'A sessão terminou. Inicie sessão novamente.';
   if (error.status === 403) return 'Não tem permissão para aceder a este conteúdo.';
   if (error.status === 404) return 'Recurso não encontrado ou não acessível.';
+  if (error.code === 'discovery_busy') return 'O limite de execuções foi atingido. Aguarde ou cancele uma execução.';
+  if (error.code === 'discovery_not_configured') return 'A Descoberta precisa de redes autorizadas pelo administrador.';
+  if (error.code === 'discovery_matches_review') return 'Existem possíveis correspondências. Volte à Descoberta e reveja o candidato antes de confirmar um recurso distinto.';
   if (error.code === 'version_conflict') return 'O recurso foi alterado entretanto. Os seus valores foram mantidos. Cancele para consultar a versão atual antes de voltar a editar.';
   if (error.code === 'resource_archived') return 'Este recurso está arquivado e não pode ser editado.';
   if (error.status === 429) return 'Demasiadas tentativas. Aguarde antes de tentar novamente.';

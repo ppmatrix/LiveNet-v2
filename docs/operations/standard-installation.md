@@ -244,3 +244,159 @@ Incremento UI Inventory concluído após autorização humana do grant adicional
 Validação humana posterior da edição pela UI: nome alterado para terminar em
 “editado-PP”, apresentado no detalhe com `row_version` 3. Registo baseado na
 confirmação do utilizador, sem testes adicionais ou operações sobre serviços/base.
+
+## Descoberta — ativada e validada no DEV autorizado
+
+Incremento autorizado em código sobre `6ebd167`: TCP connect IPv4, sem DNS,
+raw sockets, comandos, banners, autenticação ou credenciais. Nome/tipo não são
+inferidos. Uma observação positiva é apresentada como candidato, nunca como
+recurso consolidado. Observações por execução são imutáveis; coincidências de IP
+com identificadores existentes ou decisões anteriores são apenas pistas. Associação
+é manual; criar um recurso distinto perante pistas exige confirmação explícita.
+Decisões são serializadas por advisory lock e únicas por observação; repetição do
+mesmo pedido retorna o recurso já decidido. Nada funde, reativa ou sobrescreve
+recursos. Candidato aprovado cria inicialmente `active` (DAT-03B); editar depois
+continua a usar Inventory. Não se implementam rejeição, correção de associação,
+limpeza, TTL ou novos prazos. Não se presume identidade comum entre observações.
+
+Worker daemon no processo da aplicação, um líder por base por advisory lock,
+com alvos paralelos limitados. Configuração ausente desativa a descoberta; não há
+fallback. Ao reiniciar, execuções running/cancelling passam a interrupted, sem
+reexecução; evidência/decisões permanecem. Falha de persistência/COMMIT para o
+worker e exige diagnóstico antes de reiniciar; não repete tráfego. A eleição
+recusada deixa a instância sem worker até reinício, sem failover automático.
+Fila e limites são globais na base. Cancelamento impede novos alvos quando
+observado; sockets em curso terminam no timeout e a evidência é preservada.
+A UI lista as últimas 50 execuções; o limite de apresentação não elimina dados.
+
+### Plano único DEV — autorizado e executado
+
+Alvo preservado: querytrial existente, `livenet_v2_dev`, SID
+`7705421224394444834`. Aplicação f066→`d001a01a7230`, security mantém
+`b12b01a7230`. Revisão nova em `backend/installation/versions`, lida apenas pelo
+runner padrão; não altera revisões publicadas nem percorre f067/AUTH-03.
+Schema novo `discovery`, owner `livenet_migrator`, sem ACL PUBLIC; três tabelas
+jobs/observations/decisions, índices, FKs/uniqueness e triggers que impedem
+UPDATE/DELETE da evidência/decisões. Nenhum requisito histórico é declarado satisfeito.
+
+Registo dos comandos já executados sob autorização conjunta, após backup
+concluído e legível. Não repetir preparação/migração/ensaio confirmados:
+
+```bash
+STATE=/home/paulo/.local/state/livenet-v2-standard-dev
+CFG="$STATE/installation.json"
+./scripts/livenet inspect --config "$CFG"
+./scripts/livenet backup --config "$CFG" --output "$STATE/backups/before-discovery.dump"
+pg_restore --list "$STATE/backups/before-discovery.dump" >/dev/null
+pg_restore --file=/dev/null "$STATE/backups/before-discovery.dump"
+./scripts/livenet prepare-discovery --config "$CFG"
+./scripts/livenet migrate --config "$CFG" --chain application \
+  --application-from f066a01a7230 --security-from b12b01a7230
+./scripts/livenet grant-runtime --config "$CFG"
+./scripts/livenet inspect --config "$CFG"
+```
+
+`prepare-discovery` usa administração apenas para CREATE SCHEMA AUTHORIZATION
+migrator e REVOKE ALL FROM PUBLIC; diário/reconciliação e confirmação independente.
+Migração usa migrator e a mesma transação/lock/pin SID/ledgers já existentes.
+`grant-runtime` conserva os grants anteriores e acrescenta somente (nomes DEV):
+
+```sql
+GRANT USAGE ON SCHEMA discovery TO livenet_runtime;
+GRANT SELECT,INSERT ON TABLE discovery.jobs,discovery.observations,discovery.decisions TO livenet_runtime;
+GRANT UPDATE(status,processed,finished_at) ON TABLE discovery.jobs TO livenet_runtime;
+GRANT SELECT(resource_id,identifier_type,normalized_value) ON TABLE inventory.resource_identifiers TO livenet_runtime;
+```
+
+Runtime sem DDL/administração/ownership, DELETE, UPDATE de evidência/decisões ou
+INSERT/UPDATE de identificadores. Logs/JSON não expõem exceções SQL ou segredos.
+Resultado incerto: parar escritas, `./scripts/livenet reconcile --config "$CFG"`,
+conferir estado antes/depois; não repetir migração nem restaurar automaticamente.
+Rollback transacional antes do COMMIT deve conservar f066 e o catálogo anterior;
+o schema vazio preparado fica identificado separadamente. Após COMMIT confirmado,
+rollback de produto exige parar a aplicação/desativar Discovery e decisão de
+recuperação própria, sem apagar tabelas/evidência ou usar downgrade destrutivo.
+
+### Primeiro ensaio real — autorizado e executado
+
+Usar apenas o endpoint da DB querytrial identificado na configuração DEV:
+`172.29.0.2/32`, TCP **5432**, até duas execuções sequenciais de um alvo
+(máximo duas ligações TCP de deteção), sem payload PostgreSQL/autenticação. Reconfirmar configuração/endereço antes de executar;
+qualquer mudança de endereço exige rever o alvo, sem ampliar o âmbito.
+Possível efeito remoto: registo de conexão aberta/fechada no servidor PostgreSQL;
+não se escrevem dados nem se enviam credenciais ao alvo pela deteção.
+
+Criar, apenas depois de autorização, ficheiro privado 0600 fora do Git em
+`$STATE/discovery.json`, com estes bytes JSON (sem secrets):
+
+```json
+{"networks":["172.29.0.2/32"],"ports":[5432],"max_targets":1,"concurrency":1,"target_timeout":1.0,"job_timeout":5.0,"max_jobs":1}
+```
+
+Reinício controlado apenas da aplicação, mantendo DB/volume/dados/HTTPS existentes,
+com `LIVENET_DISCOVERY_CONFIG="$STATE/discovery.json" ./scripts/livenet serve --config "$CFG"`.
+Não há reload automático do scope; parar a aplicação antes de trocar este ficheiro.
+No browser via túnel, `https://localhost:8443/discovery`: iniciar esse /32, observar
+progresso/evidência/instante, rever candidato. Escolha humana de nome
+`TESTE Discovery DEV — querytrial`, tipo `container`, descrição de teste, active;
+não inferidos pelo motor. Conferir recurso na lista/detalhe. Repetir o mesmo pedido
+de decisão (incluindo concorrente) deve retornar o mesmo ID, sem outro recurso.
+A segunda execução do mesmo ensaio conserva observação/decisão anterior e
+apresenta a associação manual ao recurso já criado, sem criar outro recurso
+automaticamente. Efeitos máximos previstos: dois jobs, duas observações, um
+recurso de teste e duas decisões manuais com os respetivos eventos de auditoria.
+Preservar Primeira VM DEV e o teste UI anterior. Sem scan de outras redes/portas.
+
+Validação offline: testes de rede usam doubles; persistência/concorrência usam
+SQLite com locks de teste e compilação PostgreSQL das migrações, não prova de locks
+ou DDL em PostgreSQL real. Na preparação offline anterior não houve migração/grant, reinício ou descoberta
+real; a execução autorizada posterior está registada abaixo. STAGING/PROD continuam em VMs Proxmox, acesso só interno.
+
+
+### Resultado operacional confirmado — 08/11/2026
+
+SID `7705421224394444834` e endpoint/volume existentes conferidos antes das
+escritas. Backup `before-discovery.dump`, 0600, 220022 bytes, listagem e
+leitura integral pg_restore concluídas antes de preparar o schema; SHA-256
+`5bd37a687e0e58cdff623eeb249838e1aede5c4636ab45c572fd7abda4cad1ae`.
+Preparação, migração e grants CONFIRMED por ligações independentes; application
+`d001a01a7230`, security `b12b01a7230`. Catálogo/índices/triggers conferidos.
+Runtime/worker usam `livenet_runtime`, sem DDL/administração, escrita de
+identificadores ou UPDATE da evidência/decisões. Configuração privada 0600 em
+`/home/paulo/.local/state/livenet-v2-standard-dev/discovery.json` com o /32,
+porta e limites acima; apenas aplicação reiniciada, HTTPS em 127.0.0.1:8443.
+
+Ensaio real: dois jobs sequenciais, cada um 0/1→1/1, queued→running→completed;
+duas observações `tcp_connect`, IP 172.29.0.2, única porta 5432 com `connected`,
+instante/proveniência persistidos. Duas ligações de deteção ao todo; nenhum
+outro alvo/porta/payload/autenticação de equipamento. Primeiro job
+`c6d309eb-8ced-4d77-bb33-d4f5eb9af5b7`, segundo
+`df81d3c1-e8b3-4d63-b2bc-65faff1fd679`.
+
+Criado apenas `TESTE Discovery DEV — querytrial`, UUID
+`018078d1-2292-42aa-bdf9-3bd5164bc6d0`, tipo container escolhido no ensaio,
+sem credenciais. Dois pedidos concorrentes para o mesmo candidato devolveram
+o mesmo recurso: uma criação e uma decisão; segundo pedido idempotente.
+Segunda observação preserva a primeira/decisão e apresenta possível
+correspondência. **O mandato executivo proibiu associações:** não se efetuou a
+associação sugerida no plano anterior; o segundo candidato ficou pendente.
+Contagens reais finais: dois jobs, duas observações, um recurso novo e uma
+única decisão (`create`), zero associações. Os dois recursos preexistentes e a
+conta existente foram comparados com o baseline e preservados.
+
+Sem falhas/COMMIT incerto, retries, restauro ou marcador de reconciliação
+pendente. Segredos ausentes do log da aplicação. Evidências privadas em
+`discovery-real-trial.json`/`discovery-trial-baseline.json`, fora do Git; não
+incluir em staging. UI disponível em https://localhost:8443/discovery pelo túnel
+interno, ainda limitada ao /32 e porta autorizados. Sem instalações, downloads,
+alterações DEV09B, staging, commits ou pushes. Servidor permanece DEV, sem
+supervisão/reboot automático; certificado/túnel existentes preservados.
+
+Checkpoint posterior: o utilizador comunicou validação humana das páginas de
+Descoberta. Separadamente, leitura READ ONLY confirmou a associação manual do
+segundo candidato `691be909-852a-438b-a286-59459a470bcf` ao recurso de teste
+`018078d1-2292-42aa-bdf9-3bd5164bc6d0` (decisão associate às 20:36:01.876934 UTC).
+Continuam três recursos no total e duas decisões, sem duplicado; recursos
+anteriores preservados. A associação não foi criada por esta verificação.
+Checkbox/texto alinhados na revisão; seis testes UI Discovery aprovados e
+bundle atualizado com typecheck/build local, sem reinício ou novos scans.

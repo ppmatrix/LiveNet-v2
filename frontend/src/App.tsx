@@ -1,4 +1,5 @@
 import { Link, Navigate, Route, Routes } from 'react-router';
+import { DiscoveryPage,DiscoveryJobPage,DiscoveryCandidatePage } from './pages/DiscoveryPage';
 import { RequireSession } from './auth/RequireSession';
 import { AppLayout } from './layout/AppLayout';
 import { LoginPage } from './pages/LoginPage';
@@ -12,6 +13,9 @@ export function App() {
     <Route element={<RequireSession />}>
       <Route element={<AppLayout />}>
         <Route index element={<Navigate to="/inventory" replace />} />
+        <Route path="/discovery" element={<DiscoveryPage />} />
+        <Route path="/discovery/jobs/:jobId" element={<DiscoveryJobPage />} />
+        <Route path="/discovery/candidates/:candidateId" element={<DiscoveryCandidatePage />} />
         <Route path="/inventory" element={<ResourcesPage />} />
         <Route path="/inventory/new" element={<ResourceCreatePage />} />
         <Route path="/inventory/:resourceId/edit" element={<ResourceEditPage />} />
