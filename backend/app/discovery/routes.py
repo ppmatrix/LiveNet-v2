@@ -2,7 +2,7 @@
 from flask import Blueprint,current_app,jsonify,request
 from werkzeug.exceptions import HTTPException
 from app.inventory.routes import _caller,_read_scope,InventoryHTTPError
-from app.inventory.schemas import InventoryValidationError,validate_resource_id
+from app.inventory.schemas import InventoryValidationError,validate_resource_id,validate_query
 from app.security.errors import SecurityError
 from .service import Repository,Problem
 from .worker import Worker
@@ -52,7 +52,7 @@ def start():
 
 @bp.get('/jobs/<identifier>')
 def job(identifier):
-    extension,*_=access()
+    extension,*_=access(enabled=False)
     return jsonify(extension['repository'].job(validate_resource_id(identifier)))
 
 
@@ -66,6 +66,16 @@ def cancel(identifier):
 def candidate(identifier):
     extension,_,_,scope=access()
     return jsonify(extension['repository'].candidate(validate_resource_id(identifier),scope))
+
+
+@bp.get('/resources/<identifier>/history')
+def resource_history(identifier):
+    # Reading existing history does not require enabling new network detection.
+    extension,_,_,scope=access(enabled=False)
+    if set(request.args)-{'page','per_page'}:raise Problem(400,'invalid_request')
+    query=validate_query(request.args)
+    return jsonify(extension['repository'].resource_history(validate_resource_id(identifier),scope,
+        page=query['page'],per_page=query['per_page']))
 
 
 @bp.post('/candidates/<identifier>/decision')

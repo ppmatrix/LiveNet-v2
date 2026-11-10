@@ -1,7 +1,7 @@
 import { screen,waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe,it,expect } from 'vitest';
-import { mockHttp,json,failure,resource,user } from '../test/http';
+import { emptyDiscoveryHistory,mockHttp,json,failure,resource,user } from '../test/http';
 import type { Handler } from '../test/http';
 import { renderApp } from '../test/renderApp';
 const config={enabled:true,policy:{networks:['10.42.0.0/24'],ports:[22,443],max_targets:16,concurrency:2,target_timeout:.2,job_timeout:2,max_jobs:2}};
@@ -13,6 +13,7 @@ function http(handler:Handler,editor=true) {
     if(url.pathname.endsWith('/auth/me'))return json({user:{...user,roles:editor?['inventory_editor']:['inventory_reader']}});
     if(url.pathname.endsWith('/auth/csrf'))return json({csrf_token:'discovery-test-csrf'});
     if(url.pathname.endsWith('/discovery/config'))return json(config);
+    if(url.pathname.includes('/discovery/resources/')&&url.pathname.endsWith('/history'))return emptyDiscoveryHistory(url);
     return handler(url,options);
   });
 }

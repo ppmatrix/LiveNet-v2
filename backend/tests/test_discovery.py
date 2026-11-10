@@ -362,3 +362,62 @@ def test_refused_port_with_other_errors_is_not_whole_target_failure(monkeypatch)
     result=probe('10.42.0.1',policy())
     assert result['outcome']=='responded'
     assert [p['result'] for p in result['evidence']['ports']]==['local_error','refused']
+
+
+def test_resource_history_keeps_multiple_explicit_decisions_and_excludes_ip_coincidence(store):
+    repo,_,identity=store
+    first=observe(repo,identity)
+    resource=repo.decide(first,creation(),identity,true(),lambda *args:True)['resource']
+    identifier=__import__('uuid').UUID(resource['id'])
+    second=observe(repo,identity)
+    repo.decide(second,dict(mode='associate',resource_id=resource['id']),identity,true(),lambda *args:True)
+    unassociated=observe(repo,identity)
+    history=repo.resource_history(identifier,true())
+    assert history['total']==2
+    assert {r['id'] for r in history['items']}=={str(first),str(second)}
+    assert str(unassociated) not in {r['id'] for r in history['items']}
+    assert {r['decision']['mode'] for r in history['items']}=={'create','associate'}
+    assert all(r['decision']['resource_id']==resource['id'] and r['job_id'] and r['ip']=='10.42.0.1' and r['evidence']['method']=='tcp_connect' for r in history['items'])
+    assert history['items'][0]['id']==str(second)
+    page1=repo.resource_history(identifier,true(),page=1,per_page=1)
+    page2=repo.resource_history(identifier,true(),page=2,per_page=1)
+    assert page1['total']==page2['total']==2 and page1['items'][0]['id']!=page2['items'][0]['id']
+
+
+def test_resource_history_without_discovery_and_out_of_scope_have_correct_contract(store):
+    from sqlalchemy import false
+    repo,_,identity=store
+    from app.inventory.service import create_resource
+    with repo.transaction() as session:
+        resource=create_resource(session,dict(resource_type='service',display_name='Manual',description=None,attributes={}),identity)
+        identifier=resource.id
+    assert repo.resource_history(identifier,true())['items']==[]
+    assert repo.resource_history(identifier,true())['total']==0
+    with pytest.raises(Problem) as hidden:repo.resource_history(identifier,false())
+    with pytest.raises(Problem) as missing:repo.resource_history(uuid4(),true())
+    assert hidden.value.status==missing.value.status==404 and hidden.value.code==missing.value.code=='not_found'
+
+
+def test_resource_history_api_read_permission_and_disabled_detection(store):
+    from sqlalchemy import false
+    repo,sessions,identity=store
+    candidate=observe(repo,identity);resource=repo.decide(candidate,creation(),identity,true(),lambda *args:True)['resource']
+    access=SimpleNamespace(resolve_identity=lambda:identity,read_scope=lambda i:true(),can_create=lambda *args:False)
+    app=create_app('testing',inventory_access=access,inventory_session_factory=sessions)
+    app.extensions['discovery']['repository']=repo;client=app.test_client()
+    path='/api/v1/discovery/resources/'+resource['id']+'/history'
+    response=client.get(path+'?page=1&per_page=1');assert response.status_code==200
+    assert response.json['items'][0]['decision']['mode']=='create' and response.json['total']==1
+    assert response.headers['Cache-Control']=='no-store'
+    # History and its original execution remain readable without scan configuration.
+    assert client.get('/api/v1/discovery/jobs/'+response.json['items'][0]['job_id']).status_code==200
+    for query in ('?per_page=101','?page=0','?page=1&page=2','?scope=global'):
+        assert client.get(path+query).status_code==400
+    assert client.get('/api/v1/discovery/resources/invalid/history').status_code==400
+    access.read_scope=lambda i:false()
+    hidden=client.get(path);missing=client.get('/api/v1/discovery/resources/'+str(uuid4())+'/history')
+    assert hidden.status_code==missing.status_code==404 and hidden.json==missing.json
+    access.read_scope=lambda i:None
+    assert client.get(path).status_code==403
+    access.resolve_identity=lambda:None
+    assert client.get(path).status_code==401

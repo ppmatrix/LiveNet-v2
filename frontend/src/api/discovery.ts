@@ -64,3 +64,30 @@ async function decide(id:string,body:unknown):Promise<Resource> {
 }
 export function createFromCandidate(id:string,resource:ResourceInput,confirmDistinct:boolean) { return decide(id,{mode:'create',resource,confirm_distinct:confirmDistinct}); }
 export function associateCandidate(id:string,resourceId:string) { return decide(id,{mode:'associate',resource_id:resourceId}); }
+
+export interface ResourceDiscoveryEntry extends Observation {
+  job_id:string;
+  decision:NonNullable<Observation['decision']>;
+}
+export interface ResourceDiscoveryHistory {
+  resource_id:string;
+  items:ResourceDiscoveryEntry[];
+  total:number;
+  page:number;
+  per_page:number;
+}
+export async function getResourceDiscoveryHistory(id:string,page=1,signal?:AbortSignal):Promise<ResourceDiscoveryHistory> {
+  const data=await request('/discovery/resources/'+encodeURIComponent(id)+'/history',{
+    signal,query:new URLSearchParams({page:String(page),per_page:'20'}),
+  });
+  if(!isRecord(data)||data.resource_id!==id||!Array.isArray(data.items)
+      ||!Number.isSafeInteger(data.total)||Number(data.total)<0||!Number.isSafeInteger(data.page)||Number(data.page)<1
+      ||!Number.isSafeInteger(data.per_page)||Number(data.per_page)<1||Number(data.per_page)>100)return invalidResponse();
+  for(const item of data.items) {
+    const o=observation(item);
+    if(!isRecord(item)||typeof item.job_id!=='string'||!item.job_id||!o.decision
+        ||!['create','associate'].includes(o.decision.mode)||o.decision.resource_id!==id
+        ||typeof o.decision.decided_at!=='string')return invalidResponse();
+  }
+  return data as unknown as ResourceDiscoveryHistory;
+}

@@ -431,3 +431,20 @@ Validação humana da apresentação em 10/11/2026: candidatos por defeito,
 contadores e evidências visíveis. Não abrange polling durante execução nem
 validação da causa das 232 falhas históricas. Testes automatizados anteriores
 permanecem distintos desta confirmação humana; nenhum foi repetido no checkpoint.
+
+Detalhe do recurso com Descoberta (10/11/2026): secção de histórico apenas das
+observações explicitamente ligadas ao UUID por decisões create/associate; IP não
+é tratado como identidade permanente ou disponibilidade atual. Inclui evidência
+TCP, datas, tipo de decisão e ligação à execução original, com paginação; ausência
+ou falha do histórico não remove o detalhe normal. Mesmo scope de leitura do
+Inventory; nenhuma migração/grant adicional, pois os SELECTs já instalados bastam.
+Leituras históricas não exigem habilitar o motor de deteção. Validação humana
+comunicada do percurso ecEng: candidato 10.10.77.160→criação→detalhe, Contentor,
+versão 1; não é declaração de validação humana da secção nova. Confirmada por GET
+no DEV, incluindo histórico múltiplo/vazio, após reinício só da aplicação em
+loopback. Dados integralmente preservados; zero deteções novas.
+
+Validação visual posterior em ecEng: secção Descoberta confirmada pelo utilizador,
+com “Ver execução” visível. A navegação por essa ligação não foi confirmada;
+a validação humana fica limitada à apresentação visual, distinta dos testes/GETs
+anteriormente reportados. Nenhum teste ou operação operacional repetido no checkpoint.

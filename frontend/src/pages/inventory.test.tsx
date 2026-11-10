@@ -1,7 +1,7 @@
 import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { failure, json, mockHttp, page, resource, user } from '../test/http';
+import { emptyDiscoveryHistory, failure, json, mockHttp, page, resource, user } from '../test/http';
 import type { Handler } from '../test/http';
 import { renderApp } from '../test/renderApp';
 
@@ -9,6 +9,7 @@ function inventoryHttp(handler: Handler) {
   return mockHttp((url, options) => {
     if (url.pathname.endsWith('/auth/me')) return json({ user });
     if (url.pathname.endsWith('/auth/csrf')) return json({ csrf_token: 'test-session-csrf' });
+    if(url.pathname.includes('/discovery/resources/')&&url.pathname.endsWith('/history'))return emptyDiscoveryHistory(url);
     return handler(url, options);
   });
 }

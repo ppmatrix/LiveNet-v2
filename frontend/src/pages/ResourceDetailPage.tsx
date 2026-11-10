@@ -7,6 +7,7 @@ import { useRemote } from '../api/useRemote';
 import { ErrorNotice, Loading } from '../components/Feedback';
 import { formatDate, ResourceState } from '../components/ResourceState';
 import { useSession } from '../auth/SessionProvider';
+import { ResourceDiscoverySection } from '../components/ResourceDiscoverySection';
 
 export function ResourceDetailPage() {
   const { session } = useSession();
@@ -37,6 +38,7 @@ export function ResourceDetailPage() {
         <div><dt>Arquivado em</dt><dd>{formatDate(resource.archived_at)}</dd></div>
         <div><dt>Versão do registo</dt><dd>{resource.row_version}</dd></div>
       </dl></section>
+      <ResourceDiscoverySection key={resource.id} resourceId={resource.id}/>
       <section className="surface detail-panel attributes-panel"><h2>Atributos</h2>
         {Object.keys(resource.attributes).length ? <pre>{JSON.stringify(resource.attributes, null, 2)}</pre>
           : <p className="muted">Sem atributos adicionais.</p>}</section>

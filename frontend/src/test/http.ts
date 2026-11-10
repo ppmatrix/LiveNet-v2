@@ -26,12 +26,17 @@ export function failure(status: number, code: string): Response {
 
 export type Handler = (url: URL, options: RequestInit) => Response | Promise<Response>;
 
+export function emptyDiscoveryHistory(url: URL): Response {
+  return json({ resource_id: url.pathname.split('/').at(-2), items: [], total: 0, page: 1, per_page: 20 });
+}
+
 export function mockHttp(handler?: Handler) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, options: RequestInit = {}) => {
     const url = new URL(String(input));
     if (handler) return handler(url, options);
     if (url.pathname.endsWith('/auth/me')) return json({ user });
     if (url.pathname.endsWith('/auth/csrf')) return json({ csrf_token: 'test-only-csrf' });
+    if (url.pathname.includes('/discovery/resources/') && url.pathname.endsWith('/history')) return emptyDiscoveryHistory(url);
     if (url.pathname.endsWith('/inventory/resources')) return json(page());
     if (url.pathname.endsWith('/inventory/resources/' + resource.id)) return json(resource);
     throw new Error('Unexpected HTTP request in test: ' + url.pathname);

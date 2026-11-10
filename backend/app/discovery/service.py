@@ -71,6 +71,18 @@ class Repository:
             source_instance=o.source_instance,confidence=None,verification_status='unverified',evidence=o.evidence,
             decision=dict(mode=decision.mode,resource_id=str(decision.resource_id),decided_at=timestamp(decision.decided_at)) if decision else None)
 
+    def resource_history(self,identifier,scope,*,page=1,per_page=20):
+        with self.transaction() as session:
+            # Authorize the resource before accessing its observation history.
+            # IP coincidence without an explicit persisted decision is excluded.
+            if inventory.get_resource(session,scope,identifier) is None:raise Problem(404,'not_found')
+            total=session.scalar(select(func.count()).select_from(Decision).where(Decision.resource_id==identifier))
+            rows=session.execute(select(Observation,Decision).join(Decision,Decision.observation_id==Observation.id)
+                .where(Decision.resource_id==identifier).order_by(Observation.observed_at.desc(),Observation.id)
+                .offset((page-1)*per_page).limit(per_page)).all()
+            return dict(resource_id=str(identifier),items=[dict(self.observation_public(o,d),job_id=str(o.job_id)) for o,d in rows],
+                total=total,page=page,per_page=per_page)
+
     def cancel(self,identifier,identity):
         with self.transaction() as session:
             job=session.scalar(select(Job).where(Job.id==identifier).with_for_update())
