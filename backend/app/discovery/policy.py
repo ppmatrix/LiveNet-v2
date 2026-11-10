@@ -18,7 +18,7 @@ class Policy:
     ports: tuple = (22,80,443)
     max_targets: int = 64
     concurrency: int = 8
-    target_timeout: float = 1.0
+    target_timeout: float = 1.0  # Existing config/API key; timeout per TCP connection.
     job_timeout: float = 60.0
     max_jobs: int = 2
 
@@ -35,7 +35,9 @@ class Policy:
         networks=tuple(ipaddress.IPv4Network(n,strict=True) for n in value['networks'])
         if not all(any(n.subnet_of(private) for private in PRIVATE) for n in networks):raise ValueError('Só são permitidas redes RFC1918.')
         ports=value['ports']
-        if not isinstance(ports,list) or not 1<=len(ports)<=4 or len(set(ports))!=len(ports) or any(type(p) is not int or not 1<=p<=65535 for p in ports):raise ValueError('Portas inválidas.')
+        if (not isinstance(ports,list) or not 1<=len(ports)<=6
+                or any(type(p) is not int or not 1<=p<=65535 for p in ports)
+                or len(set(ports))!=len(ports)):raise ValueError('Portas inválidas.')
         for name,maximum in [('max_targets',256),('concurrency',32),('max_jobs',4)]:
             if type(value[name]) is not int or not 1<=value[name]<=maximum:raise ValueError('Limite inválido.')
         for name,maximum in [('target_timeout',5),('job_timeout',300)]:
@@ -62,7 +64,9 @@ class Policy:
                 count=int(last)-int(first)+1
                 if not 1<=count<=self.max_targets:raise ValueError('Intervalo inválido ou demasiado grande.')
                 addresses=tuple(ipaddress.IPv4Address(n) for n in range(int(first),int(last)+1))
-            if not addresses or not all(internal(a) and any(a in n for n in self.networks) for a in addresses):raise ValueError('Alvos fora das redes autorizadas.')
+            if not addresses or not all(internal(a) and any(a in n and
+                (n.prefixlen>=31 or a not in (n.network_address,n.broadcast_address))
+                for n in self.networks) for a in addresses):raise ValueError('Alvos fora das redes autorizadas ou endereços de rede/broadcast.')
         except (ipaddress.AddressValueError,ipaddress.NetmaskValueError):
             raise ValueError('Rede IPv4 inválida.') from None
         return tuple(str(a) for a in addresses)

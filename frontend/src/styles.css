@@ -168,3 +168,9 @@ pre { margin: 0; padding: 18px; background: #f4f7f3; overflow-x: auto; white-spa
   .account-name { max-width: 120px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+.discovery-summary { display: flex; flex-wrap: wrap; gap: 16px 32px; margin: 18px 0; }
+.discovery-summary > div { margin: 0; }
+.discovery-summary dd { font-size: 1.2rem; font-weight: 600; }
+.discovery-results { table-layout: fixed; min-width: 1000px; }
+.discovery-results td:nth-child(3) { overflow-wrap: anywhere; }

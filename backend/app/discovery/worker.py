@@ -3,7 +3,6 @@
 Never resumes running jobs after restart or retries a failed persistence/commit.
 """
 from concurrent.futures import ThreadPoolExecutor,wait,FIRST_COMPLETED
-from dataclasses import replace
 from threading import Event,Thread
 import logging
 import time
@@ -80,8 +79,7 @@ class Worker:
                 while not exhausted and not cancel.is_set() and len(inflight)<self.policy.concurrency:
                     try:ip=next(addresses)
                     except StopIteration:exhausted=True;break
-                    effective=replace(self.policy,target_timeout=min(self.policy.target_timeout,max(.01,deadline-time.monotonic())))
-                    inflight[pool.submit(self.probe,ip,effective,cancel.is_set)]=ip
+                    inflight[pool.submit(self.probe,ip,self.policy,cancel.is_set,deadline=deadline)]=ip
                 if not inflight:break
                 done,_=wait(inflight,timeout=.1,return_when=FIRST_COMPLETED)
                 for future in done:

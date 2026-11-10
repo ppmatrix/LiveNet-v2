@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen,waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe,it,expect } from 'vitest';
 import { mockHttp,json,failure,resource,user } from '../test/http';
@@ -33,6 +33,7 @@ describe('Descoberta manual',()=>{
     });
     renderApp('/discovery');
     await userEvent.type(await screen.findByLabelText('Rede IPv4 CIDR ou intervalo IP'),'10.42.0.5/32');
+    expect(screen.getByText(/timeout por ligação 0\.2s/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button',{name:'Iniciar descoberta'}));
     expect(await screen.findByRole('progressbar')).toHaveAttribute('value','1');
     await userEvent.click(await screen.findByRole('link',{name:'Rever candidato'}));
@@ -60,7 +61,7 @@ describe('Descoberta manual',()=>{
     http((_,options)=>{if(options.method==='POST'){writes++;cancelled=true;}return json({...job,status:cancelled?'cancelled':'running',processed:0,observations:[]});});
     renderApp('/discovery/jobs/'+job.id);
     await userEvent.click(await screen.findByRole('button',{name:'Cancelar descoberta'}));
-    expect(await screen.findByRole('status')).toHaveTextContent('Cancelada');
+    await waitFor(()=>expect(screen.getByRole('status')).toHaveTextContent('Cancelada'));
     expect(screen.queryByRole('button',{name:'Cancelar descoberta'})).not.toBeInTheDocument();expect(writes).toBe(1);
   });
   it('associa manualmente uma possível correspondência sem reativar',async()=>{

@@ -400,3 +400,34 @@ Continuam três recursos no total e duas decisões, sem duplicado; recursos
 anteriores preservados. A associação não foi criada por esta verificação.
 Checkbox/texto alinhados na revisão; seis testes UI Discovery aprovados e
 bundle atualizado com typecheck/build local, sem reinício ou novos scans.
+
+Atualização operacional DEV de 10/11/2026, autorizada sem varrimento: o scope
+atual substitui o /32 de ensaio por `10.10.77.0/24` exclusivamente no ficheiro
+privado discovery.json. Até 254 hosts, excluindo rede/broadcast, TCP
+22/80/443/445/3389/8006, 8 ligações em paralelo, timeout de 1s por ligação e
+300s por execução; uma execução ativa no máximo. A chave existente
+`target_timeout` representa agora o timeout por ligação; cada porta tem o seu
+orçamento e todas respeitam o deadline global. Sem retries, leitura de banners,
+DNS ou autenticação de equipamento. Código genérico admite até seis portas,
+sem conter as definições deste laboratório. Configuração anterior preservada
+fora do Git. API confirmou valores efetivos; hashes de jobs/observações/decisões
+e recursos iguais antes/depois do reinício, zero jobs novos e nenhuma pesquisa.
+Apenas aplicação reiniciada, HTTPS loopback preservado. Início manual na UI.
+
+Experiência de resultados atualizada em 10/11/2026: vista de execução abre em
+Candidatos detetados, com contadores de todos os alvos e filtros Todos/Diagnósticos.
+Polling serializado conserva tabela/foco/scroll, acrescenta novos resultados no
+fim e faz uma leitura final ao atingir estado terminal, sem polling posterior.
+Execuções já terminais são lidas uma vez; atualização manual permanece disponível.
+As observações históricas não são reescritas. Nos 232 registos antigos de
+445:error da execução /24, o errno original não foi guardado nem consta dos logs;
+a causa não pode ser determinada retroativamente. Execuções futuras preservam
+códigos seguros/errno (recusa, timeout, inacessibilidade, erro local), sem mensagens
+brutas e sem transformar uma recusa isolada em falha do alvo inteiro.
+Só aplicação reiniciada para carregar código; hashes de jobs/observações/decisões
+e recursos antes/depois iguais, zero deteções novas. Configuração/âmbito mantidos.
+
+Validação humana da apresentação em 10/11/2026: candidatos por defeito,
+contadores e evidências visíveis. Não abrange polling durante execução nem
+validação da causa das 232 falhas históricas. Testes automatizados anteriores
+permanecem distintos desta confirmação humana; nenhum foi repetido no checkpoint.

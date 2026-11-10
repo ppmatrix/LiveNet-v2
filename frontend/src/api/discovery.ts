@@ -8,7 +8,7 @@ export interface DiscoveryPolicy { networks:string[]; ports:number[]; max_target
 export interface DiscoveryConfig { enabled:boolean; policy:DiscoveryPolicy|null }
 export interface Observation {
   id:string; ip:string; hostname:null; outcome:'responded'|'no_response'|'error'; observed_at:string;
-  evidence:{ method:string; ports:{port:number; result:string}[] };
+  evidence:{ method:string; ports:{port:number; result:string; code?:string; errno?:number}[] };
   decision:{mode:string; resource_id:string; decided_at:string}|null;
 }
 export interface DiscoveryJob { id:string; target:string; status:string; total:number; processed:number; observations?:Observation[] }
@@ -20,7 +20,7 @@ function observation(data:unknown):Observation {
   if (!isRecord(data) || typeof data.id!=='string' || typeof data.ip!=='string' || data.hostname!==null
       || !['responded','no_response','error'].includes(String(data.outcome)) || typeof data.observed_at!=='string'
       || !isRecord(data.evidence) || data.evidence.method!=='tcp_connect' || !Array.isArray(data.evidence.ports)
-      || !data.evidence.ports.every(p=>isRecord(p)&&Number.isInteger(p.port)&&typeof p.result==='string')
+      || !data.evidence.ports.every(p=>isRecord(p)&&Number.isInteger(p.port)&&typeof p.result==='string'&&(p.code===undefined||typeof p.code==='string')&&(p.errno===undefined||Number.isInteger(p.errno)))
       || !(data.decision===null || (isRecord(data.decision)&&typeof data.decision.resource_id==='string'&&typeof data.decision.mode==='string'))) return invalidResponse();
   return data as unknown as Observation;
 }
