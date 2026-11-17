@@ -1,5 +1,10 @@
 # Instalação padrão MVP — DEV, login e Inventory persistente
 
+Preparação posterior DEV-STABILITY-01/Fase B: [transporte HTTPS limitado e
+procedimento de ativação/rollback](dev-stability-01-https.md). Implementado e
+testado isoladamente, **ainda não ativado no processo DEV operacional**. Não
+autoriza reinício, supervisão, novas pesquisas ou transferência da baseline.
+
 ## Decisão e limite de âmbito — 08/11/2026
 
 Por instrução humana expressa, a instalação/migração da própria base LiveNet no

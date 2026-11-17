@@ -50,7 +50,7 @@ def inspect(settings):
 
 def serve(settings,config_file):
     from ipaddress import ip_address
-    from werkzeug.serving import run_simple
+    from installation.https import run_dev_https, LOG
     from installation.runtime import create_standard_app
     require(settings.values['environment']=='DEV','USE_PRODUCTION_WSGI_SERVER_OUTSIDE_DEV')
     https=settings.values['https'];address=ip_address(https['bind'])
@@ -58,8 +58,14 @@ def serve(settings,config_file):
     # Validate the private key file's ownership/mode without returning its bytes.
     _secret(https['key'])
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
-    run_simple(str(address),https['port'],create_standard_app(config_file),
-        ssl_context=(https['certificate'],https['key']),use_debugger=False,use_reloader=False)
+    if not LOG.handlers:
+        handler=logging.StreamHandler()
+        handler.setFormatter(logging.Formatter('%(message)s'))
+        LOG.addHandler(handler)
+    LOG.setLevel(logging.INFO)
+    LOG.propagate=False
+    run_dev_https(str(address),https['port'],lambda: create_standard_app(config_file),
+        https['certificate'],https['key'])
 
 
 def main(argv=None):
