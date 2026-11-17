@@ -51,11 +51,13 @@ def create_standard_app(config_file):
     from app.discovery.policy import Policy
     discovery_file=os.environ.get('LIVENET_DISCOVERY_CONFIG')
     discovery_policy=Policy.load(discovery_file) if discovery_file else None
+    from installation.discovery import journal_for
     app=create_app('production',security_config=dict(SECURITY_ENABLED=True,
         SECURITY_HTTPS_ORIGIN=settings.values['https']['origin'],
         SECURITY_CSRF_KEY=_secret(settings.values['csrf_key_file'])),
         inventory_session_factory=RuntimeSession,security_session_factory=RuntimeSession,
-        discovery_policy=discovery_policy,discovery_leader_factory=(lambda: runtime_connection(settings)) if discovery_policy else None)
+        discovery_policy=discovery_policy,discovery_leader_factory=(lambda: runtime_connection(settings)) if discovery_policy else None,
+        discovery_journal=journal_for(settings) if discovery_policy else None)
     SecurityPolicy.load(app.config)
     app.wsgi_app=TrustedProxy(app.wsgi_app,enabled=False,peers=(),authority='')
     dist=Path(settings.values['frontend_dist'])

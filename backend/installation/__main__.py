@@ -79,9 +79,14 @@ def main(argv=None):
     init.add_argument('--system-identifier');init.add_argument('--origin',default='https://localhost:8443')
     init.add_argument('--bind',default='127.0.0.1');init.add_argument('--https-port',type=int,default=8443)
     init.add_argument('--frontend-dist',required=True)
-    for name in ('inspect','backup','provision','migrate','reconcile','grant-runtime','prepare-discovery','initial-user','install','serve'):
+    for name in ('inspect','backup','provision','migrate','reconcile','grant-runtime','prepare-discovery','initial-user','install','serve','discovery-recover'):
         command=commands.add_parser(name)
         command.add_argument('--config',required=True)
+        if name=='discovery-recover':
+            command.add_argument('--confirm-reviewed',action='store_true',required=True)
+            command.add_argument('--previous-pid',type=int)
+            command.add_argument('--previous-start-ticks')
+            command.add_argument('--previous-boot-id')
         if name=='backup':command.add_argument('--output',required=True)
         if name=='migrate':
             command.add_argument('--application-from',required=True)
@@ -100,6 +105,15 @@ def main(argv=None):
             elif args.command=='migrate':result=migrate(settings,expected_application=args.application_from,expected_security=args.security_from,chain=args.chain)
             elif args.command=='reconcile':result=reconcile(settings)
             elif args.command=='serve':serve(settings,args.config);return 0
+            elif args.command=='discovery-recover':
+                from installation.discovery import recover
+                previous=None
+                supplied=(args.previous_pid,args.previous_start_ticks,args.previous_boot_id)
+                if any(v is not None for v in supplied):
+                    require(all(v is not None for v in supplied),'PREVIOUS_INSTANCE_IDENTITY_REQUIRED')
+                    previous=dict(pid=args.previous_pid,start_ticks=args.previous_start_ticks,
+                                  boot_id=args.previous_boot_id,instance='00000000-0000-0000-0000-000000000000')
+                result=recover(settings,previous=previous)
             else:
                 from installation.admin import provision,grants,initial_user,backup,prepare_discovery
                 if args.command=='backup':result=backup(settings,args.output)

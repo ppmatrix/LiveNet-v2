@@ -24,6 +24,18 @@ from app.discovery.policy import Policy
 from app.discovery.service import Repository,Problem,now
 from app.discovery.worker import Worker
 from app.discovery.network import probe
+from app.discovery.coordinator import Coordinator
+from app.discovery.journal import Journal,JournalError
+
+
+@pytest.fixture(autouse=True)
+def prohibit_real_detection_sockets(monkeypatch):
+    attempts=[]
+    def forbidden(*args,**kwargs):
+        attempts.append(True);raise AssertionError('Real detection socket prohibited')
+    monkeypatch.setattr('app.discovery.network.socket.socket',forbidden)
+    yield
+    assert not attempts
 
 
 @compiles(JSONB,'sqlite')
@@ -59,14 +71,31 @@ def store(tmp_path):
                 if value is not None and value.tzinfo is None:set_committed_value(instance,field,value.replace(tzinfo=timezone.utc))
     lock=RLock()
     class LocalRepository(Repository):
+        lease_valid=True
+        def ensure_lease(self,session,lease):
+            if not self.lease_valid or lease!={'pid':7,'started':'fixture'}:raise JournalError('leadership_lost')
         @contextmanager
         def transaction(self,key=None):
             # SQLite test substitute for PG transaction/row/advisory locks.
             with lock:
                 with super().transaction() as session:yield session
     repo=LocalRepository(sessions)
+    repo.journal_directory=tmp_path/'journal';repo.workers=[]
     yield repo,sessions,InventoryIdentity(uuid4())
+    for worker in repo.workers:worker.close()
     engine.dispose()
+
+
+def ready_worker(repo,p=None,network=None):
+    p=p or policy()
+    leader=Mock();leader.execute.return_value.scalar_one.return_value=True
+    leader.execute.return_value.mappings.return_value.one.side_effect=lambda:dict(pid=7,started='fixture',held=repo.lease_valid)
+    identity=dict(pid=99999999,start_ticks='1',boot_id='00000000-0000-0000-0000-000000000001',instance=str(uuid4()))
+    journal=Journal(repo.journal_directory,'fixture-installation',identity=identity)
+    coordinator=Coordinator(repo,p,journal)
+    worker=Worker(repo,p,lambda:leader,network or Mock(side_effect=AssertionError('Unexpected probe')),coordinator=coordinator)
+    repo.workers.append(worker);worker.acquire()
+    return worker
 
 
 def observe(repo,identity,ip='10.42.0.1',outcome='responded'):
@@ -113,29 +142,30 @@ def test_tcp_method_without_real_network(monkeypatch):
 
 def test_partial_failures_progress_and_observation_history(store):
     repo,sessions,identity=store
-    job=repo.enqueue(policy(),'10.42.0.1-10.42.0.3',identity)
     def network(ip,p,cancel,*,deadline=None):
         if ip.endswith('.3'):raise OSError('must not be persisted or logged')
         return dict(outcome='responded' if ip.endswith('.1') else 'no_response',evidence={'method':'tcp_connect','ports':[]})
-    worker=Worker(repo,policy(),None,network);assert worker.run_one()
+    worker=ready_worker(repo,network=network)
+    job=worker.coordinator.submit('10.42.0.1-10.42.0.3',identity);assert worker.run_one()
     result=repo.job(__import__('uuid').UUID(job['id']))
     assert result['status']=='completed' and result['processed']==3
     assert {o['outcome'] for o in result['observations']}=={'responded','no_response','error'}
     assert all(o['hostname'] is None and o['confidence'] is None and o['verification_status']=='unverified' for o in result['observations'])
     candidate=next(o for o in result['observations'] if o['outcome']=='responded')
-    repo.enqueue(policy(),'10.42.0.1/32',identity);worker.run_one()
+    worker.coordinator.submit('10.42.0.1/32',identity);worker.run_one()
     old=repo.candidate(__import__('uuid').UUID(candidate['id']),true())
     assert len(old['previous_observations'])==1
     with repo.transaction() as s:assert s.scalar(select(func.count()).select_from(Resource))==0
 
 
 def test_cancel_inflight_is_bounded_and_preserves_evidence(store):
-    repo,_,identity=store;job=repo.enqueue(policy(),'10.42.0.1-10.42.0.8',identity)
+    repo,_,identity=store
     entered=Event();release=Event();calls=[]
     def network(ip,p,cancel,*,deadline=None):
         calls.append(ip);entered.set();assert release.wait(2)
         return dict(outcome='no_response',evidence={'method':'tcp_connect','ports':[]})
-    worker=Worker(repo,policy(),None,network);thread=Thread(target=worker.run_one);thread.start();assert entered.wait(2)
+    worker=ready_worker(repo,network=network);job=worker.coordinator.submit('10.42.0.1-10.42.0.8',identity)
+    thread=Thread(target=worker.run_one);thread.start();assert entered.wait(2)
     repo.cancel(__import__('uuid').UUID(job['id']),identity);release.set();thread.join(3);assert not thread.is_alive()
     result=repo.job(__import__('uuid').UUID(job['id']))
     assert result['status']=='cancelled' and 1<=result['processed']<=2 and len(calls)<=2
@@ -144,12 +174,12 @@ def test_cancel_inflight_is_bounded_and_preserves_evidence(store):
 
 def test_job_deadline_and_policy_change_do_not_resume(store):
     repo,_,identity=store;p=policy(job_timeout=.1)
-    job=repo.enqueue(p,'10.42.0.1-10.42.0.4',identity)
     def network(*args,**kwargs):time.sleep(.15);return dict(outcome='no_response',evidence={'method':'tcp_connect','ports':[]})
-    Worker(repo,p,None,network).run_one()
+    worker=ready_worker(repo,p,network);job=worker.coordinator.submit('10.42.0.1-10.42.0.4',identity);worker.run_one()
     assert repo.job(__import__('uuid').UUID(job['id']))['status']=='timed_out'
-    job=repo.enqueue(policy(),'10.42.0.1/32',identity);network=Mock(side_effect=AssertionError('no traffic'))
-    Worker(repo,policy(ports=[22]),None,network).run_one()
+    worker.close();network=Mock(side_effect=AssertionError('no traffic'))
+    worker=ready_worker(repo,network=network);job=worker.coordinator.submit('10.42.0.1/32',identity)
+    worker.policy=policy(ports=[22]);worker.run_one()
     assert repo.job(__import__('uuid').UUID(job['id']))['status']=='interrupted';network.assert_not_called()
 
 
@@ -208,6 +238,7 @@ def test_api_permissions_scope_and_disabled_mode(store):
     assert client.post(base+'/jobs/'+str(uuid4())+'/cancel').status_code==403
     assert client.post(base+'/candidates/'+str(uuid4())+'/decision',json=creation()).status_code==403
     access.can_create=lambda *args:True
+    worker=ready_worker(repo);app.extensions['discovery']['coordinator']=worker.coordinator
     assert client.post(base+'/jobs',json={'target':'8.8.8.8/32'}).status_code==400
     result=client.post(base+'/jobs',json={'target':'10.42.0.1/32'});assert result.status_code==202
     assert client.get(base+'/jobs/'+result.json['id']).json['status']=='queued'
@@ -240,8 +271,9 @@ def test_election_refusal_and_restart_preserve_observations_without_network(stor
     worker=Worker(repo,policy(),lambda:leader,network);worker.loop();network.assert_not_called()
     assert repo.jobs()[0]['status']=='running'
     leader.execute.return_value.scalar_one.return_value=True
-    worker.stop.set();worker.loop()
-    assert repo.jobs()[0]['status']=='interrupted'
+    leader.execute.return_value.mappings.return_value.one.return_value=dict(pid=7,started='fixture',held=True)
+    worker.loop()
+    assert worker.coordinator.state=='BLOCKED' and repo.jobs()[0]['status']=='running'
     assert repo.candidate(candidate,true())['id']==str(candidate)
     network.assert_not_called()
 
@@ -259,6 +291,7 @@ def test_production_transactions_use_database_advisory_lock_before_effects():
 def test_lost_leader_lock_stops_before_new_probe_or_write(store):
     repo,_,identity=store;repo.enqueue(policy(),'10.42.0.1/32',identity)
     connection=Mock();connection.execute.return_value.scalar_one.return_value=False
+    connection.execute.return_value.mappings.return_value.one.return_value=dict(pid=7,started='fixture',held=False)
     network=Mock(side_effect=AssertionError('must not probe'))
     worker=Worker(repo,policy(),None,network);worker.leader_connection=connection
     with pytest.raises(RuntimeError):worker.run_one()
@@ -311,7 +344,6 @@ def test_cancellation_stops_remaining_ports_without_retry(monkeypatch):
 
 def test_eight_target_threads_are_bounded_and_cancellable(store):
     repo,_,identity=store;p=policy(concurrency=8)
-    job=repo.enqueue(p,'10.42.0.1-10.42.0.16',identity)
     entered=Event();release=Event();lock=RLock();calls=[];active=[0];maximum=[0];deadlines=[]
     def network(ip,p,cancel,*,deadline=None):
         with lock:
@@ -320,7 +352,8 @@ def test_eight_target_threads_are_bounded_and_cancellable(store):
         assert release.wait(5)
         with lock:active[0]-=1
         return dict(outcome='no_response',evidence={'method':'tcp_connect','ports':[]})
-    worker=Worker(repo,p,None,network);thread=Thread(target=worker.run_one);thread.start()
+    worker=ready_worker(repo,p,network);job=worker.coordinator.submit('10.42.0.1-10.42.0.16',identity)
+    thread=Thread(target=worker.run_one);thread.start()
     try:
         assert entered.wait(5)
         repo.cancel(__import__('uuid').UUID(job['id']),identity)

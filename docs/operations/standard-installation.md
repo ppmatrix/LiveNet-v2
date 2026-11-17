@@ -453,3 +453,14 @@ Validação visual posterior em ecEng: secção Descoberta confirmada pelo utili
 com “Ver execução” visível. A navegação por essa ligação não foi confirmada;
 a validação humana fica limitada à apresentação visual, distinta dos testes/GETs
 anteriormente reportados. Nenhum teste ou operação operacional repetido no checkpoint.
+
+## DEV-STABILITY-01 — Fase C preparada, sem ativação
+
+A proteção Discovery contra repetição após reinício/falha encontra-se descrita
+em [Fase C — ciclo de vida e recuperação](dev-stability-01-discovery.md).
+Acrescenta coordenador, permissões voláteis, journal privado e recuperação
+administrativa sem scans, sem migrações ou novos grants. Configurada não significa
+READY. O procedimento documenta também a incompatibilidade de rollback para o
+worker antigo quando exista fila ativa. A implementação não foi ativada no DEV;
+o mecanismo HTTPS B e a configuração privada permanecem preservados. A futura
+intervenção requer autorização própria; não pressupõe acesso ao Synology.

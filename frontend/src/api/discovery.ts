@@ -5,7 +5,8 @@ import type { ResourceInput } from './inventory';
 import type { Resource } from './contracts';
 
 export interface DiscoveryPolicy { networks:string[]; ports:number[]; max_targets:number; concurrency:number; target_timeout:number; job_timeout:number; max_jobs:number }
-export interface DiscoveryConfig { enabled:boolean; policy:DiscoveryPolicy|null }
+export interface DiscoveryOperational { state:'STARTING'|'READY'|'BLOCKED'; reason:string|null }
+export interface DiscoveryConfig { enabled:boolean; policy:DiscoveryPolicy|null; operational:DiscoveryOperational }
 export interface Observation {
   id:string; ip:string; hostname:null; outcome:'responded'|'no_response'|'error'; observed_at:string;
   evidence:{ method:string; ports:{port:number; result:string; code?:string; errno?:number}[] };
@@ -41,6 +42,9 @@ export async function getDiscoveryConfig(signal?:AbortSignal):Promise<DiscoveryC
     if (!isRecord(p)||!Array.isArray(p.networks)||!p.networks.every(n=>typeof n==='string')
         ||!Array.isArray(p.ports)||!p.ports.every(n=>Number.isInteger(n))||!['max_targets','concurrency','target_timeout','job_timeout','max_jobs'].every(k=>typeof p[k]==='number'&&Number(p[k])>0)) return invalidResponse();
   }
+  if (data.operational===undefined) data.operational={state:'BLOCKED',reason:'state_unavailable'};
+  if (!isRecord(data.operational)||!['STARTING','READY','BLOCKED'].includes(String(data.operational.state))
+      || !(data.operational.reason===null||typeof data.operational.reason==='string')) return invalidResponse();
   return data as unknown as DiscoveryConfig;
 }
 export async function getJobs(signal?:AbortSignal):Promise<DiscoveryJob[]> {

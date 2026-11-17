@@ -1,13 +1,15 @@
 """Persistent observations and explicit, one-shot manual decisions."""
 from contextlib import contextmanager
 from datetime import datetime,timezone
-from uuid import uuid4
+from uuid import UUID,uuid4
 from sqlalchemy import select,func,or_,text
 from app.inventory import service as inventory
 from app.inventory.models import Resource,ResourceIdentifier
 from app.inventory.schemas import serialize_resource,validate_creation
 from app.audit.service import record_audit_event
 from .models import Job,Observation,Decision
+from app.audit.models import AuditEvent
+from .journal import JournalError,valid_identity
 
 ACTIVE=('queued','running','cancelling')
 ADMISSION_KEY=701030112
@@ -34,9 +36,10 @@ class Repository:
                 if key is not None:session.execute(text('SELECT pg_catalog.pg_advisory_xact_lock(:key)'),{'key':key})
                 yield session
 
-    def enqueue(self,policy,target,identity):
+    def enqueue(self,policy,target,identity,*,lease=None):
         addresses=policy.targets(target)
         with self.transaction(ADMISSION_KEY) as session:
+            if lease is not None:self.ensure_lease(session,lease)
             active=session.scalar(select(func.count()).select_from(Job).where(Job.status.in_(ACTIVE)))
             if active>=policy.max_jobs:raise Problem(409,'discovery_busy')
             job=Job(id=uuid4(),actor_id=identity.actor_id,target=target.strip(),policy=policy.snapshot(),status='queued',
@@ -46,6 +49,152 @@ class Repository:
                 entity_type='discovery.job',entity_id=job.id,outcome='success',changes={'target':job.target,'total':job.total,'policy':job.policy})
             session.flush()
             return self.job_public(job)
+
+    def ensure_lease(self,session,lease):
+        if lease is None or session.scalar(text("""SELECT EXISTS(SELECT FROM pg_catalog.pg_locks l
+          JOIN pg_catalog.pg_stat_activity a ON a.pid=l.pid WHERE l.locktype='advisory'
+          AND l.granted AND l.classid::bigint=0 AND l.objid::bigint=:key AND l.objsubid=1
+          AND l.pid=:pid AND a.backend_start::text=:started AND a.datname=current_database())"""),
+          dict(key=LEADER_KEY,pid=lease['pid'],started=lease['started'])) is not True:
+            raise JournalError('leadership_lost')
+
+    def confirm_admission(self,identifier,policy,lease):
+        with self.transaction() as session:
+            self.ensure_lease(session,lease)
+            job=session.get(Job,identifier)
+            if job is None or job.status!='queued' or job.processed!=0 or job.policy!=policy.snapshot():
+                raise JournalError('state_inconsistent')
+
+    def observation_count(self,session,identifier):
+        return session.scalar(select(func.count()).select_from(Observation).where(Observation.job_id==identifier))
+
+    def confirm_terminal(self,identifier,lease):
+        with self.transaction() as session:
+            self.ensure_lease(session,lease)
+            job=session.get(Job,identifier)
+            if (job is None or job.status not in ('completed','cancelled','interrupted','failed','timed_out')
+                    or job.finished_at is None or job.processed!=self.observation_count(session,identifier)
+                    or (job.status=='completed' and job.processed!=job.total)):
+                raise JournalError('state_inconsistent')
+
+    def transition(self,session,job,status,reason):
+        before=job.status
+        allowed={'queued':{'running','interrupted'},'running':{'completed','interrupted','timed_out'},
+                 'cancelling':{'cancelled','interrupted'}}
+        if status not in allowed.get(before,set()):raise JournalError('state_inconsistent')
+        if status=='completed' and job.processed!=job.total:raise JournalError('state_inconsistent')
+        job.status=status
+        if status!='running':job.finished_at=now()
+        event=record_audit_event(session,actor_type='system',action='discovery.job.transition',
+            entity_type='discovery.job',entity_id=job.id,outcome='success',
+            changes={'before':before,'after':status},context={'reason':reason})
+        event.id=uuid4()
+        session.flush()
+        return event.id
+
+    def confirm_running(self,identifier,audit_id,lease):
+        with self.transaction() as session:
+            self.ensure_lease(session,lease)
+            job=session.get(Job,identifier)
+            if (job is None or job.status not in ('running','cancelling')
+                    or session.scalar(select(AuditEvent.id).where(AuditEvent.id==audit_id)) is None):
+                raise JournalError('state_inconsistent')
+
+    def prune_grants(self,grants,lease):
+        with self.transaction() as session:
+            self.ensure_lease(session,lease)
+            for identifier in tuple(grants):
+                job=session.get(Job,identifier)
+                if job is None or job.status in ('running','cancelling'):raise JournalError('state_inconsistent')
+                if job.status!='queued':grants.remove(identifier)
+
+    def recovery_plan(self,session,jobs,reason):
+        rows=[]
+        for job in jobs:
+            count=self.observation_count(session,job.id)
+            if job.processed!=count:raise JournalError('state_inconsistent')
+            rows.append(dict(id=str(job.id),before=job.status,processed=job.processed,observations=count))
+        return dict(audit_id=str(uuid4()),jobs=rows,reason=reason)
+
+    def apply_recovery(self,session,plan):
+        audit_id=UUID(plan['audit_id'])
+        if session.scalar(select(AuditEvent.id).where(AuditEvent.id==audit_id)) is not None:return
+        for row in plan['jobs']:
+            job=session.scalar(select(Job).where(Job.id==UUID(row['id'])).with_for_update())
+            if (job is None or job.status!=row['before'] or job.processed!=row['processed']
+                    or self.observation_count(session,job.id)!=row['observations']):raise JournalError('state_inconsistent')
+            job.status='interrupted';job.finished_at=now()
+        event=record_audit_event(session,actor_type='operator' if plan['reason']=='operator_reviewed' else 'system',
+            action='discovery.recovery.confirmed',entity_type='discovery.recovery',entity_id=audit_id,
+            outcome='success',changes={'jobs':[r['id'] for r in plan['jobs']]},context={'reason':plan['reason']})
+        event.id=audit_id
+        session.flush()
+
+    def confirm_recovery(self,plan,lease):
+        with self.transaction() as session:
+            self.ensure_lease(session,lease)
+            if session.scalar(select(AuditEvent.id).where(AuditEvent.id==UUID(plan['audit_id']))) is None:
+                raise JournalError('persistence_uncertain')
+            for row in plan['jobs']:
+                job=session.get(Job,UUID(row['id']))
+                if (job is None or job.status!='interrupted' or job.finished_at is None
+                        or job.processed!=row['processed'] or self.observation_count(session,job.id)!=row['observations']):
+                    raise JournalError('state_inconsistent')
+
+    def bootstrap(self,coordinator,lease):
+        journal=coordinator.journal;plan=None
+        with self.transaction(ADMISSION_KEY) as session:
+            self.ensure_lease(session,lease)
+            jobs=list(session.scalars(select(Job).where(Job.status.in_(ACTIVE)).with_for_update()))
+            if any(j.status!='queued' or j.processed!=0 or j.finished_at is not None
+                   or self.observation_count(session,j.id)!=0 for j in jobs):
+                raise JournalError('recovery_required')
+            if jobs:
+                journal.establish_owner()
+                plan=self.recovery_plan(session,jobs,'previous_queue_without_execution')
+                journal.write('recovery',plan=plan)
+                self.apply_recovery(session,plan)
+        if plan:
+            self.confirm_recovery(plan,lease)
+            journal.archive('recovery')
+
+    def recover(self,journal,lease,*,previous=None):
+        """Caller owns both PostgreSQL election and journal lock; never probes."""
+        attempt=None;corrupt=False
+        try:attempt=journal.read('attempt')
+        except JournalError as error:
+            if str(error)!='journal_corrupt':raise
+            corrupt=True
+        pending=journal.read('recovery')
+        owners=[v for v in (journal.previous,attempt['owner'] if attempt else None,pending['owner'] if pending else None,previous) if v is not None]
+        if any(not valid_identity(v) or journal.alive(v) for v in owners):raise JournalError('previous_instance_alive')
+        with self.transaction(ADMISSION_KEY) as session:
+            self.ensure_lease(session,lease)
+            jobs=list(session.scalars(select(Job).where(Job.status.in_(ACTIVE)).with_for_update()))
+            if attempt:
+                try:attempt_id=UUID(attempt['job_id'])
+                except (KeyError,ValueError,TypeError):raise JournalError('journal_corrupt') from None
+                job=session.get(Job,attempt_id)
+                if (job is None or job.processed!=self.observation_count(session,attempt_id)
+                        or (job.status not in ACTIVE and job.finished_at is None)
+                        or (job.status=='completed' and job.processed!=job.total)):
+                    raise JournalError('state_inconsistent')
+            if (jobs or attempt or corrupt or pending) and not owners:raise JournalError('previous_instance_unknown')
+            if not jobs and not attempt and not corrupt and not pending:return dict(state='ALREADY_CLEAN',jobs=0)
+            if pending:
+                plan=pending['plan']
+                # A persisted audit only confirms this exact plan. Unexpected
+                # active rows cannot be hidden by replaying an older recovery.
+                if {str(j.id) for j in jobs} - {r['id'] for r in plan['jobs']}:
+                    raise JournalError('state_inconsistent')
+            else:
+                plan=self.recovery_plan(session,jobs,'operator_reviewed')
+                journal.establish_owner()
+                journal.write('recovery',plan=plan)
+            self.apply_recovery(session,plan)
+        self.confirm_recovery(plan,lease)
+        journal.archive('attempt');journal.archive('recovery')
+        return dict(state='RECOVERED',jobs=len(plan['jobs']))
 
     def job_public(self,job):
         return dict(id=str(job.id),target=job.target,status=job.status,total=job.total,processed=job.processed,

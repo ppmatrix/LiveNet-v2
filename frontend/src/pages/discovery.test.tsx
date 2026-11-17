@@ -4,7 +4,7 @@ import { describe,it,expect } from 'vitest';
 import { emptyDiscoveryHistory,mockHttp,json,failure,resource,user } from '../test/http';
 import type { Handler } from '../test/http';
 import { renderApp } from '../test/renderApp';
-const config={enabled:true,policy:{networks:['10.42.0.0/24'],ports:[22,443],max_targets:16,concurrency:2,target_timeout:.2,job_timeout:2,max_jobs:2}};
+const config={enabled:true,operational:{state:'READY',reason:null},policy:{networks:['10.42.0.0/24'],ports:[22,443],max_targets:16,concurrency:2,target_timeout:.2,job_timeout:2,max_jobs:2}};
 const observation={id:'710818f5-07aa-4ae0-b198-ed5fa53277ac',ip:'10.42.0.5',hostname:null,outcome:'responded',observed_at:'2026-11-08T12:00:00Z',evidence:{method:'tcp_connect',ports:[{port:22,result:'refused'}]},decision:null};
 const job={id:'aa47bc28-853d-41c0-9596-c02cbce6ebce',target:'10.42.0.5/32',status:'completed',total:1,processed:1,observations:[observation]};
 const candidate={...observation,possible_matches:[],matches_truncated:false,previous_observations:[]};
@@ -88,5 +88,46 @@ describe('Descoberta manual',()=>{
     const mock=mockHttp(url=>url.pathname.endsWith('/auth/me')?json({user}):url.pathname.endsWith('/auth/csrf')?json({csrf_token:'test-csrf'}):json({enabled:false,policy:null}));
     renderApp('/discovery');expect(await screen.findByRole('alert')).toHaveTextContent('redes autorizadas');
     expect(screen.queryByRole('button',{name:'Iniciar descoberta'})).not.toBeInTheDocument();expect(mock.mock.calls.every(call=>call[1]?.method==='GET')).toBe(true);
+  });
+  it.each(['STARTING','BLOCKED'])('configurada mas %s não admite scans e conserva histórico',async(state)=>{
+    const mock=mockHttp(url=>{
+      if(url.pathname.endsWith('/auth/me'))return json({user:{...user,roles:['inventory_editor']}});
+      if(url.pathname.endsWith('/auth/csrf'))return json({csrf_token:'test-csrf'});
+      if(url.pathname.endsWith('/discovery/config'))return json({...config,operational:{state,reason:state==='STARTING'?'initializing':'recovery_required'}});
+      return json({items:[job]});
+    });
+    renderApp('/discovery');
+    expect(await screen.findByRole('button',{name:'Iniciar descoberta'})).toBeDisabled();
+    expect(screen.getByLabelText('Rede IPv4 CIDR ou intervalo IP')).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent(state==='STARTING'?'a inicializar':'bloqueada');
+    expect(screen.getByRole('link',{name:job.target})).toHaveAttribute('href','/discovery/jobs/'+job.id);
+    await userEvent.click(screen.getByRole('button',{name:'Iniciar descoberta'}));
+    expect(mock.mock.calls.every(call=>call[1]?.method==='GET')).toBe(true);
+  });
+  it('um backend anterior sem prontidão explícita é tratado de forma conservadora',async()=>{
+    mockHttp(url=>{
+      if(url.pathname.endsWith('/auth/me'))return json({user:{...user,roles:['inventory_editor']}});
+      if(url.pathname.endsWith('/auth/csrf'))return json({csrf_token:'test-csrf'});
+      return url.pathname.endsWith('/discovery/config')?json({enabled:true,policy:config.policy}):json({items:[job]});
+    });
+    renderApp('/discovery');
+    expect(await screen.findByRole('button',{name:'Iniciar descoberta'})).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent('bloqueada');
+  });
+  it('503 atualiza a prontidão por GET sem repetir o POST',async()=>{
+    let blocked=false;let writes=0;
+    mockHttp((url,options)=>{
+      if(url.pathname.endsWith('/auth/me'))return json({user:{...user,roles:['inventory_editor']}});
+      if(url.pathname.endsWith('/auth/csrf'))return json({csrf_token:'test-csrf'});
+      if(url.pathname.endsWith('/discovery/config'))return json({...config,operational:{state:blocked?'BLOCKED':'READY',reason:blocked?'recovery_required':null}});
+      if(options.method==='POST'){blocked=true;writes++;return failure(503,'discovery_not_ready');}
+      return json({items:[]});
+    });
+    renderApp('/discovery');
+    await userEvent.type(await screen.findByLabelText('Rede IPv4 CIDR ou intervalo IP'),'10.42.0.5/32');
+    await userEvent.click(screen.getByRole('button',{name:'Iniciar descoberta'}));
+    await screen.findByText('É necessária recuperação administrativa antes de iniciar outra descoberta.');
+    expect(screen.getByRole('button',{name:'Iniciar descoberta'})).toBeDisabled();
+    expect(writes).toBe(1);
   });
 });

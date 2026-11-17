@@ -5,7 +5,7 @@ from .config import CONFIG_MAP, get_config_name
 
 def create_app(config_name=None, *, inventory_access=None, inventory_session_factory=None,
                security_config=None, security_session_factory=None,
-               discovery_policy=None, discovery_leader_factory=None):
+               discovery_policy=None, discovery_leader_factory=None, discovery_journal=None):
     """Create the app. Inventory denies access until real identity/RBAC is wired.
 
     Keyword dependencies are for trusted integration and isolated tests only;
@@ -40,6 +40,6 @@ def create_app(config_name=None, *, inventory_access=None, inventory_session_fac
     app.register_blueprint(inventory_bp, url_prefix="/api/v1/inventory")
 
     from .discovery.routes import init_discovery
-    init_discovery(app,discovery_policy,discovery_leader_factory)
+    init_discovery(app,discovery_policy,discovery_leader_factory,journal=discovery_journal)
 
     return app

@@ -6,6 +6,7 @@ from app.inventory.schemas import InventoryValidationError,validate_resource_id,
 from app.security.errors import SecurityError
 from .service import Repository,Problem
 from .worker import Worker
+from .coordinator import Coordinator
 
 bp=Blueprint('discovery',__name__)
 
@@ -17,7 +18,11 @@ def failure(error):
     elif isinstance(error,SecurityError):status,code=error.code,error.error_code
     elif isinstance(error,(InventoryValidationError,ValueError)):status,code=400,'invalid_request'
     elif isinstance(error,HTTPException):status,code=error.code,'invalid_request'
-    else:status,code=503,'discovery_unavailable'
+    else:
+        # A failed read/cancel/decision may be the first observable persistence
+        # failure. Do not keep admitting or probing after that uncertainty.
+        current_app.extensions['discovery']['coordinator'].block('persistence_uncertain')
+        status,code=503,'discovery_unavailable'
     return jsonify(error=dict(code=code,message='Não foi possível concluir o pedido de descoberta.')),status
 
 
@@ -32,7 +37,8 @@ def access(write=False,enabled=True):
 @bp.get('/config')
 def configuration():
     extension,*_=access(enabled=False);policy=extension['policy']
-    return jsonify(enabled=policy is not None,policy=policy.snapshot() if policy else None)
+    return jsonify(enabled=policy is not None,policy=policy.snapshot() if policy else None,
+                   operational=extension['coordinator'].public())
 
 
 @bp.get('/jobs')
@@ -47,7 +53,7 @@ def start():
     request.max_content_length=16384
     payload=request.get_json()
     if not isinstance(payload,dict) or set(payload)!={'target'}:raise Problem(400,'invalid_request')
-    return jsonify(extension['repository'].enqueue(extension['policy'],payload['target'],identity)),202
+    return jsonify(extension['coordinator'].submit(payload['target'],identity)),202
 
 
 @bp.get('/jobs/<identifier>')
@@ -85,11 +91,15 @@ def decision(identifier):
     return jsonify(extension['repository'].decide(validate_resource_id(identifier),request.get_json(),identity,scope,dependencies.access.can_create))
 
 
-def init_discovery(app,policy=None,leader_factory=None,network_probe=None):
+def init_discovery(app,policy=None,leader_factory=None,network_probe=None,*,journal=None):
     repository=Repository(app.extensions['inventory'].open_session)
-    app.extensions['discovery']=dict(policy=policy,repository=repository,worker=None)
+    coordinator=Coordinator(repository,policy,journal)
+    app.extensions['discovery']=dict(policy=policy,repository=repository,worker=None,coordinator=coordinator)
     app.register_blueprint(bp,url_prefix='/api/v1/discovery')
     if policy is not None and leader_factory is not None:
-        worker=Worker(repository,policy,leader_factory,**({'network_probe':network_probe} if network_probe else {}))
+        worker=Worker(repository,policy,leader_factory,coordinator=coordinator,
+                      **({'network_probe':network_probe} if network_probe else {}))
         app.extensions['discovery']['worker']=worker
         worker.start()
+    else:
+        coordinator.block('not_configured' if policy is None else 'leadership_unavailable')

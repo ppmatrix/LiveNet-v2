@@ -11,20 +11,33 @@ import { DiscoveryEvidence } from '../components/DiscoveryEvidence';
 import { ResourceForm } from './ResourceFormPage';
 
 const statuses:Record<string,string>={queued:'Em fila',running:'Em execução',cancelling:'A cancelar',cancelled:'Cancelada',completed:'Concluída',interrupted:'Interrompida',failed:'Falhou',timed_out:'Tempo esgotado'};
+const operationalReasons:Record<string,string>={
+  initializing:'Aguarde a inicialização do coordenador antes de iniciar uma descoberta.',
+  recovery_required:'É necessária recuperação administrativa antes de iniciar outra descoberta.',
+  journal_corrupt:'O diário de execução precisa de verificação administrativa.',
+  journal_unavailable:'O diário de execução não está disponível.',
+  journal_in_use:'Outra instância possui o diário de execução.',
+  previous_instance_alive:'A instância anterior ainda não foi confirmada como encerrada.',
+  leadership_lost:'A liderança foi perdida. É necessária verificação administrativa.',
+  leadership_unavailable:'Esta instância não possui liderança para executar descobertas.',
+  persistence_uncertain:'O resultado de uma operação persistente é incerto. É necessária recuperação administrativa.',
+  shutting_down:'O serviço está a encerrar.',
+};
 
 export function DiscoveryPage() {
   const { session,expire }=useSession();const navigate=useNavigate();
   const load=useCallback(async (signal:AbortSignal)=>{const config=await getDiscoveryConfig(signal);return {config,jobs:config.enabled?await getJobs(signal):[]};},[]);
   const {result,retry}=useRemote(load);
   const [target,setTarget]=useState('');const [pending,setPending]=useState(false);const [error,setError]=useState<string|null>(null);const [uncertain,setUncertain]=useState(false);const busy=useRef(false);
+  const ready=result.status==='success'&&result.data.config.operational.state==='READY';
   async function start(event:React.FormEvent) {
-    event.preventDefault();if(busy.current)return;
+    event.preventDefault();if(busy.current||!ready)return;
     if(!target.trim()){setError('Indique uma rede IPv4 CIDR ou intervalo início-fim.');return;}
     busy.current=true;setPending(true);setError(null);
     try { const job=await startJob(target.trim());navigate('/discovery/jobs/'+job.id); }
     catch(failure) {
       if(failure instanceof ApiError&&failure.status===401)expire();
-      else {setError(failure instanceof ApiError&&failure.status===400?'Alvos inválidos, fora das redes autorizadas ou acima do limite.':errorMessage(failure));setUncertain(!(failure instanceof ApiError)||failure.status===0||failure.status>=500);}
+      else {setError(failure instanceof ApiError&&failure.status===400?'Alvos inválidos, fora das redes autorizadas ou acima do limite.':errorMessage(failure));setUncertain(!(failure instanceof ApiError)||failure.status===0||failure.status>=500);if(failure instanceof ApiError&&failure.status===503)retry();}
     } finally {busy.current=false;setPending(false);}
   }
   return <><div className="page-heading"><div><p className="eyebrow">OBSERVAÇÕES DE REDE</p><h1>Descoberta</h1>
@@ -33,12 +46,14 @@ export function DiscoveryPage() {
     {result.status==='error'&&<ErrorNotice message={errorMessage(result.error)} retry={retry}/>}
     {result.status==='success'&&(!result.data.config.enabled?<ErrorNotice message="A Descoberta precisa de redes autorizadas e migração preparada pelo administrador."/>:<>
       <section className="surface detail-panel"><h2>Deteção TCP sem credenciais</h2>
+        <p role="status">{ready?'Descoberta pronta':result.data.config.operational.state==='STARTING'?'Descoberta a inicializar':'Descoberta bloqueada'}</p>
+        {!ready&&<ErrorNotice message={operationalReasons[result.data.config.operational.reason||'']||'A prontidão não foi confirmada. Consulte o administrador; as execuções anteriores continuam disponíveis.'}/>}
         <p>Redes autorizadas: {result.data.config.policy!.networks.join(', ')}. Portas: {result.data.config.policy!.ports.join(', ')}.</p>
         <p className="context-note">Máximo {result.data.config.policy!.max_targets} alvos; {result.data.config.policy!.concurrency} ligações em paralelo; timeout por ligação {result.data.config.policy!.target_timeout}s; execução até {result.data.config.policy!.job_timeout}s.</p>
         {session.user?.roles.includes('inventory_editor')&&<form onSubmit={start}>
-          <label htmlFor="discovery-target">Rede IPv4 CIDR ou intervalo IP</label><input id="discovery-target" value={target} maxLength={80} onChange={event=>setTarget(event.target.value)} disabled={pending} placeholder="CIDR ou início-fim"/>
+          <label htmlFor="discovery-target">Rede IPv4 CIDR ou intervalo IP</label><input id="discovery-target" value={target} maxLength={80} onChange={event=>setTarget(event.target.value)} disabled={pending||!ready} placeholder="CIDR ou início-fim"/>
           {error&&<ErrorNotice message={error}/>}
-          <div className="page-actions"><button className="button" disabled={pending||uncertain}>{pending?'A iniciar…':'Iniciar descoberta'}</button>
+          <div className="page-actions"><button className="button" disabled={pending||uncertain||!ready}>{pending?'A iniciar…':'Iniciar descoberta'}</button>
             {uncertain&&<button type="button" className="button button-secondary" onClick={()=>{retry();setError('Consulte as execuções antes de voltar a iniciar.');}}>Consultar execuções</button>}</div>
         </form>}
       </section>
