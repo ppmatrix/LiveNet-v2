@@ -186,3 +186,8 @@ def update_resource(resource_id):
                 raise InventoryHTTPError(404, "not_found", "Recurso não encontrado.")
             payload = serialize_resource(resource)
     return jsonify(payload)
+
+
+# Register once at module import, before any Flask application is constructed.
+from .identifier_routes import register as _register_identifiers
+_register_identifiers(inventory_bp)

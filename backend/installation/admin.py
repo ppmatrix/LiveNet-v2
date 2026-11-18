@@ -11,6 +11,7 @@ from sqlalchemy import text, select, func
 from sqlalchemy.orm import Session
 
 from app.dedicated import _secret
+from app.inventory.identifier_contract import COLUMNS as IDENTIFIER_COLUMNS
 from installation import APPLICATION_TARGET, SECURITY_TARGET, require
 from installation.runner import (locked, identity, revisions, validate_tables, Journal,runtime_privileges,migration_privileges)
 
@@ -127,6 +128,22 @@ def provision(settings):
             raise
 
 
+IDENTIFIER_GRANTS = (
+    'GRANT SELECT(' + ','.join(IDENTIFIER_COLUMNS) + ') ON TABLE inventory.resource_identifiers TO {runtime}',
+    'GRANT INSERT(' + ','.join(IDENTIFIER_COLUMNS) + ') ON TABLE inventory.resource_identifiers TO {runtime}',
+    'GRANT UPDATE(valid_until,updated_at) ON TABLE inventory.resource_identifiers TO {runtime}',
+)
+
+
+def inspect_identifiers(settings):
+    """Explicit SELECT-only legacy preflight; no app, worker or journal creation."""
+    from app.inventory.identifiers import legacy_preflight
+    with settings.connect('admin') as connection:
+        connection.execute(text('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY'))
+        identity(connection,settings,'admin')
+        counts=legacy_preflight(connection)
+        return dict(state='BLOCKED' if any(counts.values()) else 'COMPATIBLE',counts=counts,read_only=True)
+
 RUNTIME_GRANTS=(
     'GRANT USAGE ON SCHEMA inventory,audit,security TO {runtime}',
     'GRANT SELECT,INSERT ON TABLE inventory.resources TO {runtime}',
@@ -144,7 +161,7 @@ RUNTIME_GRANTS=(
     'GRANT SELECT,INSERT ON TABLE security.login_sessions,security.login_throttles TO {runtime}',
     'GRANT UPDATE(last_activity_at,revoked_at) ON TABLE security.login_sessions TO {runtime}',
     'GRANT UPDATE(window_started_at,attempts) ON TABLE security.login_throttles TO {runtime}',
-)
+) + IDENTIFIER_GRANTS
 
 
 def grants_state(connection,settings):
@@ -156,6 +173,9 @@ def grants_state(connection,settings):
         'discovery_read_insert':"has_table_privilege(:role,'discovery.jobs','SELECT') AND has_table_privilege(:role,'discovery.jobs','INSERT') AND has_table_privilege(:role,'discovery.observations','SELECT') AND has_table_privilege(:role,'discovery.observations','INSERT') AND has_table_privilege(:role,'discovery.decisions','SELECT') AND has_table_privilege(:role,'discovery.decisions','INSERT') AND has_schema_privilege(:role,'discovery','USAGE')",
         'discovery_progress':"has_column_privilege(:role,'discovery.jobs','status','UPDATE') AND has_column_privilege(:role,'discovery.jobs','processed','UPDATE') AND has_column_privilege(:role,'discovery.jobs','finished_at','UPDATE')",
         'discovery_identifiers':"has_column_privilege(:role,'inventory.resource_identifiers','resource_id','SELECT') AND has_column_privilege(:role,'inventory.resource_identifiers','identifier_type','SELECT') AND has_column_privilege(:role,'inventory.resource_identifiers','normalized_value','SELECT')",
+        'identifier_read':" AND ".join("has_column_privilege(:role,'inventory.resource_identifiers','"+c+"','SELECT')" for c in IDENTIFIER_COLUMNS),
+        'identifier_insert':" AND ".join("has_column_privilege(:role,'inventory.resource_identifiers','"+c+"','INSERT')" for c in IDENTIFIER_COLUMNS),
+        'identifier_close':"has_column_privilege(:role,'inventory.resource_identifiers','valid_until','UPDATE') AND has_column_privilege(:role,'inventory.resource_identifiers','updated_at','UPDATE')",
         'audit_insert':"has_table_privilege(:role,'audit.events','INSERT')",
         'audit_metadata':"has_column_privilege(:role,'audit.events','id','SELECT') AND has_column_privilege(:role,'audit.events','occurred_at','SELECT')",
         'users_read':"has_table_privilege(:role,'security.local_users','SELECT')",

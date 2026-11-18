@@ -1,5 +1,5 @@
 export class ApiError extends Error {
-  constructor(public readonly status: number, public readonly code: string) {
+  constructor(public readonly status: number, public readonly code: string, public readonly details?: unknown) {
     super('Pedido à API não concluído.');
     this.name = 'ApiError';
   }
@@ -26,6 +26,12 @@ export function errorMessage(error: unknown): string {
   if (error.code === 'discovery_matches_review') return 'Existem possíveis correspondências. Volte à Descoberta e reveja o candidato antes de confirmar um recurso distinto.';
   if (error.code === 'version_conflict') return 'O recurso foi alterado entretanto. Os seus valores foram mantidos. Cancele para consultar a versão atual antes de voltar a editar.';
   if (error.code === 'resource_archived') return 'Este recurso está arquivado e não pode ser editado.';
+  if (error.code === 'invalid_ipv4') return 'Indique um endereço IPv4 decimal válido, sem máscara ou porta.';
+  if (error.code === 'invalid_namespace') return 'Indique um namespace explícito em minúsculas, sem espaços.';
+  if (error.code === 'identifier_conflict') return 'Existe uma associação coincidente. Reveja-a antes de confirmar.';
+  if (error.code === 'conflict_changed') return 'As associações coincidentes mudaram. Reveja novamente antes de confirmar.';
+  if (error.code === 'identifier_read_only') return 'Apenas associações manuais podem ser encerradas aqui.';
+  if (error.code === 'temporal_conflict') return 'A ordem temporal não pôde ser confirmada. Consulte o administrador.';
   if (error.status === 429) return 'Demasiadas tentativas. Aguarde antes de tentar novamente.';
   if (error.code === 'network_error') return 'Não foi possível contactar o servidor. Verifique a ligação.';
   if (error.code === 'invalid_response') return 'O servidor devolveu uma resposta incompatível.';
@@ -83,7 +89,7 @@ export async function request(path: string, options: RequestOptions = {}): Promi
     const code = isRecord(data) && isRecord(data.error) && typeof data.error.code === 'string'
       ? data.error.code : 'http_error';
     // Never display backend messages, response bodies or request credentials.
-    throw new ApiError(response.status, code);
+    throw new ApiError(response.status, code, isRecord(data) ? data.details : undefined);
   }
   return data;
 }

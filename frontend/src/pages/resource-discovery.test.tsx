@@ -13,6 +13,7 @@ function http(handler:(url:URL)=>Response){
   return mockHttp((url)=>{
     if(url.pathname.endsWith('/auth/me'))return json({user});
     if(url.pathname.endsWith('/auth/csrf'))return json({csrf_token:'test-resource-history'});
+    if(url.pathname.endsWith('/identifiers'))return json({items:[],total:0,page:1,per_page:20,resource_row_version:1});
     if(url.pathname.endsWith('/inventory/resources/'+resource.id))return json({...resource,display_name:'ecEng',resource_type:'container'});
     return handler(url);
   });

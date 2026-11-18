@@ -79,7 +79,7 @@ def main(argv=None):
     init.add_argument('--system-identifier');init.add_argument('--origin',default='https://localhost:8443')
     init.add_argument('--bind',default='127.0.0.1');init.add_argument('--https-port',type=int,default=8443)
     init.add_argument('--frontend-dist',required=True)
-    for name in ('inspect','backup','provision','migrate','reconcile','grant-runtime','prepare-discovery','initial-user','install','serve','discovery-recover'):
+    for name in ('inspect','inspect-identifiers','backup','provision','migrate','reconcile','grant-runtime','prepare-discovery','initial-user','install','serve','discovery-recover'):
         command=commands.add_parser(name)
         command.add_argument('--config',required=True)
         if name=='discovery-recover':
@@ -102,6 +102,10 @@ def main(argv=None):
         else:
             settings=Settings.load(args.config)
             if args.command=='inspect':result=inspect(settings)
+            elif args.command=='inspect-identifiers':
+                from installation.admin import inspect_identifiers
+                result=inspect_identifiers(settings)
+                print(json.dumps(result,sort_keys=True));return 78 if result['state']=='BLOCKED' else 0
             elif args.command=='migrate':result=migrate(settings,expected_application=args.application_from,expected_security=args.security_from,chain=args.chain)
             elif args.command=='reconcile':result=reconcile(settings)
             elif args.command=='serve':serve(settings,args.config);return 0

@@ -20,6 +20,7 @@ from sqlalchemy.dialects.postgresql import ExcludeConstraint, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base
+from .identifier_contract import NAMESPACE_CHECK, OPEN_PREDICATE
 
 
 def utc_now():
@@ -127,6 +128,9 @@ class ResourceIdentifier(Base):
 
     __tablename__ = "resource_identifiers"
     __table_args__ = (
+        CheckConstraint(NAMESPACE_CHECK, name='ck_identifiers_manual_ipv4_namespace').ddl_if(dialect='postgresql'),
+        Index('uq_identifiers_manual_ipv4_open', 'resource_id', 'namespace', 'normalized_value',
+              unique=True, postgresql_where=text(OPEN_PREDICATE), sqlite_where=text(OPEN_PREDICATE)),
         CheckConstraint(
             "last_seen_at >= first_seen_at",
             name="ck_resource_identifiers_seen_order",

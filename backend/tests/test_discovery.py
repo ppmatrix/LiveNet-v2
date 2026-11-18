@@ -58,6 +58,10 @@ def store(tmp_path):
     metadata=MetaData()
     for model in (Resource,ResourceIdentifier,AuditEvent,Job,Observation,Decision):
         table=model.__table__.to_metadata(metadata)
+        # Table.to_metadata does not copy ddl_if. PostgreSQL regex CHECKs are
+        # exercised by the real isolated PG suite, not this SQLite substitute.
+        for constraint in table.constraints:
+            if constraint.name=='ck_identifiers_manual_ipv4_namespace':constraint.ddl_if(dialect='postgresql')
         for column in table.columns:
             if column.server_default is not None and '::jsonb' in str(column.server_default.arg):column.server_default.arg=text("'{}'")
     metadata.create_all(engine)

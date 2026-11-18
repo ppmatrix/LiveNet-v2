@@ -19,7 +19,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from sqlalchemy import text
 
-from installation import APPLICATION_TARGET, APPLICATION_BASELINE, SECURITY_TARGET, STANDARD_ATTR, Refused, require
+from installation import APPLICATION_TARGET, APPLICATION_BASELINE, APPLICATION_DISCOVERY, SECURITY_TARGET, STANDARD_ATTR, Refused, require
 from installation.config import private_directory
 
 BACKEND = Path(__file__).resolve().parents[1]
@@ -102,7 +102,7 @@ def revisions(connection):
         require(len(rows) == 1 and type(rows[0]) is str, 'INVALID_OR_EMPTY_LEDGER')
         require(rows[0] in {row.revision for row in chain_sources(chain)}, 'UNSUPPORTED_REVISION')
         result[chain] = rows[0]
-    require(result['security'] == 'base' or result['application'] in {APPLICATION_BASELINE,APPLICATION_TARGET}, 'SECURITY_WITHOUT_APPLICATION')
+    require(result['security'] == 'base' or result['application'] in {APPLICATION_BASELINE,APPLICATION_DISCOVERY,APPLICATION_TARGET}, 'SECURITY_WITHOUT_APPLICATION')
     return result
 
 

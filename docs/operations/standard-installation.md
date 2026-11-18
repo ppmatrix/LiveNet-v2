@@ -464,3 +464,11 @@ READY. O procedimento documenta também a incompatibilidade de rollback para o
 worker antigo quando exista fila ativa. A implementação não foi ativada no DEV;
 o mecanismo HTTPS B e a configuração privada permanecem preservados. A futura
 intervenção requer autorização própria; não pressupõe acesso ao Synology.
+
+## INV-ID-01 — implementação isolada, ativação pendente
+
+Ver [contrato, migração e rollback IPv4 manuais](inv-id-01.md). O código preparado
+acrescenta o alvo standard `d002a01a7230` e grants por coluna; não os aplica ao DEV.
+`inspect-identifiers` é um preflight explícito READ ONLY que bloqueia legado
+incompatível, sem o corrigir. As evidências d001/b12 e operacionais anteriores
+neste documento permanecem históricas; este apontador não declara nova ativação.

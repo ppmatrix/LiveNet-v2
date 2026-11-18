@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { ApiError, errorMessage } from '../api/client';
+import { ApiError, errorMessage, invalidResponse } from '../api/client';
 import { resourceTypeLabel } from '../api/contracts';
 import { getResource } from '../api/inventory';
 import { useRemote } from '../api/useRemote';
@@ -8,19 +8,40 @@ import { ErrorNotice, Loading } from '../components/Feedback';
 import { formatDate, ResourceState } from '../components/ResourceState';
 import { useSession } from '../auth/SessionProvider';
 import { ResourceDiscoverySection } from '../components/ResourceDiscoverySection';
+import { ResourceIdentifiersSection } from '../components/ResourceIdentifiersSection';
+import type { Resource } from '../api/contracts';
+
+function resourceIdentity(id:string) {
+  const value=id.toLowerCase().replace(/^urn:uuid:/,'').replace(/[{}-]/g,'');
+  return /^[0-9a-f]{32}$/.test(value)?value:id;
+}
 
 export function ResourceDetailPage() {
-  const { session } = useSession();
   const { resourceId = '' } = useParams();
-  const load = useCallback((signal: AbortSignal) => getResource(resourceId, signal), [resourceId]);
+  // A real route identity change resets all local drafts, even if the next
+  // resource is still loading. Refreshes of this UUID retain the mounted view.
+  return <ResourceDetailView key={resourceIdentity(resourceId)} resourceId={resourceId}/>;
+}
+
+function ResourceDetailView({resourceId}:{resourceId:string}) {
+  const { session } = useSession();
+  const [snapshot,setSnapshot] = useState<Resource|null>(null);
+  const load = useCallback(async (signal: AbortSignal) => {
+    const data=await getResource(resourceId,signal);
+    if(resourceIdentity(data.id)!==resourceIdentity(resourceId))return invalidResponse();
+    if(!signal.aborted)setSnapshot(data);
+    return data;
+  }, [resourceId]);
   const { result, retry } = useRemote(load);
-  const resource = result.status === 'success' ? result.data : null;
+  const accessDenied=result.status==='error'&&result.error instanceof ApiError&&[401,403,404].includes(result.error.status);
+  const resource = accessDenied?null:result.status === 'success'?result.data:snapshot;
+  const refreshing=result.status!=='success';
   return <>
     <Link className="back-link" to="/inventory">← Voltar ao inventário</Link>
     <div className="page-heading"><div><p className="eyebrow">DETALHE DO RECURSO</p><h1>{resource?.display_name || 'Recurso'}</h1>
       <p className="muted">Identidade e informação administrativa.</p></div>
       {resource && <div className="page-actions"><ResourceState value={resource.administrative_state} />
-        {session.user?.roles.includes('inventory_editor') && resource.administrative_state !== 'archived' && !resource.archived_at
+        {!refreshing && session.user?.roles.includes('inventory_editor') && resource.administrative_state !== 'archived' && !resource.archived_at
           && <Link className="button" to={'/inventory/' + encodeURIComponent(resource.id) + '/edit'}>Editar</Link>}</div>}</div>
     {result.status === 'loading' && <section className="surface"><Loading label="A carregar o recurso…" /></section>}
     {result.status === 'error' && <ErrorNotice message={errorMessage(result.error)}
@@ -39,6 +60,8 @@ export function ResourceDetailPage() {
         <div><dt>Versão do registo</dt><dd>{resource.row_version}</dd></div>
       </dl></section>
       <ResourceDiscoverySection key={resource.id} resourceId={resource.id}/>
+      <ResourceIdentifiersSection key={'identifiers-'+resource.id} resourceId={resource.id}
+        archived={resource.administrative_state==='archived'||!!resource.archived_at} resourceRefreshing={refreshing} onChanged={retry}/>
       <section className="surface detail-panel attributes-panel"><h2>Atributos</h2>
         {Object.keys(resource.attributes).length ? <pre>{JSON.stringify(resource.attributes, null, 2)}</pre>
           : <p className="muted">Sem atributos adicionais.</p>}</section>

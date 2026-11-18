@@ -92,6 +92,7 @@ def test_identifier_indexes():
             "source_type",
             "source_instance",
         ),
+        "uq_identifiers_manual_ipv4_open": ("resource_id", "namespace", "normalized_value"),
     }
 
 
@@ -106,10 +107,10 @@ def test_identifier_has_no_global_unique_constraint():
 
     assert unique_constraints == []
 
-    assert all(
-        not index.unique
-        for index in table.indexes
-    )
+    unique = [index for index in table.indexes if index.unique]
+    assert len(unique) == 1
+    assert tuple(c.name for c in unique[0].columns) == ('resource_id','namespace','normalized_value')
+    assert str(unique[0].dialect_options['postgresql']['where']) == "identifier_type IN ('ipv4','IPv4') AND source_type = 'manual' AND valid_until IS NULL"
 
 
 def test_identifier_numeric_confidence():

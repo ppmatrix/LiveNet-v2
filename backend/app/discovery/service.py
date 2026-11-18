@@ -247,7 +247,8 @@ class Repository:
         # Hints only: network identifiers and prior explicit decisions, never identity proof.
         known=select(Decision.resource_id).join(Observation).where(Observation.ip==observation.ip)
         identifiers=select(ResourceIdentifier.resource_id).where(ResourceIdentifier.identifier_type.in_(('ipv4','IPv4')),
-            ResourceIdentifier.normalized_value==observation.ip)
+            ResourceIdentifier.normalized_value==observation.ip,ResourceIdentifier.valid_until.is_(None),
+            ResourceIdentifier.source_type!='manual')  # Observations have no proven namespace.
         resources=session.scalars(select(Resource).where(scope,or_(Resource.id.in_(known),Resource.id.in_(identifiers))).order_by(Resource.id).limit(21)).all()
         return [dict(id=str(r.id),display_name=r.display_name,administrative_state=r.administrative_state) for r in resources[:20]],len(resources)>20
 
